@@ -39,7 +39,7 @@ type
 
 
   Protected
-    function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF): TRectF;
+    function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF; const offset: TPointF): TRectF;
       Virtual; Abstract;
     function CalcuMaxLabel(PanelBmp: TBitmap; StdTextR: TRectF): Integer;
       Virtual; Abstract;
@@ -73,7 +73,7 @@ type
   TLeftAxis = Class(TCustomAxis)
   Protected
     function LableSuffix: String; Override;
-    function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF)
+    function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF; const offset: TPointF)
       : TRectF; override;
     Function IsVertical: Boolean; Override;
     function CalcuMaxLabel(PanelBmp: TBitmap; StdTextR: TRectF)
@@ -88,7 +88,7 @@ type
   TBottomAxis = Class(TCustomAxis)
   Protected
     function LableSuffix: String; Override;
-    function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF)
+    function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF; const offset: TPointF)
       : TRectF; override;
     Function IsVertical: Boolean; Override;
     function CalcuMaxLabel(PanelBmp: TBitmap; StdTextR: TRectF)
@@ -405,7 +405,7 @@ begin
   FGridR.Top := FGridR.Top + MaxRect.Height / 2;
   FGridR.Left := FGridR.Left + MaxRect.Width;
   FGridR.Bottom := FGridR.Bottom - MaxRect.Height * 1.5;
-  FGridR.Right := FGridR.Right - FBottomTextR.Width;
+  FGridR.Right := FGridR.Right - FBottomTextR.Width / 2;
 end;
 
 { TGridAndAxis }
@@ -537,6 +537,8 @@ procedure TCustomAxis.DrawLables(const CoordinatePos: TPointF; ACanvas: TCanvas;
 var
   i: Integer;
   LableStep: Single;
+  R: TRectF;
+  AOffset: TPointF;
 begin
   With ACanvas do
   begin
@@ -546,9 +548,11 @@ begin
     LableStep := (FMaxValue - FMinValue) / (Length(FLines) - 1);
     for i := 0 to Length(FLines) - 1 do
     begin
-      FillText(CalcuLabelR(FLines[i], StdTextR), CalcuLableText(i, LableStep),
+      AOffset:= TPointF.Create(CoordinatePos.X, CoordinatePos.Y);
+      R:= CalcuLabelR(FLines[i], StdTextR, AOffset);
+      FillText(R, CalcuLableText(i, LableStep),
         False, 1, [], HTextAlign, TTextAlign.Center);
-//      DrawRect(CalcuLabelR(FLines[i], StdTextR), 0, 0, [], 1);
+//      DrawRect(R, 0, 0, [], 1);
     end;
   end;
 end;
@@ -628,14 +632,13 @@ end;
 { TLeftAxis }
 
 function TLeftAxis.CalcuLabelR(const Line: TLine;
-  const StdTextRect: TRectF): TRectF;
+  const StdTextRect: TRectF;  const offset: TPointF): TRectF;
 var
   Posi: TPointF;
 begin
   Result := StdTextRect;
-//  Result.Inflate(2, 0);
   Posi := Line.StartPoint;
-  Posi.X := Posi.X - 2;
+  Posi.X:= Posi.X + offset.X - StdTextRect.Width - 4;
   Result.SetLocation(Posi);
 end;
 
@@ -674,7 +677,7 @@ end;
 { TBottomAxis }
 
 function TBottomAxis.CalcuLabelR(const Line: TLine;
-  const StdTextRect: TRectF): TRectF;
+  const StdTextRect: TRectF; const offset: TPointF): TRectF;
 var
   Posi: TPointF;
 begin

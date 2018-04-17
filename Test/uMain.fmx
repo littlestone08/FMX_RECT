@@ -2,8 +2,8 @@ object Form3: TForm3
   Left = 0
   Top = 0
   Caption = 'Form3'
-  ClientHeight = 527
-  ClientWidth = 910
+  ClientHeight = 524
+  ClientWidth = 904
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
@@ -12,16 +12,16 @@ object Form3: TForm3
   DesignerMasterStyle = 0
   object Button2: TButton
     Anchors = [akBottom]
-    Position.X = 781.935485839843800000
-    Position.Y = 489.000000000000000000
+    Position.X = 776.516113281250000000
+    Position.Y = 486.000000000000000000
     TabOrder = 9
     Text = 'Button2'
     OnClick = Button2Click
   end
   object Button3: TButton
     Anchors = [akBottom]
-    Position.X = 125.362327575683600000
-    Position.Y = 489.000000000000000000
+    Position.X = 124.272033691406300000
+    Position.Y = 486.000000000000000000
     TabOrder = 3
     Text = 'Start'
     OnClick = Button3Click
@@ -35,8 +35,8 @@ object Form3: TForm3
   end
   object Button1: TButton
     Anchors = [akBottom]
-    Position.X = 471.119659423828100000
-    Position.Y = 489.000000000000000000
+    Position.X = 467.749603271484400000
+    Position.Y = 486.000000000000000000
     TabOrder = 6
     Text = 'Stop'
     OnClick = Button1Click
@@ -45,8 +45,8 @@ object Form3: TForm3
     Anchors = [akLeft, akTop, akRight, akBottom]
     Position.X = 120.000000000000000000
     Position.Y = 40.000000000000000000
-    Size.Width = 753.000000000000000000
-    Size.Height = 433.000000000000000000
+    Size.Width = 747.000000000000000000
+    Size.Height = 430.000000000000000000
     Size.PlatformDefault = False
     OnResized = SignalChart1Resized
   end
