@@ -37,6 +37,7 @@ type
     procedure SetThinkness(const Value: Single);
     procedure SetLineColor(const Value: TAlphaColor);
 
+
   Protected
     function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF): TRectF;
       Virtual; Abstract;
@@ -59,11 +60,14 @@ type
     Procedure DrawGrid(Coordinate: TBitmap; MaxLableCount: Integer);
     Procedure DrawLables(const CoordinatePos: TPointF; ACanvas: TCanvas;
       StdTextR: TRectF);
+
+
     Property MinValue: Integer read FMinValue write SetMinValue;
     Property MaxValue: Integer read FMaxValue write SetMaxValue;
     Property Thinkness: Single read FThinkness write SetThinkness;
     Property LineColor: TAlphaColor read FLineColor write SetLineColor;
     Property HTextAlign: TTextAlign Read GetHTextAlign;
+
   End;
 
   TLeftAxis = Class(TCustomAxis)
@@ -114,11 +118,13 @@ type
     FData: TArray<Single>;
     FLeft: TCustomAxis;
     FBottom: TCustomAxis;
+    FLeftTextR  : TRectF;
+    FBottomTextR: TRectF;
   Private
     FBitmap: TBitmap;
   Private
     FFrameCounter: TFrameCount;
-    FStdTextR: TRectF;
+//    FStdTextR: TRectF;
     function GetFPS: Integer;
     Procedure UpdateBitmap;
     Procedure UpdateGridRAndStdTextR();
@@ -138,7 +144,8 @@ procedure Register;
 implementation
 
 uses
-  System.Diagnostics, CnDebug;
+  System.Diagnostics;
+//  , CnDebug;
 
 { TSpectrumChart }
 
@@ -292,7 +299,7 @@ var
   ACanvas: TCanvas;
 begin
   inherited;
-
+//  CnDebugger.LogMsg('UpdateBitmap');
   UpdateGridRAndStdTextR();
 
   FCoordinate.SetSize(TSize.Create(Ceil(FGridR.Width), Ceil(FGridR.Height)));
@@ -302,13 +309,14 @@ begin
   // 画坐标格
   if FCoordinate.HandleAllocated then
   begin
+//    CnDebugger.LogMsg('画坐标格');
     ACanvas := FCoordinate.Canvas;
 
     ACanvas.BeginScene();
     try
       FCoordinate.Clear(TAlphaColors.Null);
-      FLeft.DrawGrid(FCoordinate, FLeft.CalcuMaxLabel(FBitmap, FStdTextR));
-      FBottom.DrawGrid(FCoordinate, FBottom.CalcuMaxLabel(FBitmap, FStdTextR));
+      FLeft.DrawGrid(FCoordinate, FLeft.CalcuMaxLabel(FBitmap, FLeftTextR));
+      FBottom.DrawGrid(FCoordinate, FBottom.CalcuMaxLabel(FBitmap, FBottomTextR));
     finally
       ACanvas.EndScene();
     end;
@@ -321,8 +329,8 @@ begin
     ACanvas.BeginScene();
     try
       ACanvas.Clear(TAlphaColors.Null);
-      FLeft.DrawLables(FGridR.TopLeft, ACanvas, FStdTextR);
-      FBottom.DrawLables(FGridR.TopLeft, ACanvas, FStdTextR);
+      FLeft.DrawLables(FGridR.TopLeft, ACanvas, FLeftTextR);
+      FBottom.DrawLables(FGridR.TopLeft, ACanvas, FBottomTextR);
       DrawGridFrame(ACanvas);
       DrawFrame(ACanvas);
       ACanvas.DrawBitmap(FCoordinate, FCoordinate.BoundsF, FGridR, 1, True);
@@ -365,24 +373,39 @@ procedure TSignalChart.UpdateGridRAndStdTextR;
 var
   i: Integer;
   ARect: TRectF;
+  MaxRect: TRectF;
 begin
-  ARect := TRectF.Create(0, 0, 1, Canvas.TextHeight(' '));
-  FStdTextR := TRectF.Create(0, 0, 1, 1);
+  MaxRect:= TRectF.Empty;
   for i := FLeft.MinValue to FLeft.MaxValue do
   begin
+    ARect:= LocalRect;
+//    CnDebugger.LogMsg(IntToStr(i) + FLeft.LableSuffix);
     Canvas.MeasureText(ARect, IntToStr(i) + FLeft.LableSuffix, False, [],
       TTextAlign.Leading, TTextAlign.Leading);
-    // ARect.NormalizeRect;
-    FStdTextR.Union(ARect);
-    // L_LableW := Canvas.TextWidth(IntToStr(i) + FLeft.LableSuffix);
+    MaxRect.Union(ARect);
   end;
-  FStdTextR.Inflate(2, 0);
+  FLeftTextR:= MaxRect;
 
+  MaxRect := TRectF.Empty;
+  for i := FBottom.MinValue to FBottom.MaxValue do
+  begin
+    ARect:= LocalRect;
+//    CnDebugger.LogMsg(IntToStr(i) + FBottom.LableSuffix);
+    Canvas.MeasureText(ARect, IntToStr(i) + FBottom.LableSuffix, False, [],
+      TTextAlign.Leading, TTextAlign.Leading);
+    MaxRect.Union(ARect);
+  end;
+  FBottomTextR:= MaxRect;
+
+
+
+//  FStdTextR.Inflate(2, 0);
+//  CnDebugger.LogMsg(Format('W=%f; H=%f', [MaxRect.Width, MaxRect.Height]));
   FGridR := LocalRect;
-  FGridR.Top := FGridR.Top + FStdTextR.Height / 2;
-  FGridR.Left := FGridR.Left + FStdTextR.Width;
-  FGridR.Bottom := FGridR.Bottom - FStdTextR.Height * 1.5;
-  FGridR.Right := FGridR.Right - FStdTextR.Width;
+  FGridR.Top := FGridR.Top + MaxRect.Height / 2;
+  FGridR.Left := FGridR.Left + MaxRect.Width;
+  FGridR.Bottom := FGridR.Bottom - MaxRect.Height * 1.5;
+  FGridR.Right := FGridR.Right - FBottomTextR.Width;
 end;
 
 { TGridAndAxis }
@@ -525,10 +548,12 @@ begin
     begin
       FillText(CalcuLabelR(FLines[i], StdTextR), CalcuLableText(i, LableStep),
         False, 1, [], HTextAlign, TTextAlign.Center);
-      // DrawRect(CalcuLabelR(FLines[i], StdTextR), 0, 0, [], 1);
+//      DrawRect(CalcuLabelR(FLines[i], StdTextR), 0, 0, [], 1);
     end;
   end;
 end;
+
+
 
 procedure TCustomAxis.SetLineColor(const Value: TAlphaColor);
 begin
@@ -608,9 +633,9 @@ var
   Posi: TPointF;
 begin
   Result := StdTextRect;
-  Result.Inflate(2, 0);
+//  Result.Inflate(2, 0);
   Posi := Line.StartPoint;
-  Posi.X := Posi.X - 6;
+  Posi.X := Posi.X - 2;
   Result.SetLocation(Posi);
 end;
 
@@ -673,7 +698,7 @@ end;
 constructor TBottomAxis.Create;
 begin
   inherited;
-  FMaxValue := 31;
+  FMaxValue := 1023;
   FMinValue := 0;
 end;
 
