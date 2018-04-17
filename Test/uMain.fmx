@@ -1,0 +1,53 @@
+object Form3: TForm3
+  Left = 0
+  Top = 0
+  Caption = 'Form3'
+  ClientHeight = 563
+  ClientWidth = 887
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnPaint = FormPaint
+  DesignerMasterStyle = 0
+  object Button2: TButton
+    Anchors = [akBottom]
+    Position.X = 761.161315917968800000
+    Position.Y = 525.000000000000000000
+    TabOrder = 9
+    Text = 'Button2'
+    OnClick = Button2Click
+  end
+  object Button3: TButton
+    Anchors = [akBottom]
+    Position.X = 121.182830810546900000
+    Position.Y = 525.000000000000000000
+    TabOrder = 3
+    Text = 'Start'
+    OnClick = Button3Click
+  end
+  object Timer1: TTimer
+    Enabled = False
+    Interval = 5
+    OnTimer = Timer1Timer
+    Left = 56
+    Top = 40
+  end
+  object Button1: TButton
+    Anchors = [akBottom]
+    Position.X = 458.201171875000000000
+    Position.Y = 525.000000000000000000
+    TabOrder = 6
+    Text = 'Stop'
+    OnClick = Button1Click
+  end
+  object SignalChart1: TSignalChart
+    Anchors = [akLeft, akTop, akRight, akBottom]
+    Position.X = 120.000000000000000000
+    Position.Y = 40.000000000000000000
+    Size.Width = 734.000000000000000000
+    Size.Height = 475.000000000000000000
+    Size.PlatformDefault = False
+    OnResized = SignalChart1Resized
+  end
+end

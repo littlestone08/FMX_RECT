@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{FA19FDC7-6467-4644-8A45-BB2639572E35}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="PTestGraphic.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="..\dpkRecvGraphic.dproj">
+            <Dependencies>PTestGraphic.dproj</Dependencies>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="PTestGraphic">
+        <MSBuild Projects="PTestGraphic.dproj"/>
+    </Target>
+    <Target Name="PTestGraphic:Clean">
+        <MSBuild Projects="PTestGraphic.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="PTestGraphic:Make">
+        <MSBuild Projects="PTestGraphic.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="dpkRecvGraphic" DependsOnTargets="PTestGraphic">
+        <MSBuild Projects="..\dpkRecvGraphic.dproj"/>
+    </Target>
+    <Target Name="dpkRecvGraphic:Clean" DependsOnTargets="PTestGraphic:Clean">
+        <MSBuild Projects="..\dpkRecvGraphic.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="dpkRecvGraphic:Make" DependsOnTargets="PTestGraphic:Make">
+        <MSBuild Projects="..\dpkRecvGraphic.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="PTestGraphic;dpkRecvGraphic"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="PTestGraphic:Clean;dpkRecvGraphic:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="PTestGraphic:Make;dpkRecvGraphic:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
