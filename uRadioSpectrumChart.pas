@@ -109,6 +109,18 @@ type
     Function CalcuY(X: Single): Single;
   End;
 
+
+  TAxises = class(TPersistent)
+  Strict Private
+    FLeft: TCustomAxis;
+    FBottom: TCustomAxis;
+  Public
+    Constructor Create;
+    Destructor Destroy; Override;
+  Published
+    Property Left: TCustomAxis Read FLeft Write FLeft;
+    Property Bottom: TCustomAxis Read FBottom Write FBottom;
+  End;
   TSignalChart = Class(TPaintBox)
   Private
     FEquationBottomIn: TLinearEquations;
@@ -116,12 +128,13 @@ type
     FCoordinate: TBitmap;
     FGridR: TRectF;
     FData: TArray<Single>;
-    FLeft: TCustomAxis;
-    FBottom: TCustomAxis;
+    FDataAxises: TAxises;
     FLeftTextR  : TRectF;
     FBottomTextR: TRectF;
   Private
     FBitmap: TBitmap;
+    procedure ReadDataAxis(Reader: TReader);
+    procedure WriteDataAxis(Writer: TWriter);
   Private
     FFrameCounter: TFrameCount;
 //    FStdTextR: TRectF;
@@ -132,11 +145,14 @@ type
     procedure DoCheckSize;
   Protected
     Procedure DoPaint; Override;
+    procedure DefineProperties(Filer: TFiler); Override;
   Public
     Constructor Create(AOwner: TComponent); Override;
     Destructor Destroy; Override;
     Procedure DrawData(const AData: TArray<Single>);
     Property FPS: Integer Read GetFPS;
+  Published
+    Property DataAxises: TAxises Read FDataAxises Write FDataAxises;
   End;
 
 procedure Register;
@@ -205,7 +221,7 @@ begin
   if ComponentState * [csLoading, csReading] <> [] then
     Exit;
   HStep := FGridR.Width / (Length(FData) - 1);
-  VStep := FGridR.Height / (FLeft.MaxValue - FLeft.MinValue + 1);
+  VStep := FGridR.Height / (FDataAxises.Left.MaxValue - FDataAxises.Left.MinValue + 1);
 
   ACanvas := Canvas;
   ACanvas.Stroke.Color := TAlphaColors.Black;
@@ -234,14 +250,20 @@ begin
   end;
 end;
 
+procedure TSignalChart.ReadDataAxis(Reader: TReader);
+begin
+  FDataAxises.Left.FMinValue:= Reader.ReadInteger();
+  FDataAxises.Left.FMaxValue:= Reader.ReadInteger();
+  FDataAxises.Bottom.FMinValue:= Reader.ReadInteger();
+  FDataAxises.Bottom.FMaxValue:= Reader.ReadInteger();
+end;
+
 { TGridLayer }
 
 constructor TSignalChart.Create;
 begin
   inherited;
-  FLeft := TLeftAxis.Create;
-  FBottom := TBottomAxis.Create;
-
+  FDataAxises:= TAxises.Create;
   FFrameCounter := TFrameCount.Create;
   FEquationBottomIn := TLinearEquations.Create;
   FCoordinate := TBitmap.Create;
@@ -249,12 +271,18 @@ begin
   FBitmap := TBitmap.Create;
 end;
 
+procedure TSignalChart.DefineProperties(Filer: TFiler);
+begin
+  inherited;
+//  Filer.DefineProperty('AxisData', ReadDataAxis, WriteDataAxis, True);
+//  Filer.DefineProperty('AxisData', Nil, WriteDataAxis, True);
+end;
+
 destructor TSignalChart.Destroy;
 begin
   FreeAndNil(FBitmap);
   FreeAndNil(FCoordinate);
-  FreeAndNil(FLeft);
-  FreeAndNil(FBottom);
+  FreeAndNil(FDataAxises);
   FreeAndNil(FEquationBottomIn);
   FreeAndNil(FFrameCounter);
   inherited;
@@ -315,8 +343,10 @@ begin
     ACanvas.BeginScene();
     try
       FCoordinate.Clear(TAlphaColors.Null);
-      FLeft.DrawGrid(FCoordinate, FLeft.CalcuMaxLabel(FBitmap, FLeftTextR));
-      FBottom.DrawGrid(FCoordinate, FBottom.CalcuMaxLabel(FBitmap, FBottomTextR));
+      With FDataAxises.Left do
+        DrawGrid(FCoordinate, CalcuMaxLabel(FBitmap, FLeftTextR));
+      With FDataAxises.Bottom do
+        DrawGrid(FCoordinate, CalcuMaxLabel(FBitmap, FBottomTextR));
     finally
       ACanvas.EndScene();
     end;
@@ -329,8 +359,10 @@ begin
     ACanvas.BeginScene();
     try
       ACanvas.Clear(TAlphaColors.Null);
-      FLeft.DrawLables(FGridR.TopLeft, ACanvas, FLeftTextR);
-      FBottom.DrawLables(FGridR.TopLeft, ACanvas, FBottomTextR);
+      With FDataAxises.Left do
+        DrawLables(FGridR.TopLeft, ACanvas, FLeftTextR);
+      With FDataAxises.Bottom do
+        DrawLables(FGridR.TopLeft, ACanvas, FBottomTextR);
       DrawGridFrame(ACanvas);
       DrawFrame(ACanvas);
       ACanvas.DrawBitmap(FCoordinate, FCoordinate.BoundsF, FGridR, 1, True);
@@ -375,27 +407,35 @@ var
   ARect: TRectF;
   MaxRect: TRectF;
 begin
-  MaxRect:= TRectF.Empty;
-  for i := FLeft.MinValue to FLeft.MaxValue do
-  begin
-    ARect:= LocalRect;
-//    CnDebugger.LogMsg(IntToStr(i) + FLeft.LableSuffix);
-    Canvas.MeasureText(ARect, IntToStr(i) + FLeft.LableSuffix, False, [],
-      TTextAlign.Leading, TTextAlign.Leading);
-    MaxRect.Union(ARect);
-  end;
-  FLeftTextR:= MaxRect;
 
-  MaxRect := TRectF.Empty;
-  for i := FBottom.MinValue to FBottom.MaxValue do
+  With FDataAxises.Left do
   begin
-    ARect:= LocalRect;
-//    CnDebugger.LogMsg(IntToStr(i) + FBottom.LableSuffix);
-    Canvas.MeasureText(ARect, IntToStr(i) + FBottom.LableSuffix, False, [],
-      TTextAlign.Leading, TTextAlign.Leading);
-    MaxRect.Union(ARect);
+    MaxRect:= TRectF.Empty;
+    for i := MinValue to MaxValue do
+    begin
+      ARect:= LocalRect;
+  //    CnDebugger.LogMsg(IntToStr(i) + FLeft.LableSuffix);
+      Canvas.MeasureText(ARect, IntToStr(i) + LableSuffix, False, [],
+        TTextAlign.Leading, TTextAlign.Leading);
+      MaxRect.Union(ARect);
+    end;
+    FLeftTextR:= MaxRect;
   end;
-  FBottomTextR:= MaxRect;
+
+
+  With FDataAxises.Bottom do
+  begin
+    MaxRect := TRectF.Empty;
+    for i := MinValue to MaxValue do
+    begin
+      ARect:= LocalRect;
+  //    CnDebugger.LogMsg(IntToStr(i) + FBottom.LableSuffix);
+      Canvas.MeasureText(ARect, IntToStr(i) + LableSuffix, False, [],
+        TTextAlign.Leading, TTextAlign.Leading);
+      MaxRect.Union(ARect);
+    end;
+    FBottomTextR:= MaxRect;
+  end;
 
 
 
@@ -406,6 +446,15 @@ begin
   FGridR.Left := FGridR.Left + MaxRect.Width;
   FGridR.Bottom := FGridR.Bottom - MaxRect.Height * 1.5;
   FGridR.Right := FGridR.Right - FBottomTextR.Width / 2;
+end;
+
+procedure TSignalChart.WriteDataAxis(Writer: TWriter);
+begin
+  Writer.WriteInteger(5);
+//  Writer.WriteInteger(FDataAxises.Left.FMinValue);
+//  Writer.WriteInteger(FDataAxises.Left.FMaxValue);
+//  Writer.WriteInteger(FDataAxises.Bottom.FMinValue);
+//  Writer.WriteInteger(FDataAxises.Bottom.FMaxValue);
 end;
 
 { TGridAndAxis }
@@ -759,6 +808,22 @@ end;
 function TFrameCount.GetFPS: Integer;
 begin
   Result := Length(FStamps);
+end;
+
+{ TAxises }
+
+constructor TAxises.Create;
+begin
+  inherited;
+  FLeft:= TLeftAxis.Create;
+  FBottom:= TBottomAxis.Create;
+end;
+
+destructor TAxises.Destroy;
+begin
+  FreeAndNil(FLeft);
+  FreeAndNil(FBottom);
+  inherited;
 end;
 
 initialization
