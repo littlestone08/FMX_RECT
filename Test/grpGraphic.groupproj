@@ -3,13 +3,16 @@
         <ProjectGuid>{FA19FDC7-6467-4644-8A45-BB2639572E35}</ProjectGuid>
     </PropertyGroup>
     <ItemGroup>
-        <Projects Include="PTestGraphic.dproj">
+        <Projects Include="PTestGraphicA.dproj">
             <Dependencies/>
         </Projects>
         <Projects Include="..\dpkRecvGraphic.dproj">
-            <Dependencies>PTestGraphic.dproj</Dependencies>
+            <Dependencies>PTestGraphicA.dproj</Dependencies>
         </Projects>
         <Projects Include="..\TestFFT\Project1.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="..\FMXTestFFT\PTestAudioFFTGraphic.dproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -20,22 +23,22 @@
             <Default.Personality/>
         </BorlandProject>
     </ProjectExtensions>
-    <Target Name="PTestGraphic">
-        <MSBuild Projects="PTestGraphic.dproj"/>
+    <Target Name="PTestGraphicA">
+        <MSBuild Projects="PTestGraphicA.dproj"/>
     </Target>
-    <Target Name="PTestGraphic:Clean">
-        <MSBuild Projects="PTestGraphic.dproj" Targets="Clean"/>
+    <Target Name="PTestGraphicA:Clean">
+        <MSBuild Projects="PTestGraphicA.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="PTestGraphic:Make">
-        <MSBuild Projects="PTestGraphic.dproj" Targets="Make"/>
+    <Target Name="PTestGraphicA:Make">
+        <MSBuild Projects="PTestGraphicA.dproj" Targets="Make"/>
     </Target>
-    <Target Name="dpkRecvGraphic" DependsOnTargets="PTestGraphic">
+    <Target Name="dpkRecvGraphic" DependsOnTargets="PTestGraphicA">
         <MSBuild Projects="..\dpkRecvGraphic.dproj"/>
     </Target>
-    <Target Name="dpkRecvGraphic:Clean" DependsOnTargets="PTestGraphic:Clean">
+    <Target Name="dpkRecvGraphic:Clean" DependsOnTargets="PTestGraphicA:Clean">
         <MSBuild Projects="..\dpkRecvGraphic.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="dpkRecvGraphic:Make" DependsOnTargets="PTestGraphic:Make">
+    <Target Name="dpkRecvGraphic:Make" DependsOnTargets="PTestGraphicA:Make">
         <MSBuild Projects="..\dpkRecvGraphic.dproj" Targets="Make"/>
     </Target>
     <Target Name="Project1">
@@ -47,14 +50,23 @@
     <Target Name="Project1:Make">
         <MSBuild Projects="..\TestFFT\Project1.dproj" Targets="Make"/>
     </Target>
+    <Target Name="PTestAudioFFTGraphic">
+        <MSBuild Projects="..\FMXTestFFT\PTestAudioFFTGraphic.dproj"/>
+    </Target>
+    <Target Name="PTestAudioFFTGraphic:Clean">
+        <MSBuild Projects="..\FMXTestFFT\PTestAudioFFTGraphic.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="PTestAudioFFTGraphic:Make">
+        <MSBuild Projects="..\FMXTestFFT\PTestAudioFFTGraphic.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="PTestGraphic;dpkRecvGraphic;Project1"/>
+        <CallTarget Targets="PTestGraphicA;dpkRecvGraphic;Project1;PTestAudioFFTGraphic"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="PTestGraphic:Clean;dpkRecvGraphic:Clean;Project1:Clean"/>
+        <CallTarget Targets="PTestGraphicA:Clean;dpkRecvGraphic:Clean;Project1:Clean;PTestAudioFFTGraphic:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="PTestGraphic:Make;dpkRecvGraphic:Make;Project1:Make"/>
+        <CallTarget Targets="PTestGraphicA:Make;dpkRecvGraphic:Make;Project1:Make;PTestAudioFFTGraphic:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

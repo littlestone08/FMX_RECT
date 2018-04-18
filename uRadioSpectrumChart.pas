@@ -312,11 +312,19 @@ end;
 procedure TSignalChart.FillDesigningTestData;
 var
   i: Integer;
+  nCount: Integer;
 begin
+  Exit;
   if csDesigning in ComponentState then
   begin
-    SetLength(FData, FAxisesData.Bottom.MaxValue - FAxisesData.Bottom.MinValue + 1);
-    for i := 0 to Length(FData) - 1 do
+    nCount:= FAxisesData.Bottom.MaxValue - FAxisesData.Bottom.MinValue + 1;
+    if nCount > 512 then
+      nCount:= 512;
+    if nCount < 0 then
+      nCount:= 10;
+
+    SetLength(FData, nCount);
+    for i := 0 to nCount - 1 do
     begin
       FData[i]:= Random(FAxisesData.Left.FMaxValue - FAxisesData.Left.FMinValue + 2);
     end;

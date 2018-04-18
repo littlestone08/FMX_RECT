@@ -2,8 +2,8 @@ object Form1: TForm1
   Left = 222
   Top = 114
   Caption = 'Form1'
-  ClientHeight = 154
-  ClientWidth = 476
+  ClientHeight = 523
+  ClientWidth = 955
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -15,15 +15,15 @@ object Form1: TForm1
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   DesignSize = (
-    476
-    154)
+    955
+    523)
   PixelsPerInch = 96
   TextHeight = 13
   object PaintBox1: TPaintBox
     Left = 0
     Top = 0
-    Width = 476
-    Height = 154
+    Width = 955
+    Height = 523
     Align = alClient
     Anchors = []
     OnPaint = PaintBox1Paint
@@ -32,34 +32,40 @@ object Form1: TForm1
     ExplicitHeight = 105
   end
   object Button1: TButton
-    Left = 109
-    Top = 117
+    Left = 256
+    Top = 486
     Width = 75
     Height = 25
     Anchors = [akBottom]
     Caption = #25171#24320
     TabOrder = 0
     OnClick = Button1Click
+    ExplicitLeft = 109
+    ExplicitTop = 117
   end
   object Button2: TButton
-    Left = 206
-    Top = 117
+    Left = 451
+    Top = 486
     Width = 75
     Height = 25
     Anchors = [akBottom]
     Caption = #25773#25918
     TabOrder = 1
     OnClick = Button2Click
+    ExplicitLeft = 206
+    ExplicitTop = 117
   end
   object Button3: TButton
-    Left = 303
-    Top = 117
+    Left = 645
+    Top = 486
     Width = 75
     Height = 25
     Anchors = [akBottom]
     Caption = #26242#20572
     TabOrder = 2
     OnClick = Button3Click
+    ExplicitLeft = 303
+    ExplicitTop = 117
   end
   object OpenDialog1: TOpenDialog
     FileName = 'D:\WORK170908\PCIeReceiver\Test\acs_test\res\*.wav'

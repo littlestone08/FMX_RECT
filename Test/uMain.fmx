@@ -43,7 +43,7 @@ object Form3: TForm3
   end
   object SignalChart1: TSignalChart
     Anchors = [akLeft, akTop, akRight, akBottom]
-    Position.X = 120.000000000000000000
+    Position.X = 112.000000000000000000
     Position.Y = 40.000000000000000000
     Size.Width = 736.000000000000000000
     Size.Height = 449.000000000000000000
