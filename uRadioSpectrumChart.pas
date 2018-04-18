@@ -36,17 +36,18 @@ type
     FThinkness: Single;
     FMaxValue: Integer;
     FLineColor: TAlphaColor;
+    FLabelSuffix: String;
     procedure SetMaxValue(const Value: Integer);
     procedure SetMinValue(const Value: Integer);
     procedure SetThinkness(const Value: Single);
     procedure SetLineColor(const Value: TAlphaColor);
     Procedure DoChanged;
+    procedure SetLabelSuffix(const Value: String);
   Protected
     function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF; const offset: TPointF): TRectF;
       Virtual; Abstract;
     function CalcuMaxLabel(PanelBmp: TBitmap; StdTextR: TRectF): Integer;
       Virtual; Abstract;
-    function LableSuffix: String; virtual; Abstract;
     Function IsVertical: Boolean; Virtual; Abstract;
     function CalcuLableText(Index: Integer; LabelStep: Single): String;
       Virtual; Abstract;
@@ -64,18 +65,18 @@ type
     Procedure DrawLables(const CoordinatePos: TPointF; ACanvas: TCanvas;
       StdTextR: TRectF);
 
+
   Published
     Property MinValue: Integer read FMinValue write SetMinValue;
     Property MaxValue: Integer read FMaxValue write SetMaxValue;
     Property Thinkness: Single read FThinkness write SetThinkness;
     Property LineColor: TAlphaColor read FLineColor write SetLineColor;
     Property HTextAlign: TTextAlign Read GetHTextAlign;
-
+    Property LableSuffix: String Read FLabelSuffix Write SetLabelSuffix;
   End;
 
   TLeftAxis = Class(TCustomAxis)
   Protected
-    function LableSuffix: String; Override;
     function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF; const offset: TPointF)
       : TRectF; override;
     Function IsVertical: Boolean; Override;
@@ -90,7 +91,6 @@ type
 
   TBottomAxis = Class(TCustomAxis)
   Protected
-    function LableSuffix: String; Override;
     function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF; const offset: TPointF)
       : TRectF; override;
     Function IsVertical: Boolean; Override;
@@ -576,15 +576,18 @@ end;
 
 procedure TCustomAxis.DoChanged;
 begin
-  if (FChart <> Nil) and ([csReading, csLoading] * FChart.ComponentState = []) then
+  if FChart <> Nil then
   begin
-    FChart.UpdateBitmap;
-    FChart.InvalidateRect(FChart.LocalRect);
-  end;
+    if csDesigning in FChart.ComponentState then
+    begin
+      FChart.FillDesigningTestData();
+    end;
 
-  if csDesigning in FChart.ComponentState then
-  begin
-    FChart.FillDesigningTestData();
+    if [csReading, csLoading] * FChart.ComponentState = [] then
+    begin
+      FChart.UpdateBitmap;
+      FChart.InvalidateRect(FChart.LocalRect);
+    end;
   end;
 end;
 
@@ -639,6 +642,15 @@ begin
 end;
 
 
+
+procedure TCustomAxis.SetLabelSuffix(const Value: String);
+begin
+  if FLabelSuffix <> value then
+  begin
+    FLabelSuffix := Value;
+    DoChanged;
+  end;
+end;
 
 procedure TCustomAxis.SetLineColor(const Value: TAlphaColor);
 begin
@@ -754,6 +766,7 @@ begin
   inherited;
   FMaxValue := 0;
   FMinValue := -140;
+  FLabelSuffix:= 'dB'
 end;
 
 function TLeftAxis.GetHTextAlign: TTextAlign;
@@ -766,10 +779,6 @@ begin
   Result := True;
 end;
 
-function TLeftAxis.LableSuffix: String;
-begin
-  Result := 'dB';
-end;
 
 { TBottomAxis }
 
@@ -800,6 +809,7 @@ begin
   inherited;
   FMaxValue := 1023;
   FMinValue := 0;
+  FLabelSuffix:= 'MHz'
 end;
 
 function TBottomAxis.GetHTextAlign: TTextAlign;
@@ -812,10 +822,6 @@ begin
   Result := False;
 end;
 
-function TBottomAxis.LableSuffix: String;
-begin
-  Result := 'MHz'
-end;
 
 { TLinearEquations }
 
