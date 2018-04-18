@@ -40,8 +40,7 @@ type
     procedure SetMinValue(const Value: Integer);
     procedure SetThinkness(const Value: Single);
     procedure SetLineColor(const Value: TAlphaColor);
-
-
+    Procedure DoChanged;
   Protected
     function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF; const offset: TPointF): TRectF;
       Virtual; Abstract;
@@ -135,6 +134,7 @@ type
     FGridR: TRectF;
     FData: TArray<Single>;
     FAxisesData: TAxises;
+    FAxisesView: TAxises;
     FLeftTextR  : TRectF;
     FBottomTextR: TRectF;
   Private
@@ -146,8 +146,10 @@ type
     Procedure UpdateGridRAndStdTextR();
     Procedure PaintData();
     procedure DoCheckSize;
+    Procedure FillDesigningTestData;
   Protected
     Procedure DoPaint; Override;
+    Procedure Loaded; Override;
   Public
     Constructor Create(AOwner: TComponent); Override;
     Destructor Destroy; Override;
@@ -155,21 +157,31 @@ type
     Property FPS: Integer Read GetFPS;
   Published
     Property AxisesData: TAxises Read FAxisesData Write FAxisesData;
+    Property AxisesView: TAxises Read FAxisesView Write FAxisesView;
   End;
 
+  TTest = Class(TComponent)
+  Private
+    FSaveStr: String;
+    Procedure ReadSave(Reader: TReader);
+    Procedure WriteSave(Writer: TWriter);
+  Protected
+    Procedure DefineProperties(Filer: TFiler); Override;
+  Public
+    Constructor Create(AOwner: TComponent); Override;
+  End;
 procedure Register;
 
 implementation
 
 uses
-  System.Diagnostics;
-//  , CnDebug;
+  System.Diagnostics;//, CnDebug;
 
 { TSpectrumChart }
 
 procedure Register;
 begin
-  RegisterComponents('RadioReceiver', [TSignalChart]);
+  RegisterComponents('RadioReceiver', [TSignalChart, TTest]);
 end;
 
 procedure TSignalChart.DoPaint;
@@ -179,11 +191,18 @@ begin
   DoCheckSize();
   Canvas.DrawBitmap(FBitmap, FBitmap.BoundsF, FBitmap.BoundsF, 1);
   PaintData();
+//  CnDebugger.LogMsg('DoPaint');
 end;
 
 function TSignalChart.GetFPS: Integer;
 begin
   Result := FFrameCounter.FPS;
+end;
+
+procedure TSignalChart.Loaded;
+begin
+  inherited;
+
 end;
 
 procedure TSignalChart.DoCheckSize;
@@ -259,11 +278,13 @@ constructor TSignalChart.Create;
 begin
   inherited;
   FAxisesData:= TAxises.Create(Self);
+  FAxisesView:= TAxises.Create(Self);
   FFrameCounter := TFrameCount.Create;
   FEquationBottomIn := TLinearEquations.Create;
   FCoordinate := TBitmap.Create;
 
   FBitmap := TBitmap.Create;
+  FillDesigningTestData();
 end;
 
 
@@ -271,9 +292,10 @@ destructor TSignalChart.Destroy;
 begin
   FreeAndNil(FBitmap);
   FreeAndNil(FCoordinate);
-  FreeAndNil(FAxisesData);
   FreeAndNil(FEquationBottomIn);
   FreeAndNil(FFrameCounter);
+  FreeAndNil(FAxisesView);
+  FreeAndNil(FAxisesData);
   inherited;
 end;
 
@@ -285,6 +307,20 @@ begin
   end;
   FData := AData;
   InvalidateRect(ClipRect);
+end;
+
+procedure TSignalChart.FillDesigningTestData;
+var
+  i: Integer;
+begin
+  if csDesigning in ComponentState then
+  begin
+    SetLength(FData, FAxisesData.Bottom.MaxValue - FAxisesData.Bottom.MinValue + 1);
+    for i := 0 to Length(FData) - 1 do
+    begin
+      FData[i]:= Random(FAxisesData.Left.FMaxValue - FAxisesData.Left.FMinValue + 2);
+    end;
+  end;
 end;
 
 procedure TSignalChart.UpdateBitmap;
@@ -340,7 +376,7 @@ begin
       ACanvas.EndScene();
     end;
   end;
-
+//  CnDebugger.LogMsg('UpdateBitmap');
   if FBitmap.HandleAllocated then
   begin
     // 画底图，主要是坐标轴的Label
@@ -531,10 +567,25 @@ end;
 constructor TCustomAxis.Create(AChart: TSignalChart);
 begin
   inherited Create;
+  FChart:= AChart;
   FMaxValue := 0;
   FMinValue := -140;
   FThinkness := 1;
   FLineColor := TAlphaColors.Darkslategray;
+end;
+
+procedure TCustomAxis.DoChanged;
+begin
+  if (FChart <> Nil) and ([csReading, csLoading] * FChart.ComponentState = []) then
+  begin
+    FChart.UpdateBitmap;
+    FChart.InvalidateRect(FChart.LocalRect);
+  end;
+
+  if csDesigning in FChart.ComponentState then
+  begin
+    FChart.FillDesigningTestData();
+  end;
 end;
 
 procedure TCustomAxis.DrawGrid(Coordinate: TBitmap; MaxLableCount: Integer);
@@ -591,22 +642,38 @@ end;
 
 procedure TCustomAxis.SetLineColor(const Value: TAlphaColor);
 begin
-  FLineColor := Value;
+  if FLineColor <> Value then
+  begin
+    FLineColor := Value;
+    DoChanged();
+  end;
 end;
 
 procedure TCustomAxis.SetMaxValue(const Value: Integer);
 begin
-  FMaxValue := Value;
+  if FMaxValue <> Value then
+  begin
+    FMaxValue := Value;
+    DoChanged();
+  end;
 end;
 
 procedure TCustomAxis.SetMinValue(const Value: Integer);
 begin
-  FMinValue := Value;
+  if FMinValue <> Value then
+  begin
+    FMinValue := Value;
+    DoChanged();
+  end;
 end;
 
 procedure TCustomAxis.SetThinkness(const Value: Single);
 begin
-  FThinkness := Value;
+  if FThinkness <> Value then
+  begin
+    FThinkness := Value;
+    DoChanged();
+  end;
 end;
 
 Class procedure TCustomAxis.UpdateLinesPos(var Lines: TArray<TLine>;
@@ -805,6 +872,30 @@ begin
   FreeAndNil(FLeft);
   FreeAndNil(FBottom);
   inherited;
+end;
+
+{ TTest }
+
+constructor TTest.Create(AOwner: TComponent);
+begin
+  inherited;
+  FSaveStr:= TGUID.NewGuid.ToString
+end;
+
+procedure TTest.DefineProperties(Filer: TFiler);
+begin
+  inherited;
+  Filer.DefineProperty('save', ReadSave, WriteSave, True);
+end;
+
+procedure TTest.ReadSave(Reader: TReader);
+begin
+  FSaveStr:= Reader.ReadString;
+end;
+
+procedure TTest.WriteSave(Writer: TWriter);
+begin
+  Writer.WriteString(FSaveStr);
 end;
 
 initialization

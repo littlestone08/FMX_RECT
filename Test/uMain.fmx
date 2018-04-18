@@ -3,7 +3,7 @@ object Form3: TForm3
   Top = 0
   Caption = 'Form3'
   ClientHeight = 533
-  ClientWidth = 909
+  ClientWidth = 906
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
@@ -12,7 +12,7 @@ object Form3: TForm3
   DesignerMasterStyle = 0
   object Button2: TButton
     Anchors = [akBottom]
-    Position.X = 781.032287597656300000
+    Position.X = 778.322631835937500000
     Position.Y = 495.000000000000000000
     TabOrder = 9
     Text = 'Button2'
@@ -20,7 +20,7 @@ object Form3: TForm3
   end
   object Button3: TButton
     Anchors = [akBottom]
-    Position.X = 125.180618286132800000
+    Position.X = 124.635467529296900000
     Position.Y = 495.000000000000000000
     TabOrder = 3
     Text = 'Start'
@@ -35,7 +35,7 @@ object Form3: TForm3
   end
   object Button1: TButton
     Anchors = [akBottom]
-    Position.X = 470.557952880859400000
+    Position.X = 468.873016357421900000
     Position.Y = 495.000000000000000000
     TabOrder = 6
     Text = 'Stop'
@@ -45,10 +45,30 @@ object Form3: TForm3
     Anchors = [akLeft, akTop, akRight, akBottom]
     Position.X = 120.000000000000000000
     Position.Y = 40.000000000000000000
-    Size.Width = 752.000000000000000000
-    Size.Height = 439.000000000000000000
+    Size.Width = 736.000000000000000000
+    Size.Height = 449.000000000000000000
     Size.PlatformDefault = False
     OnResized = SignalChart1Resized
-
+    AxisesData.Left.MinValue = -140
+    AxisesData.Left.MaxValue = 0
+    AxisesData.Left.Thinkness = 1.000000000000000000
+    AxisesData.Left.LineColor = claDarkslategray
+    AxisesData.Bottom.MinValue = 0
+    AxisesData.Bottom.MaxValue = 1023
+    AxisesData.Bottom.Thinkness = 1.000000000000000000
+    AxisesData.Bottom.LineColor = claDarkslategray
+    AxisesView.Left.MinValue = -140
+    AxisesView.Left.MaxValue = 0
+    AxisesView.Left.Thinkness = 1.000000000000000000
+    AxisesView.Left.LineColor = claDarkslategray
+    AxisesView.Bottom.MinValue = 0
+    AxisesView.Bottom.MaxValue = 1023
+    AxisesView.Bottom.Thinkness = 1.000000000000000000
+    AxisesView.Bottom.LineColor = claDarkslategray
+  end
+  object Test1: TTest
+    Left = 48
+    Top = 408
+    save = '{1D8C3D07-29A9-4779-A099-32A8691EEA69}'
   end
 end

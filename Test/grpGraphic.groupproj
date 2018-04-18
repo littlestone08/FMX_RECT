@@ -7,7 +7,7 @@
             <Dependencies/>
         </Projects>
         <Projects Include="..\dpkRecvGraphic.dproj">
-            <Dependencies/>
+            <Dependencies>PTestGraphic.dproj</Dependencies>
         </Projects>
     </ItemGroup>
     <ProjectExtensions>
@@ -26,13 +26,13 @@
     <Target Name="PTestGraphic:Make">
         <MSBuild Projects="PTestGraphic.dproj" Targets="Make"/>
     </Target>
-    <Target Name="dpkRecvGraphic">
+    <Target Name="dpkRecvGraphic" DependsOnTargets="PTestGraphic">
         <MSBuild Projects="..\dpkRecvGraphic.dproj"/>
     </Target>
-    <Target Name="dpkRecvGraphic:Clean">
+    <Target Name="dpkRecvGraphic:Clean" DependsOnTargets="PTestGraphic:Clean">
         <MSBuild Projects="..\dpkRecvGraphic.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="dpkRecvGraphic:Make">
+    <Target Name="dpkRecvGraphic:Make" DependsOnTargets="PTestGraphic:Make">
         <MSBuild Projects="..\dpkRecvGraphic.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">

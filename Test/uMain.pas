@@ -19,6 +19,7 @@ type
     Button1: TButton;
     Button2: TButton;
     SignalChart1: TSignalChart;
+    Test1: TTest;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -55,6 +56,10 @@ procedure TForm3.Button2Click(Sender: TObject);
 var
   x: TBitmap;
 begin
+  SignalChart1.AxisesData.Left.MinValue:=   self.SignalChart1.AxisesData.Left.MinValue - 1;
+  SignalChart1.InvalidateRect(SignalChart1.ClipRect);
+
+  SignalChart1.Repaint;
 //  RadioSpectrumChart1.InvalidateRect(RadioSpectrumChart1.BoundsRect);
   x:= TBitmap.Create;
   try
