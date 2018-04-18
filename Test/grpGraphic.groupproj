@@ -9,6 +9,9 @@
         <Projects Include="..\dpkRecvGraphic.dproj">
             <Dependencies>PTestGraphic.dproj</Dependencies>
         </Projects>
+        <Projects Include="..\TestFFT\Project1.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -35,14 +38,23 @@
     <Target Name="dpkRecvGraphic:Make" DependsOnTargets="PTestGraphic:Make">
         <MSBuild Projects="..\dpkRecvGraphic.dproj" Targets="Make"/>
     </Target>
+    <Target Name="Project1">
+        <MSBuild Projects="..\TestFFT\Project1.dproj"/>
+    </Target>
+    <Target Name="Project1:Clean">
+        <MSBuild Projects="..\TestFFT\Project1.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Project1:Make">
+        <MSBuild Projects="..\TestFFT\Project1.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="PTestGraphic;dpkRecvGraphic"/>
+        <CallTarget Targets="PTestGraphic;dpkRecvGraphic;Project1"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="PTestGraphic:Clean;dpkRecvGraphic:Clean"/>
+        <CallTarget Targets="PTestGraphic:Clean;dpkRecvGraphic:Clean;Project1:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="PTestGraphic:Make;dpkRecvGraphic:Make"/>
+        <CallTarget Targets="PTestGraphic:Make;dpkRecvGraphic:Make;Project1:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
