@@ -161,6 +161,7 @@ end;
 procedure TForm3.SignalChart1Resized(Sender: TObject);
 begin
 //  CnDebugger.LogMsg('Resized');
+  self.Fill.Color
 end;
 
 procedure TForm3.Timer1Timer(Sender: TObject);
