@@ -138,7 +138,14 @@ type
     FEquationBottomIn: TLinearEquations;
 
     FGrid: TBitmap;
-    FGridR: TRectF;
+
+    FGraphicRect: TRectF;
+    FGraphicGridR: TRectF;
+
+    FWaterFallRect: TRectF;
+    FWaterFallGridR: TRectF;
+
+
     FData: TArray<Single>;
     FAxisesData: TAxises;
     FAxisesView: TAxises;
@@ -146,7 +153,7 @@ type
     FBottomTextR: TRectF;
   Private
     FBKGraphic: TBitmap;
-    FGraphicRect: TRectF;
+
   Private
     FFrameCounter: TFrameCount;
     FDrawer: TSignalDrawer;
@@ -258,13 +265,13 @@ end;
 function TSignalChart.GraphicToGrid(const APoint: TRectF): TRectF;
 begin
   Result:= APoint;
-  Result.Offset(FGridR.TopLeft);
+  Result.Offset(FGraphicGridR.TopLeft);
 end;
 
 function TSignalChart.GridToClient(const APoint: TRectF): TRectF;
 begin
   Result:= APoint;
-  Result.Offset(FGridR.TopLeft);
+  Result.Offset(FGraphicGridR.TopLeft);
 end;
 
 function TSignalChart.GridToGraphic(const APoint: TRectF): TRectF;
@@ -283,7 +290,11 @@ procedure TSignalChart.DoCheckSize;
   Procedure UpdateGraphicRect;
   begin
     FGraphicRect:= LocalRect;
+    FGraphicRect.Top:= FGraphicRect.Top + 2;
     FGraphicRect.Bottom:= FGraphicRect.Bottom / 2;
+    FWaterFallRect:= LocalRect;
+    FWaterFallRect.Top:= FGraphicRect.Bottom;
+    FWaterFallRect.Bottom:= LocalRect.Bottom - 2
   end;
 var
   w, h: Integer;
@@ -365,7 +376,7 @@ end;
 function TSignalChart.ClientToGrid(const APoint: TRectF): TRectF;
 begin
   Result:= APoint;
-  Result.Offset(-FGridR.Left, -FGridR.Top);
+  Result.Offset(-FGraphicGridR.Left, -FGraphicGridR.Top);
 end;
 
 constructor TSignalChart.Create;
@@ -397,7 +408,7 @@ procedure TSignalChart.DrawData(const AData: TArray<Single>);
 begin
   if Length(AData) <> Length(FData) then
   begin
-    FEquationBottomIn.CalcuCoff(0, 0, Length(AData), FGridR.Width - 1);
+    FEquationBottomIn.CalcuCoff(0, 0, Length(AData), FGraphicGridR.Width - 1);
   end;
   FData := AData;
   InvalidateRect(ClipRect);
@@ -435,15 +446,15 @@ procedure TSignalChart.UpdateBitmap;
     ACanvas.Stroke.Dash := TStrokeDash.Dash;
     ACanvas.Stroke.Thickness := CONST_FRAME_THICKNESS;
     ACanvas.Stroke.Color := CONST_FRAME_COLOR;
-    ACanvas.DrawRect(LocalRect, 0, 0, [], 100);
+    ACanvas.DrawRect(LocalRect, 0, 0, [], 1);
   end;
 
-  Procedure DrawGridBound(ACanvas: TCanvas);
+  Procedure DrawGraphicGridBound(ACanvas: TCanvas);
   var
     GridFrameR: TRectF;
   begin
     // 画Grid的外边框
-    GridFrameR := FGridR;
+    GridFrameR := FGraphicGridR;
     GridFrameR.Inflate(1, 1);
     // ACanvas.Stroke.Color := TAlphaColors.Blue;
     ACanvas.Stroke.Thickness := 2;
@@ -452,6 +463,41 @@ procedure TSignalChart.UpdateBitmap;
     ACanvas.DrawRect(GridFrameR, 0, 0, [], 1);
   end;
 
+  Procedure DrawGraphicBound(ACanvas: TCanvas);
+  const
+    CONST_FRAME_COLOR: TAlphaColor = TAlphaColors.Lime;
+    CONST_FRAME_THICKNESS: Single = 2;
+  begin
+    ACanvas.Stroke.Dash := TStrokeDash.Dash;
+    ACanvas.Stroke.Thickness := CONST_FRAME_THICKNESS;
+    ACanvas.Stroke.Color := CONST_FRAME_COLOR;
+    ACanvas.DrawRect(FGraphicRect, 0, 0, [], 1);
+  end;
+
+  Procedure DrawWaterFallBound(ACanvas: TCanvas);
+  const
+    CONST_FRAME_COLOR: TAlphaColor = TAlphaColors.Red;
+    CONST_FRAME_THICKNESS: Single = 2;
+  begin
+    ACanvas.Stroke.Dash := TStrokeDash.Dash;
+    ACanvas.Stroke.Thickness := CONST_FRAME_THICKNESS;
+    ACanvas.Stroke.Color := CONST_FRAME_COLOR;
+    ACanvas.DrawRect(FWaterFallRect, 0, 0, [], 1);
+  end;
+
+  Procedure DrawWaterfallGridBound(ACanvas: TCanvas);
+  var
+    GridFrameR: TRectF;
+  begin
+    // 画Grid的外边框
+    GridFrameR := FWaterFallGridR;
+    GridFrameR.Inflate(1, 1);
+    // ACanvas.Stroke.Color := TAlphaColors.Blue;
+    ACanvas.Stroke.Thickness := 2;
+    ACanvas.Stroke.Color := FGridBoundColor;
+    ACanvas.Stroke.Dash := TStrokeDash.Solid;
+    ACanvas.DrawRect(FWaterFallGridR, 0, 0, [], 1);
+  end;
 var
   ACanvas: TCanvas;
 begin
@@ -459,9 +505,9 @@ begin
   // CnDebugger.LogMsg('UpdateBitmap');
   UpdateGridRAndStdTextR();
 
-  FGrid.SetSize(TSize.Create(Ceil(FGridR.Width), Ceil(FGridR.Height)));
+  FGrid.SetSize(TSize.Create(Ceil(FGraphicGridR.Width), Ceil(FGraphicGridR.Height)));
 
-  FEquationBottomIn.CalcuCoff(0, 0, Length(FData), FGridR.Width - 1);
+  FEquationBottomIn.CalcuCoff(0, 0, Length(FData), FGraphicGridR.Width - 1);
 
   // 画坐标格
   if FGrid.HandleAllocated then
@@ -489,12 +535,19 @@ begin
     try
       ACanvas.Clear(FBKColor);
       With FAxisesData.Left do
-        DrawLables(FGridR.Location, ACanvas, FLeftTextR);
+        DrawLables(FGraphicGridR.Location, ACanvas, FLeftTextR);
       With FAxisesData.Bottom do
-        DrawLables(FGridR.Location, ACanvas, FBottomTextR);
-      DrawGridBound(ACanvas);
+        DrawLables(FGraphicGridR.Location, ACanvas, FBottomTextR);
+
+      DrawGraphicGridBound(ACanvas);
+      DrawWaterfallGridBound(ACanvas);
+
+//      DrawGraphicBound(ACanvas);
+//      DrawWaterFallBound(ACanvas);
+
       DrawControlBound(ACanvas);
-      ACanvas.DrawBitmap(FGrid, FGrid.BoundsF, FGridR, 1, True);
+
+      ACanvas.DrawBitmap(FGrid, FGrid.BoundsF, FGraphicGridR, 1, True);
     finally
       ACanvas.EndScene;
     end;
@@ -540,12 +593,16 @@ begin
   With FAxisesData.Bottom do
     FBottomTextR := MeasureMaxRect(MinValue, MaxValue, LabelSuffix);
 
-  FGridR := FGraphicRect;
-  FGridR.Top := FGridR.Top + FLeftTextR.Height * 0.5;
-  FGridR.Left := FGridR.Left + FBottomTextR.Width;
-  FGridR.Bottom := FGridR.Bottom - FLeftTextR.Height * 0.5 -
+  FGraphicGridR := FGraphicRect;
+  FGraphicGridR.Top := FGraphicGridR.Top + FLeftTextR.Height * 0.5;
+  FGraphicGridR.Left := FGraphicGridR.Left + FBottomTextR.Width;
+  FGraphicGridR.Bottom := FGraphicGridR.Bottom - FLeftTextR.Height * 0.5 -
     FBottomTextR.Height;
-  FGridR.Right := FGridR.Right - FBottomTextR.Width * 0.5;
+  FGraphicGridR.Right := FGraphicGridR.Right - FBottomTextR.Width * 0.5;
+
+  FWaterFallGridR:= FGraphicGridR;
+  FWaterFallGridR.Top:= FWaterFallRect.Top;
+  FWaterFallGridR.Bottom:= FWaterFallRect.Bottom - FBottomTextR.Bottom / 2;
 end;
 
 { TGridAndAxis }
@@ -1033,8 +1090,8 @@ begin
           FFallOff[i]:= 0;
       end;
     end;
-    HStep := FGridR.Width / (Length(FData) - 1);
-    VStep := FGridR.Height / (FAxisesData.Left.MaxValue -
+    HStep := FGraphicGridR.Width / (Length(FData) - 1);
+    VStep := FGraphicGridR.Height / (FAxisesData.Left.MaxValue -
       FAxisesData.Left.MinValue + 1);
 
     ACanvas := Canvas;
@@ -1046,17 +1103,17 @@ begin
 
     for i := 0 to nCount - 1 do
     begin
-      FalloffR := TRectF.Create(0, FGridR.Height - VStep * FFallOff[i], HStep,
-        FGridR.Height - 0);
+      FalloffR := TRectF.Create(0, FGraphicGridR.Height - VStep * FFallOff[i], HStep,
+        FGraphicGridR.Height - 0);
 
       FalloffR.offset((i - 0.5) * HStep, 0);
       FallOffR:= Chart.GridToClient(FalloffR);
 //      FalloffR.offset(FGridR.Left, FGridR.Top);
 
-      if FalloffR.Left < FGridR.Left then
-        FalloffR.Left := FGridR.Left;
-      if FalloffR.Right > FGridR.Right then
-        FalloffR.Right := FGridR.Right;
+      if FalloffR.Left < FGraphicGridR.Left then
+        FalloffR.Left := FGraphicGridR.Left;
+      if FalloffR.Right > FGraphicGridR.Right then
+        FalloffR.Right := FGraphicGridR.Right;
 
       PeakR:= FalloffR;
       if FalloffVisible then
@@ -1067,7 +1124,7 @@ begin
       end;
       if PeakVisible then
       begin
-        PeakR.Bottom:=  FGridR.Height - VStep * FPeaks[i] + FGridR.Top;
+        PeakR.Bottom:=  FGraphicGridR.Height - VStep * FPeaks[i] + FGraphicGridR.Top;
         PeakR.Top:= PeakR.Bottom - 1;
         ACanvas.FillRect(PeakR, 0, 0, [], 1);
       end;
