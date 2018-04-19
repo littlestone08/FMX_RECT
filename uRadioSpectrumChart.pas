@@ -122,14 +122,15 @@ type
     Property Bottom: TCustomAxis Read FBottom Write FBottom;
   End;
 
-  TSignalDrawer = Class
+  TSignalDrawer = Class(TComponent)
   Strict Private
     [weak]FChart: TSignalChart;
-  Strict Protected
-    function Chart: TSignalChart;
+  private
+    procedure SetChart(const Value: TSignalChart);
   Public
-    Constructor Create(AChart: TSignalChart);
     Procedure DoDraw;Virtual; Abstract;
+  Published
+    Property Chart: TSignalChart Read FChart Write SetChart;
   End;
 
   TSignalChart = Class(TPaintBox)
@@ -147,12 +148,14 @@ type
     FBKGraphic: TBitmap;
   Private
     FFrameCounter: TFrameCount;
+    FDrawer: TSignalDrawer;
     function GetFPS: Integer;
     Procedure UpdateBitmap;
     Procedure UpdateGridRAndStdTextR();
     Procedure PaintData();
     procedure DoCheckSize;
     Procedure FillDesigningTestData;
+    procedure SetDrawer(const Value: TSignalDrawer);
   Protected
     Procedure DoPaint; Override;
     Procedure Loaded; Override;
@@ -164,6 +167,7 @@ type
   Published
     Property AxisesData: TAxises Read FAxisesData Write FAxisesData;
     Property AxisesView: TAxises Read FAxisesView Write FAxisesView;
+    Property Drawer: TSignalDrawer read FDrawer write SetDrawer;
   End;
 
   TTest = Class(TComponent)
@@ -178,8 +182,19 @@ type
   End;
 
   TSignalRectangeDrawer = Class(TSignalDrawer)
-  Protected
+  Strict Private
+    FPeakes: TArray<Single>;
+    FFallOff: TArray<Single>;
+  private
+    FFalloffDecrement: Single;
+    FPeakeDecrement: Single;
+    procedure SetFalloffDecrement(const Value: Single);
+    procedure SetPeakeDecrement(const Value: Single);
+  Public
     Procedure DoDraw; Override;
+  Published
+    Property PeakeDecrement: Single read FPeakeDecrement write SetPeakeDecrement;
+    Property FalloffDecrement: Single read FFalloffDecrement write SetFalloffDecrement;
   End;
 
 procedure Register;
@@ -193,7 +208,7 @@ uses
 
 procedure Register;
 begin
-  RegisterComponents('RadioReceiver', [TSignalChart, TTest]);
+  RegisterComponents('RadioReceiver', [TSignalChart, TSignalRectangeDrawer, TTest]);
 end;
 
 procedure TSignalChart.DoPaint;
@@ -202,7 +217,9 @@ begin
   FFrameCounter.AddFrame;
   DoCheckSize();
   Canvas.DrawBitmap(FBKGraphic, FBKGraphic.BoundsF, FBKGraphic.BoundsF, 1);
-  PaintData();
+  if FDrawer <> Nil then
+    FDrawer.DoDraw();
+//    PaintData();
   // CnDebugger.LogMsg('DoPaint');
 end;
 
@@ -280,8 +297,24 @@ begin
     ACanvas.DrawRect(R, 0, 0, [], 1);
     R.Inflate(-0.5, -0.5);
     ACanvas.FillRect(R, 0, 0, [], 1);
-
   end;
+end;
+
+procedure TSignalChart.SetDrawer(const Value: TSignalDrawer);
+begin
+  if FDrawer <> Value then
+  begin
+    if (FDrawer <> Nil) then
+    begin
+      if FDrawer.Chart <> Nil then
+        FDrawer.Chart:= Nil;
+    end;
+    FDrawer := Value;
+  end;
+
+  if Value <> Nil then
+    if Value.Chart <> Self then
+      Value.Chart:= Self;
 end;
 
 { TGridLayer }
@@ -891,16 +924,7 @@ end;
 
 { TSignalChartDrawer }
 
-function TSignalDrawer.Chart: TSignalChart;
-begin
-  Result:= FChart;
-end;
 
-constructor TSignalDrawer.Create(AChart: TSignalChart);
-begin
-  inherited Create;
-  FChart:= AChart;
-end;
 
 { TSignalRectangeDrawer }
 
@@ -910,11 +934,25 @@ var
   R: TRectF;
   i: Integer;
   ACanvas: TCanvas;
+  di: Single;
+  nCount: Integer;
 begin
   With Chart do
   begin
     if ComponentState * [csLoading, csReading] <> [] then
       Exit;
+
+    nCount:= Length(FData);
+    if Length(FPeakes) < nCount then
+      SetLength(FPeakes, nCount);
+    if Length(FFallOff) < nCount then
+      SetLength(FFallOff, nCount);
+    for i := 0 to nCount - 1 do
+    begin
+      di:= FData[i];
+      if di >= FPeakes[i] then FPeakes[i] := di else FPeakes[i] := FPeakes[i] - 0.1;
+      if di >= FFallOff[i] then FFallOff[i] := di else FFallOff[i] := FFallOff[i] - 0.5;
+    end;
     HStep := FGridR.Width / (Length(FData) - 1);
     VStep := FGridR.Height / (FAxisesData.Left.MaxValue -
       FAxisesData.Left.MinValue + 1);
@@ -926,9 +964,9 @@ begin
     ACanvas.Fill.Color := TAlphaColors.Lime;
     ACanvas.Fill.Kind := TBrushKind.Solid;
 
-    for i := 0 to Length(FData) - 1 do
+    for i := 0 to nCount - 1 do
     begin
-      R := TRectF.Create(0, FGridR.Height - VStep * FData[i], HStep,
+      R := TRectF.Create(0, FGridR.Height - VStep * FFallOff[i], HStep,
         FGridR.Height - 0);
 
       R.offset((i - 0.5) * HStep, 0);
@@ -942,8 +980,40 @@ begin
       ACanvas.DrawRect(R, 0, 0, [], 1);
       R.Inflate(-0.5, -0.5);
       ACanvas.FillRect(R, 0, 0, [], 1);
+
+      R.Bottom:=  FGridR.Height - VStep * FPeakes[i];
+      R.Top:= R.Bottom - 1;
+      ACanvas.FillRect(R, 0, 0, [], 1);
     end;
   end;
+end;
+
+procedure TSignalRectangeDrawer.SetFalloffDecrement(const Value: Single);
+begin
+  FFalloffDecrement := Value;
+end;
+
+procedure TSignalRectangeDrawer.SetPeakeDecrement(const Value: Single);
+begin
+  FPeakeDecrement := Value;
+end;
+
+{ TSignalDrawer }
+
+procedure TSignalDrawer.SetChart(const Value: TSignalChart);
+begin
+  if FChart <> Value then
+  begin
+    if FChart <> Nil then
+    begin
+      if FChart.Drawer <> Nil then
+        FChart.Drawer:= Nil;
+    end;
+    FChart := Value;
+  end;
+  if FChart <> Nil then
+    if FChart.Drawer <> Self then
+      FChart.Drawer:= Self;
 end;
 
 initialization

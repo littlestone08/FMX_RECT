@@ -69,10 +69,15 @@ object Form3: TForm3
     AxisesView.Bottom.Thinkness = 1.000000000000000000
     AxisesView.Bottom.LineColor = claDarkslategray
     AxisesView.Bottom.LabelSuffix = 'MHz'
+    Drawer = SignalRectangeDrawer1
   end
   object Test1: TTest
     Left = 48
     Top = 408
     save = '{1D8C3D07-29A9-4779-A099-32A8691EEA69}'
+  end
+  object SignalRectangeDrawer1: TSignalRectangeDrawer
+    Left = 48
+    Top = 352
   end
 end
