@@ -43,6 +43,7 @@ object Form3: TForm3
   end
   object SignalChart1: TSignalChart
     Anchors = [akLeft, akTop, akRight, akBottom]
+    Locked = True
     Position.X = 120.000000000000000000
     Position.Y = 40.000000000000000000
     Size.Width = 775.000000000000000000
@@ -71,6 +72,7 @@ object Form3: TForm3
     AxisesView.Bottom.LabelSuffix = 'Hz'
     Drawer = SignalRectangeDrawer1
     BKColor = claBlack
+    GridBoundColor = claDarkslategray
   end
   object Panel1: TPanel
     Position.X = 264.000000000000000000

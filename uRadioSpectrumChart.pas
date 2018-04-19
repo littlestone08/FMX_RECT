@@ -45,7 +45,7 @@ type
   Protected
     function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF;
       const offset: TPointF): TRectF; Virtual; Abstract;
-    function CalcuMaxLabel(PanelBmp: TBitmap; StdTextR: TRectF): Integer;
+    function CalcuMaxLabel(const GraphicR: TRectF; StdTextR: TRectF): Integer;
       Virtual; Abstract;
     Function IsVertical: Boolean; Virtual; Abstract;
     function CalcuLableText(Index: Integer; LabelStep: Single): String;
@@ -61,7 +61,7 @@ type
       MarkValueLimits, WidthLimits, HeightLimits: Integer;
       MaxLineCount: Integer; isVeritcal: Boolean);
     Procedure DrawGrid(Coordinate: TBitmap; MaxLableCount: Integer);
-    Procedure DrawLables(const CoordinatePos: TPointF; ACanvas: TCanvas;
+    Procedure DrawLables(const GridLocation: TPointF; ACanvas: TCanvas;
       StdTextR: TRectF);
 
   Published
@@ -78,7 +78,7 @@ type
     function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF;
       const offset: TPointF): TRectF; override;
     Function IsVertical: Boolean; Override;
-    function CalcuMaxLabel(PanelBmp: TBitmap; StdTextR: TRectF)
+    function CalcuMaxLabel(const GraphicR: TRectF; StdTextR: TRectF)
       : Integer; Override;
     function CalcuLableText(Index: Integer; LableStep: Single): String;
       Override;
@@ -92,7 +92,7 @@ type
     function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF;
       const offset: TPointF): TRectF; override;
     Function IsVertical: Boolean; Override;
-    function CalcuMaxLabel(PanelBmp: TBitmap; StdTextR: TRectF)
+    function CalcuMaxLabel(const GraphicR: TRectF; StdTextR: TRectF)
       : Integer; Override;
     function CalcuLableText(Index: Integer; LabelStep: Single): String;
       Override;
@@ -137,7 +137,7 @@ type
   Private
     FEquationBottomIn: TLinearEquations;
 
-    FCoordinate: TBitmap;
+    FGrid: TBitmap;
     FGridR: TRectF;
     FData: TArray<Single>;
     FAxisesData: TAxises;
@@ -146,6 +146,7 @@ type
     FBottomTextR: TRectF;
   Private
     FBKGraphic: TBitmap;
+    FGraphicRect: TRectF;
   Private
     FFrameCounter: TFrameCount;
     FDrawer: TSignalDrawer;
@@ -158,7 +159,7 @@ type
     Procedure FillDesigningTestData;
     procedure SetDrawer(const Value: TSignalDrawer);
     procedure SetBKColor(const Value: TAlphaColor);
-    procedure SetCoordinateBoundColor(const Value: TAlphaColor);
+    procedure SetGridBoundColor(const Value: TAlphaColor);
   Protected
     Procedure DoPaint; Override;
     Procedure Loaded; Override;
@@ -167,14 +168,19 @@ type
     Destructor Destroy; Override;
     Procedure DrawData(const AData: TArray<Single>);
     Property FPS: Integer Read GetFPS;
+  Public
     function GridToClient(const APoint: TRectF): TRectF; inline;
     function ClientToGrid(const APoint: TRectF): TRectF; inline;
+    function GridToGraphic(const APoint: TRectF): TRectF; inline;
+    function GraphicToGrid(const APoint: TRectF): TRectF; inline;
+    function ClientToGraphic(const APoint: TRectF): TRectF; inline;
+    function GraphicToClient(const APoint: TRectF): TRectF; inline;
   Published
     Property AxisesData: TAxises Read FAxisesData Write FAxisesData;
     Property AxisesView: TAxises Read FAxisesView Write FAxisesView;
     Property Drawer: TSignalDrawer read FDrawer write SetDrawer;
     Property BKColor: TAlphaColor read FBKColor write SetBKColor;
-    Property CoordinateBoundColor: TAlphaColor read FGridBoundColor write SetCoordinateBoundColor;
+    Property GridBoundColor: TAlphaColor read FGridBoundColor write SetGridBoundColor;
   End;
 
   TTest = Class(TComponent)
@@ -243,10 +249,28 @@ begin
   Result := FFrameCounter.FPS;
 end;
 
+function TSignalChart.GraphicToClient(const APoint: TRectF): TRectF;
+begin
+  Result:= APoint;
+  Result.Offset(-FGraphicRect.Left, -FGraphicRect.Top);
+end;
+
+function TSignalChart.GraphicToGrid(const APoint: TRectF): TRectF;
+begin
+  Result:= APoint;
+  Result.Offset(FGridR.TopLeft);
+end;
+
 function TSignalChart.GridToClient(const APoint: TRectF): TRectF;
 begin
   Result:= APoint;
   Result.Offset(FGridR.TopLeft);
+end;
+
+function TSignalChart.GridToGraphic(const APoint: TRectF): TRectF;
+begin
+  Result:= APoint;
+  Result.Offset(-FGraphicRect.Left, -FGraphicRect.Top);
 end;
 
 procedure TSignalChart.Loaded;
@@ -256,24 +280,33 @@ begin
 end;
 
 procedure TSignalChart.DoCheckSize;
+  Procedure UpdateGraphicRect;
+  begin
+    FGraphicRect:= LocalRect;
+    FGraphicRect.Bottom:= FGraphicRect.Bottom / 2;
+  end;
 var
   w, h: Integer;
   Changed: Boolean;
 begin
   Changed := False;
-  w := Ceil(Width);
-  h := Ceil(Height);
 
-  if FBKGraphic.Width <> w then
+  UpdateGraphicRect;
+  w := Ceil(FGraphicRect.Width);
+  h := Ceil(FGraphicRect.Height);
+
+  if FBKGraphic.Width <> Ceil(LocalRect.Width) then
   begin
-    FBKGraphic.Width := w;
+    FBKGraphic.Width := Ceil(LocalRect.Width);
     Changed := True;
   end;
-  if FBKGraphic.Height <> h then
+  if FBKGraphic.Height <> Ceil(LocalRect.Height) then
   begin
-    FBKGraphic.Height := h;
+    FBKGraphic.Height := Ceil(LocalRect.Height);
     Changed := True;
   end;
+
+
 
   if Changed and (ComponentState * [csLoading, csReading] = []) then
   begin
@@ -294,7 +327,7 @@ begin
   end;
 end;
 
-procedure TSignalChart.SetCoordinateBoundColor(const Value: TAlphaColor);
+procedure TSignalChart.SetGridBoundColor(const Value: TAlphaColor);
 begin
   if FGridBoundColor <> Value then
   begin
@@ -323,6 +356,12 @@ end;
 
 { TGridLayer }
 
+function TSignalChart.ClientToGraphic(const APoint: TRectF): TRectF;
+begin
+  Result:= APoint;
+  Result.Offset(FGraphicRect.TopLeft);
+end;
+
 function TSignalChart.ClientToGrid(const APoint: TRectF): TRectF;
 begin
   Result:= APoint;
@@ -337,7 +376,7 @@ begin
   FAxisesView := TAxises.Create(Self);
   FFrameCounter := TFrameCount.Create;
   FEquationBottomIn := TLinearEquations.Create;
-  FCoordinate := TBitmap.Create;
+  FGrid := TBitmap.Create;
 
   FBKGraphic := TBitmap.Create;
   FillDesigningTestData();
@@ -346,7 +385,7 @@ end;
 destructor TSignalChart.Destroy;
 begin
   FreeAndNil(FBKGraphic);
-  FreeAndNil(FCoordinate);
+  FreeAndNil(FGrid);
   FreeAndNil(FEquationBottomIn);
   FreeAndNil(FFrameCounter);
   FreeAndNil(FAxisesView);
@@ -420,23 +459,23 @@ begin
   // CnDebugger.LogMsg('UpdateBitmap');
   UpdateGridRAndStdTextR();
 
-  FCoordinate.SetSize(TSize.Create(Ceil(FGridR.Width), Ceil(FGridR.Height)));
+  FGrid.SetSize(TSize.Create(Ceil(FGridR.Width), Ceil(FGridR.Height)));
 
   FEquationBottomIn.CalcuCoff(0, 0, Length(FData), FGridR.Width - 1);
 
   // 画坐标格
-  if FCoordinate.HandleAllocated then
+  if FGrid.HandleAllocated then
   begin
     // CnDebugger.LogMsg('画坐标格');
-    ACanvas := FCoordinate.Canvas;
+    ACanvas := FGrid.Canvas;
 
     ACanvas.BeginScene();
     try
-      FCoordinate.Clear(FBKColor);
+      FGrid.Clear(FBKColor);
       With FAxisesData.Left do
-        DrawGrid(FCoordinate, CalcuMaxLabel(FBKGraphic, FLeftTextR));
+        DrawGrid(FGrid, CalcuMaxLabel(FGraphicRect, FLeftTextR));
       With FAxisesData.Bottom do
-        DrawGrid(FCoordinate, CalcuMaxLabel(FBKGraphic, FBottomTextR));
+        DrawGrid(FGrid, CalcuMaxLabel(FGraphicRect, FBottomTextR));
     finally
       ACanvas.EndScene();
     end;
@@ -450,18 +489,19 @@ begin
     try
       ACanvas.Clear(FBKColor);
       With FAxisesData.Left do
-        DrawLables(FGridR.TopLeft, ACanvas, FLeftTextR);
+        DrawLables(FGridR.Location, ACanvas, FLeftTextR);
       With FAxisesData.Bottom do
-        DrawLables(FGridR.TopLeft, ACanvas, FBottomTextR);
+        DrawLables(FGridR.Location, ACanvas, FBottomTextR);
       DrawGridBound(ACanvas);
       DrawControlBound(ACanvas);
-      ACanvas.DrawBitmap(FCoordinate, FCoordinate.BoundsF, FGridR, 1, True);
+      ACanvas.DrawBitmap(FGrid, FGrid.BoundsF, FGridR, 1, True);
     finally
       ACanvas.EndScene;
     end;
   end;
   // DrawData(FData);
 end;
+
 
 procedure TSignalChart.UpdateGridRAndStdTextR;
   function MeasureMaxRect(ValueFrom, ValueTo: Integer; Suffix: String): TRectF;
@@ -478,7 +518,7 @@ procedure TSignalChart.UpdateGridRAndStdTextR;
     Result := TRectF.Empty;
 
     i := ValueFrom;
-    ARect := LocalRect;
+    ARect := FGraphicRect;
     while i < ValueTo do
     begin
       Canvas.MeasureText(ARect, IntToStr(i) + Suffix, False, [],
@@ -500,7 +540,7 @@ begin
   With FAxisesData.Bottom do
     FBottomTextR := MeasureMaxRect(MinValue, MaxValue, LabelSuffix);
 
-  FGridR := LocalRect;
+  FGridR := FGraphicRect;
   FGridR.Top := FGridR.Top + FLeftTextR.Height * 0.5;
   FGridR.Left := FGridR.Left + FBottomTextR.Width;
   FGridR.Bottom := FGridR.Bottom - FLeftTextR.Height * 0.5 -
@@ -650,13 +690,12 @@ begin
   end;
 end;
 
-procedure TCustomAxis.DrawLables(const CoordinatePos: TPointF; ACanvas: TCanvas;
+procedure TCustomAxis.DrawLables(const GridLocation: TPointF; ACanvas: TCanvas;
   StdTextR: TRectF);
 var
   i: Integer;
   LableStep: Single;
   R: TRectF;
-  AOffset: TPointF;
 begin
   With ACanvas do
   begin
@@ -666,11 +705,9 @@ begin
     LableStep := (FMaxValue - FMinValue) / (Length(FLines) - 1);
     for i := 0 to Length(FLines) - 1 do
     begin
-      AOffset := TPointF.Create(CoordinatePos.X, CoordinatePos.Y);
-      R := CalcuLabelR(FLines[i], StdTextR, AOffset);
+      R := CalcuLabelR(FLines[i], StdTextR, GridLocation);
       FillText(R, CalcuLableText(i, LableStep), False, 1, [], HTextAlign,
         TTextAlign.Center);
-      // DrawRect(R, 0, 0, [], 1);
     end;
   end;
 end;
@@ -788,9 +825,9 @@ begin
   Result := IntToStr(FMaxValue - Round(LableStep * Index)) + LabelSuffix;
 end;
 
-function TLeftAxis.CalcuMaxLabel(PanelBmp: TBitmap; StdTextR: TRectF): Integer;
+function TLeftAxis.CalcuMaxLabel(const GraphicR: TRectF; StdTextR: TRectF): Integer;
 begin
-  Result := Trunc(PanelBmp.Bounds.Height / StdTextR.Height);
+  Result := Trunc(GraphicR.Height / StdTextR.Height);
 end;
 
 constructor TLeftAxis.Create(AChart: TSignalChart);
@@ -829,10 +866,10 @@ begin
   Result := IntToStr(FMinValue + Round(LabelStep * Index)) + LabelSuffix;
 end;
 
-function TBottomAxis.CalcuMaxLabel(PanelBmp: TBitmap; StdTextR: TRectF)
+function TBottomAxis.CalcuMaxLabel(const GraphicR: TRectF; StdTextR: TRectF)
   : Integer;
 begin
-  Result := Trunc(PanelBmp.Bounds.Width / StdTextR.Width);
+  Result := Trunc(GraphicR.Width / StdTextR.Width);
 end;
 
 constructor TBottomAxis.Create(AChart: TSignalChart);
