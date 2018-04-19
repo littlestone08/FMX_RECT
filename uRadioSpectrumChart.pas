@@ -2,7 +2,6 @@ unit uRadioSpectrumChart;
 
 interface
 
-
 uses
   System.Classes, System.SysUtils, System.Types, System.UITypes,
   System.Math, System.DateUtils, System.IOUtils,
@@ -25,12 +24,12 @@ type
     Constructor Create(const A: TPointF; const B: TPointF);
   end;
 
-
   TSignalChart = Class;
 
   TCustomAxis = Class(TPersistent)
   Private
-    [weak]FChart: TSignalChart;
+    [weak]
+    FChart: TSignalChart;
     FLines: TArray<TLine>;
     FMinValue: Integer;
     FThinkness: Single;
@@ -44,8 +43,8 @@ type
     Procedure DoChanged;
     procedure SetLabelSuffix(const Value: String);
   Protected
-    function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF; const offset: TPointF): TRectF;
-      Virtual; Abstract;
+    function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF;
+      const offset: TPointF): TRectF; Virtual; Abstract;
     function CalcuMaxLabel(PanelBmp: TBitmap; StdTextR: TRectF): Integer;
       Virtual; Abstract;
     Function IsVertical: Boolean; Virtual; Abstract;
@@ -65,20 +64,19 @@ type
     Procedure DrawLables(const CoordinatePos: TPointF; ACanvas: TCanvas;
       StdTextR: TRectF);
 
-
   Published
     Property MinValue: Integer read FMinValue write SetMinValue;
     Property MaxValue: Integer read FMaxValue write SetMaxValue;
     Property Thinkness: Single read FThinkness write SetThinkness;
     Property LineColor: TAlphaColor read FLineColor write SetLineColor;
     Property HTextAlign: TTextAlign Read GetHTextAlign;
-    Property LableSuffix: String Read FLabelSuffix Write SetLabelSuffix;
+    Property LabelSuffix: String Read FLabelSuffix Write SetLabelSuffix;
   End;
 
   TLeftAxis = Class(TCustomAxis)
   Protected
-    function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF; const offset: TPointF)
-      : TRectF; override;
+    function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF;
+      const offset: TPointF): TRectF; override;
     Function IsVertical: Boolean; Override;
     function CalcuMaxLabel(PanelBmp: TBitmap; StdTextR: TRectF)
       : Integer; Override;
@@ -91,8 +89,8 @@ type
 
   TBottomAxis = Class(TCustomAxis)
   Protected
-    function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF; const offset: TPointF)
-      : TRectF; override;
+    function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF;
+      const offset: TPointF): TRectF; override;
     Function IsVertical: Boolean; Override;
     function CalcuMaxLabel(PanelBmp: TBitmap; StdTextR: TRectF)
       : Integer; Override;
@@ -111,8 +109,6 @@ type
     Procedure CalcuCoff(X1, Y1, X2, Y2: Single);
     Function CalcuY(X: Single): Single;
   End;
-
-
 
   TAxises = class(TPersistent)
   Strict Private
@@ -135,7 +131,7 @@ type
     FData: TArray<Single>;
     FAxisesData: TAxises;
     FAxisesView: TAxises;
-    FLeftTextR  : TRectF;
+    FLeftTextR: TRectF;
     FBottomTextR: TRectF;
   Private
     FBitmap: TBitmap;
@@ -170,12 +166,13 @@ type
   Public
     Constructor Create(AOwner: TComponent); Override;
   End;
+
 procedure Register;
 
 implementation
 
 uses
-  System.Diagnostics;//, CnDebug;
+  System.Diagnostics; // , CnDebug;
 
 { TSpectrumChart }
 
@@ -191,7 +188,7 @@ begin
   DoCheckSize();
   Canvas.DrawBitmap(FBitmap, FBitmap.BoundsF, FBitmap.BoundsF, 1);
   PaintData();
-//  CnDebugger.LogMsg('DoPaint');
+  // CnDebugger.LogMsg('DoPaint');
 end;
 
 function TSignalChart.GetFPS: Integer;
@@ -242,7 +239,8 @@ begin
   if ComponentState * [csLoading, csReading] <> [] then
     Exit;
   HStep := FGridR.Width / (Length(FData) - 1);
-  VStep := FGridR.Height / (FAxisesData.Left.MaxValue - FAxisesData.Left.MinValue + 1);
+  VStep := FGridR.Height / (FAxisesData.Left.MaxValue -
+    FAxisesData.Left.MinValue + 1);
 
   ACanvas := Canvas;
   ACanvas.Stroke.Color := TAlphaColors.Black;
@@ -256,9 +254,9 @@ begin
     R := TRectF.Create(0, FGridR.Height - VStep * FData[i], HStep,
       FGridR.Height - 0);
 
-    R.Offset((i - 0.5) * HStep, 0);
+    R.offset((i - 0.5) * HStep, 0);
 
-    R.Offset(FGridR.Left, FGridR.Top);
+    R.offset(FGridR.Left, FGridR.Top);
     if R.Left < FGridR.Left then
       R.Left := FGridR.Left;
     if R.Right > FGridR.Right then
@@ -271,14 +269,13 @@ begin
   end;
 end;
 
-
 { TGridLayer }
 
 constructor TSignalChart.Create;
 begin
   inherited;
-  FAxisesData:= TAxises.Create(Self);
-  FAxisesView:= TAxises.Create(Self);
+  FAxisesData := TAxises.Create(Self);
+  FAxisesView := TAxises.Create(Self);
   FFrameCounter := TFrameCount.Create;
   FEquationBottomIn := TLinearEquations.Create;
   FCoordinate := TBitmap.Create;
@@ -286,7 +283,6 @@ begin
   FBitmap := TBitmap.Create;
   FillDesigningTestData();
 end;
-
 
 destructor TSignalChart.Destroy;
 begin
@@ -317,16 +313,17 @@ begin
   Exit;
   if csDesigning in ComponentState then
   begin
-    nCount:= FAxisesData.Bottom.MaxValue - FAxisesData.Bottom.MinValue + 1;
+    nCount := FAxisesData.Bottom.MaxValue - FAxisesData.Bottom.MinValue + 1;
     if nCount > 512 then
-      nCount:= 512;
+      nCount := 512;
     if nCount < 0 then
-      nCount:= 10;
+      nCount := 10;
 
     SetLength(FData, nCount);
     for i := 0 to nCount - 1 do
     begin
-      FData[i]:= Random(FAxisesData.Left.FMaxValue - FAxisesData.Left.FMinValue + 2);
+      FData[i] := Random(FAxisesData.Left.FMaxValue -
+        FAxisesData.Left.FMinValue + 2);
     end;
   end;
 end;
@@ -360,7 +357,7 @@ var
   ACanvas: TCanvas;
 begin
   inherited;
-//  CnDebugger.LogMsg('UpdateBitmap');
+  // CnDebugger.LogMsg('UpdateBitmap');
   UpdateGridRAndStdTextR();
 
   FCoordinate.SetSize(TSize.Create(Ceil(FGridR.Width), Ceil(FGridR.Height)));
@@ -370,7 +367,7 @@ begin
   // 画坐标格
   if FCoordinate.HandleAllocated then
   begin
-//    CnDebugger.LogMsg('画坐标格');
+    // CnDebugger.LogMsg('画坐标格');
     ACanvas := FCoordinate.Canvas;
 
     ACanvas.BeginScene();
@@ -384,7 +381,7 @@ begin
       ACanvas.EndScene();
     end;
   end;
-//  CnDebugger.LogMsg('UpdateBitmap');
+  // CnDebugger.LogMsg('UpdateBitmap');
   if FBitmap.HandleAllocated then
   begin
     // 画底图，主要是坐标轴的Label
@@ -403,84 +400,53 @@ begin
       ACanvas.EndScene;
     end;
   end;
-
   // DrawData(FData);
 end;
 
-// procedure TSignalChart.UpdateGridRAndStdTextR;
-// var
-// i: Integer;
-// L_LableMaxW: Single;
-// L_LableMaxH: Single;
-// L_LableW: Single;
-// begin
-// L_LableMaxW := 0;
-// L_LableMaxH := Canvas.TextHeight(IntToStr(FLeft.MinValue));
-//
-// for i := FLeft.MinValue to FLeft.MaxValue do
-// begin
-// L_LableW := Canvas.TextWidth(IntToStr(i) + FLeft.LableSuffix);
-// if L_LableMaxW < L_LableW then
-// L_LableMaxW := L_LableW;
-// end;
-//
-// FStdTextR := TRectF.Create(0, 0, L_LableMaxW, L_LableMaxH);
-// FStdTextR.Inflate(0, 0);
-//
-// FGridR := LocalRect;
-// FGridR.Top := FGridR.Top + FStdTextR.Height / 2;
-// FGridR.Left := FGridR.Left + FStdTextR.Width;
-// FGridR.Bottom := FGridR.Bottom - FStdTextR.Height * 1.5;
-// FGridR.Right := FGridR.Right - FStdTextR.Width;
-// end;
-
 procedure TSignalChart.UpdateGridRAndStdTextR;
-var
-  i: Integer;
-  ARect: TRectF;
-  MaxRect: TRectF;
-begin
-
-  With FAxisesData.Left do
+  function MeasureMaxRect(ValueFrom, ValueTo: Integer; Suffix: String): TRectF;
+  var
+    i: Integer;
+    ARect: TRectF;
+    Step: Integer;
   begin
-    MaxRect:= TRectF.Empty;
-    for i := MinValue to MaxValue do
+    Step := 1;
+    if Abs(ValueTo - ValueFrom) + 1 > 500 then
     begin
-      ARect:= LocalRect;
-  //    CnDebugger.LogMsg(IntToStr(i) + FLeft.LableSuffix);
-      Canvas.MeasureText(ARect, IntToStr(i) + LableSuffix, False, [],
-        TTextAlign.Leading, TTextAlign.Leading);
-      MaxRect.Union(ARect);
+      Step := Ceil((ValueTo - ValueFrom + 1) / 50)
     end;
-    FLeftTextR:= MaxRect;
+    Result := TRectF.Empty;
+
+    i := ValueFrom;
+    ARect := LocalRect;
+    while i < ValueTo do
+    begin
+      Canvas.MeasureText(ARect, IntToStr(i) + Suffix, False, [],
+        TTextAlign.Leading, TTextAlign.Leading);
+      Result.Union(ARect);
+      Inc(i, Step);
+    end;
+
+    ARect := LocalRect;
+    Canvas.MeasureText(ARect, IntToStr(ValueTo) + Suffix, False, [],
+      TTextAlign.Leading, TTextAlign.Leading);
+    Result.Union(ARect);
   end;
 
+begin
+  With FAxisesData.Left do
+    FLeftTextR := MeasureMaxRect(MinValue, MaxValue, LabelSuffix);
 
   With FAxisesData.Bottom do
-  begin
-    MaxRect := TRectF.Empty;
-    for i := MinValue to MaxValue do
-    begin
-      ARect:= LocalRect;
-  //    CnDebugger.LogMsg(IntToStr(i) + FBottom.LableSuffix);
-      Canvas.MeasureText(ARect, IntToStr(i) + LableSuffix, False, [],
-        TTextAlign.Leading, TTextAlign.Leading);
-      MaxRect.Union(ARect);
-    end;
-    FBottomTextR:= MaxRect;
-  end;
+    FBottomTextR := MeasureMaxRect(MinValue, MaxValue, LabelSuffix);
 
-
-
-//  FStdTextR.Inflate(2, 0);
-//  CnDebugger.LogMsg(Format('W=%f; H=%f', [MaxRect.Width, MaxRect.Height]));
   FGridR := LocalRect;
-  FGridR.Top := FGridR.Top + MaxRect.Height / 2;
-  FGridR.Left := FGridR.Left + MaxRect.Width;
-  FGridR.Bottom := FGridR.Bottom - MaxRect.Height * 1.5;
-  FGridR.Right := FGridR.Right - FBottomTextR.Width / 2;
+  FGridR.Top := FGridR.Top + FLeftTextR.Height * 0.5;
+  FGridR.Left := FGridR.Left + FBottomTextR.Width;
+  FGridR.Bottom := FGridR.Bottom - FLeftTextR.Height * 0.5 -
+    FBottomTextR.Height;
+  FGridR.Right := FGridR.Right - FBottomTextR.Width * 0.5;
 end;
-
 
 { TGridAndAxis }
 
@@ -575,7 +541,7 @@ end;
 constructor TCustomAxis.Create(AChart: TSignalChart);
 begin
   inherited Create;
-  FChart:= AChart;
+  FChart := AChart;
   FMaxValue := 0;
   FMinValue := -140;
   FThinkness := 1;
@@ -640,20 +606,18 @@ begin
     LableStep := (FMaxValue - FMinValue) / (Length(FLines) - 1);
     for i := 0 to Length(FLines) - 1 do
     begin
-      AOffset:= TPointF.Create(CoordinatePos.X, CoordinatePos.Y);
-      R:= CalcuLabelR(FLines[i], StdTextR, AOffset);
-      FillText(R, CalcuLableText(i, LableStep),
-        False, 1, [], HTextAlign, TTextAlign.Center);
-//      DrawRect(R, 0, 0, [], 1);
+      AOffset := TPointF.Create(CoordinatePos.X, CoordinatePos.Y);
+      R := CalcuLabelR(FLines[i], StdTextR, AOffset);
+      FillText(R, CalcuLableText(i, LableStep), False, 1, [], HTextAlign,
+        TTextAlign.Center);
+      // DrawRect(R, 0, 0, [], 1);
     end;
   end;
 end;
 
-
-
 procedure TCustomAxis.SetLabelSuffix(const Value: String);
 begin
-  if FLabelSuffix <> value then
+  if FLabelSuffix <> Value then
   begin
     FLabelSuffix := Value;
     DoChanged;
@@ -748,20 +712,20 @@ end;
 
 { TLeftAxis }
 
-function TLeftAxis.CalcuLabelR(const Line: TLine;
-  const StdTextRect: TRectF;  const offset: TPointF): TRectF;
+function TLeftAxis.CalcuLabelR(const Line: TLine; const StdTextRect: TRectF;
+  const offset: TPointF): TRectF;
 var
   Posi: TPointF;
 begin
   Result := StdTextRect;
   Posi := Line.StartPoint;
-  Posi.X:= Posi.X + offset.X - StdTextRect.Width - 4;
+  Posi.X := Posi.X + offset.X - StdTextRect.Width - 4;
   Result.SetLocation(Posi);
 end;
 
 function TLeftAxis.CalcuLableText(Index: Integer; LableStep: Single): String;
 begin
-  Result := IntToStr(FMaxValue - Round(LableStep * Index)) + LableSuffix;
+  Result := IntToStr(FMaxValue - Round(LableStep * Index)) + LabelSuffix;
 end;
 
 function TLeftAxis.CalcuMaxLabel(PanelBmp: TBitmap; StdTextR: TRectF): Integer;
@@ -774,7 +738,7 @@ begin
   inherited;
   FMaxValue := 0;
   FMinValue := -140;
-  FLabelSuffix:= 'dB'
+  FLabelSuffix := 'dB'
 end;
 
 function TLeftAxis.GetHTextAlign: TTextAlign;
@@ -787,23 +751,22 @@ begin
   Result := True;
 end;
 
-
 { TBottomAxis }
 
-function TBottomAxis.CalcuLabelR(const Line: TLine;
-  const StdTextRect: TRectF; const offset: TPointF): TRectF;
+function TBottomAxis.CalcuLabelR(const Line: TLine; const StdTextRect: TRectF;
+  const offset: TPointF): TRectF;
 var
   Posi: TPointF;
 begin
   Result := StdTextRect;
   Posi := Line.EndPoint;
-  Posi.Offset(StdTextRect.Width / 2, 2 + Ceil(StdTextRect.Height / 2));
+  Posi.offset(StdTextRect.Width / 2, 2 + Ceil(StdTextRect.Height / 2));
   Result.SetLocation(Posi);
 end;
 
 function TBottomAxis.CalcuLableText(Index: Integer; LabelStep: Single): String;
 begin
-  Result := IntToStr(FMinValue + Round(LabelStep * Index)) + LableSuffix;
+  Result := IntToStr(FMinValue + Round(LabelStep * Index)) + LabelSuffix;
 end;
 
 function TBottomAxis.CalcuMaxLabel(PanelBmp: TBitmap; StdTextR: TRectF)
@@ -817,7 +780,7 @@ begin
   inherited;
   FMaxValue := 1023;
   FMinValue := 0;
-  FLabelSuffix:= 'MHz'
+  FLabelSuffix := 'MHz'
 end;
 
 function TBottomAxis.GetHTextAlign: TTextAlign;
@@ -829,7 +792,6 @@ function TBottomAxis.IsVertical: Boolean;
 begin
   Result := False;
 end;
-
 
 { TLinearEquations }
 
@@ -877,8 +839,8 @@ end;
 constructor TAxises.Create(AChart: TSignalChart);
 begin
   inherited Create;
-  FLeft:= TLeftAxis.Create(AChart);
-  FBottom:= TBottomAxis.Create(AChart);
+  FLeft := TLeftAxis.Create(AChart);
+  FBottom := TBottomAxis.Create(AChart);
 end;
 
 destructor TAxises.Destroy;
@@ -893,7 +855,7 @@ end;
 constructor TTest.Create(AOwner: TComponent);
 begin
   inherited;
-  FSaveStr:= TGUID.NewGuid.ToString
+  FSaveStr := TGUID.NewGuid.ToString
 end;
 
 procedure TTest.DefineProperties(Filer: TFiler);
@@ -904,7 +866,7 @@ end;
 
 procedure TTest.ReadSave(Reader: TReader);
 begin
-  FSaveStr:= Reader.ReadString;
+  FSaveStr := Reader.ReadString;
 end;
 
 procedure TTest.WriteSave(Writer: TWriter);

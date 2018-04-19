@@ -53,22 +53,22 @@ object Form3: TForm3
     AxisesData.Left.MaxValue = 0
     AxisesData.Left.Thinkness = 1.000000000000000000
     AxisesData.Left.LineColor = claDarkslategray
-    AxisesData.Left.LableSuffix = 'dB'
+    AxisesData.Left.LabelSuffix = 'dB'
     AxisesData.Bottom.MinValue = 0
     AxisesData.Bottom.MaxValue = 255
     AxisesData.Bottom.Thinkness = 1.000000000000000000
     AxisesData.Bottom.LineColor = claDarkslategray
-    AxisesData.Bottom.LableSuffix = 'Hz'
+    AxisesData.Bottom.LabelSuffix = 'MHz'
     AxisesView.Left.MinValue = -140
     AxisesView.Left.MaxValue = 0
     AxisesView.Left.Thinkness = 1.000000000000000000
     AxisesView.Left.LineColor = claDarkslategray
-    AxisesView.Left.LableSuffix = 'dB'
+    AxisesView.Left.LabelSuffix = 'dB'
     AxisesView.Bottom.MinValue = 0
     AxisesView.Bottom.MaxValue = 1023
     AxisesView.Bottom.Thinkness = 1.000000000000000000
     AxisesView.Bottom.LineColor = claDarkslategray
-    AxisesView.Bottom.LableSuffix = 'MHz'
+    AxisesView.Bottom.LabelSuffix = 'MHz'
   end
   object Test1: TTest
     Left = 48
