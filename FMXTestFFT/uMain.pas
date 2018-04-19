@@ -38,8 +38,6 @@ type
   Private
     hs: HSTREAM;
     FFTData     : TArray<Single>;
-    FFTPeacks   : TArray<Single>;
-    FFTFallOff  : TArray<Single>;
   public
     { Public declarations }
     Constructor Create(AOwner: TComponent); Override;
@@ -107,9 +105,7 @@ constructor TForm3.Create(AOwner: TComponent);
 begin
   inherited;
 
-  SetLength(FFTData, 512);
-  SetLength(FFTPeacks, 512);
-  SetLength(FFTFallOff, 512);
+  SetLength(FFTData, 256);
 
   if (BASS_GetVersion shr 16) <> BASSVERSION then
     MessageDlg('"Bass.dll" 文件版本不合适! ', TmsgDlgType.mtError, [TMsgDlgBtn.mbOK], 0);
@@ -213,23 +209,12 @@ var
 begin
   if BASS_ChannelIsActive(hs) <> BASS_ACTIVE_PLAYING then Exit;
 
-  BASS_ChannelGetData(hs, FFTData, BASS_DATA_FFT1024);
-
+  BASS_ChannelGetData(hs, FFTData, BASS_DATA_FFT512);
   for i := 0 to Length(FFTData) - 1 do
   begin
-//    di := Trunc(Abs(FFTData[i]) * 500);
-    di := Trunc(Abs(FFTData[i]) * 100);
-
-
-    if di >= FFTPeacks[i] then FFTPeacks[i] := di else FFTPeacks[i] := FFTPeacks[i] - 1;
-    if di >= FFTFallOff[i] then FFTFallOff[i] := di else FFTFallOff[i] := FFTFallOff[i] - 0.5;
-//    FFTFallOff[i]:= di;
-
-
+    FFTData[i]:=  FFTData[i] * 100 ;
   end;
-
-//  SignalChart1.DrawData(FFTData);
-  SignalChart1.DrawData(FFTFallOff);
+  SignalChart1.DrawData(FFTData);
   Caption:= 'FPS: ' + IntToStr(SignalChart1.FPS);
 
 end;

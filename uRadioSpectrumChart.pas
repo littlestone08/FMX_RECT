@@ -150,6 +150,7 @@ type
     FFrameCounter: TFrameCount;
     FDrawer: TSignalDrawer;
     FBKColor: TAlphaColor;
+    FGridBoundColor: TAlphaColor;
     function GetFPS: Integer;
     Procedure UpdateBitmap;
     Procedure UpdateGridRAndStdTextR();
@@ -157,6 +158,7 @@ type
     Procedure FillDesigningTestData;
     procedure SetDrawer(const Value: TSignalDrawer);
     procedure SetBKColor(const Value: TAlphaColor);
+    procedure SetCoordinateBoundColor(const Value: TAlphaColor);
   Protected
     Procedure DoPaint; Override;
     Procedure Loaded; Override;
@@ -165,11 +167,14 @@ type
     Destructor Destroy; Override;
     Procedure DrawData(const AData: TArray<Single>);
     Property FPS: Integer Read GetFPS;
+    function GridToClient(const APoint: TRectF): TRectF; inline;
+    function ClientToGrid(const APoint: TRectF): TRectF; inline;
   Published
     Property AxisesData: TAxises Read FAxisesData Write FAxisesData;
     Property AxisesView: TAxises Read FAxisesView Write FAxisesView;
     Property Drawer: TSignalDrawer read FDrawer write SetDrawer;
     Property BKColor: TAlphaColor read FBKColor write SetBKColor;
+    Property CoordinateBoundColor: TAlphaColor read FGridBoundColor write SetCoordinateBoundColor;
   End;
 
   TTest = Class(TComponent)
@@ -189,14 +194,22 @@ type
     FFallOff: TArray<Single>;
   private
     FFalloffDecrement: Single;
-    FPeakeDecrement: Single;
+    FPeakDecrement: Single;
+    FPeakVisible: Boolean;
+    FFalloffVisible: Boolean;
     procedure SetFalloffDecrement(const Value: Single);
     procedure SetPeakeDecrement(const Value: Single);
+    procedure SetFalloffVisible(const Value: Boolean);
+    procedure SetPeakVisible(const Value: Boolean);
   Public
+    Constructor Create(AOwner: TComponent); Override;
     Procedure DoDraw; Override;
   Published
-    Property PeakeDecrement: Single read FPeakeDecrement write SetPeakeDecrement;
+    Property PeakDecrement: Single read FPeakDecrement write SetPeakeDecrement;
     Property FalloffDecrement: Single read FFalloffDecrement write SetFalloffDecrement;
+    Property FalloffVisible: Boolean read FFalloffVisible write SetFalloffVisible;
+    Property PeakVisible: Boolean read FPeakVisible write SetPeakVisible;
+
   End;
 
 procedure Register;
@@ -228,6 +241,12 @@ end;
 function TSignalChart.GetFPS: Integer;
 begin
   Result := FFrameCounter.FPS;
+end;
+
+function TSignalChart.GridToClient(const APoint: TRectF): TRectF;
+begin
+  Result:= APoint;
+  Result.Offset(FGridR.TopLeft);
 end;
 
 procedure TSignalChart.Loaded;
@@ -275,6 +294,16 @@ begin
   end;
 end;
 
+procedure TSignalChart.SetCoordinateBoundColor(const Value: TAlphaColor);
+begin
+  if FGridBoundColor <> Value then
+  begin
+    FGridBoundColor := Value;
+    UpdateBitmap;
+    InvalidateRect(ClipRect);
+  end;
+end;
+
 procedure TSignalChart.SetDrawer(const Value: TSignalDrawer);
 begin
   if FDrawer <> Value then
@@ -294,9 +323,16 @@ end;
 
 { TGridLayer }
 
+function TSignalChart.ClientToGrid(const APoint: TRectF): TRectF;
+begin
+  Result:= APoint;
+  Result.Offset(-FGridR.Left, -FGridR.Top);
+end;
+
 constructor TSignalChart.Create;
 begin
   inherited;
+  FGridBoundColor:= TAlphaColors.Darkslategray;
   FAxisesData := TAxises.Create(Self);
   FAxisesView := TAxises.Create(Self);
   FFrameCounter := TFrameCount.Create;
@@ -352,7 +388,7 @@ begin
 end;
 
 procedure TSignalChart.UpdateBitmap;
-  Procedure DrawFrame(ACanvas: TCanvas);
+  Procedure DrawControlBound(ACanvas: TCanvas);
   const
     CONST_FRAME_COLOR: TAlphaColor = TAlphaColors.Black;
     CONST_FRAME_THICKNESS: Single = 2;
@@ -363,7 +399,7 @@ procedure TSignalChart.UpdateBitmap;
     ACanvas.DrawRect(LocalRect, 0, 0, [], 100);
   end;
 
-  Procedure DrawGridFrame(ACanvas: TCanvas);
+  Procedure DrawGridBound(ACanvas: TCanvas);
   var
     GridFrameR: TRectF;
   begin
@@ -372,6 +408,7 @@ procedure TSignalChart.UpdateBitmap;
     GridFrameR.Inflate(1, 1);
     // ACanvas.Stroke.Color := TAlphaColors.Blue;
     ACanvas.Stroke.Thickness := 2;
+    ACanvas.Stroke.Color := FGridBoundColor;
     ACanvas.Stroke.Dash := TStrokeDash.Solid;
     ACanvas.DrawRect(GridFrameR, 0, 0, [], 1);
   end;
@@ -411,13 +448,13 @@ begin
     ACanvas := FBKGraphic.Canvas;
     ACanvas.BeginScene();
     try
-      ACanvas.Clear(TAlphaColors.Null);
+      ACanvas.Clear(FBKColor);
       With FAxisesData.Left do
         DrawLables(FGridR.TopLeft, ACanvas, FLeftTextR);
       With FAxisesData.Bottom do
         DrawLables(FGridR.TopLeft, ACanvas, FBottomTextR);
-      DrawGridFrame(ACanvas);
-      DrawFrame(ACanvas);
+      DrawGridBound(ACanvas);
+      DrawControlBound(ACanvas);
       ACanvas.DrawBitmap(FCoordinate, FCoordinate.BoundsF, FGridR, 1, True);
     finally
       ACanvas.EndScene;
@@ -903,6 +940,15 @@ end;
 
 { TSignalRectangeDrawer }
 
+constructor TSignalRectangeDrawer.Create(AOwner: TComponent);
+begin
+  inherited;
+  FFalloffDecrement:= 0.5;
+  FPeakDecrement:= 0.1;
+  FPeakVisible:= True;
+  FFalloffVisible:= True;
+end;
+
 procedure TSignalRectangeDrawer.DoDraw;
 var
   HStep, VStep: Single;
@@ -926,8 +972,29 @@ begin
     for i := 0 to nCount - 1 do
     begin
       di:= FData[i];
-      if di >= FPeaks[i] then FPeaks[i] := di else FPeaks[i] := FPeaks[i] - 0.1;
-      if di >= FFallOff[i] then FFallOff[i] := di else FFallOff[i] := FFallOff[i] - 0.5;
+      if di >= FPeaks[i] then
+      begin
+        FPeaks[i] := di
+      end
+      else
+      begin
+        if FPeaks[i] > FPeakDecrement then
+          FPeaks[i]:= FPeaks[i] -FPeakDecrement
+        else
+          FPeaks[i]:= 0;
+      end;
+
+      if di >= FFallOff[i] then
+      begin
+        FFallOff[i] := di
+      end
+      else
+      begin
+        if FFallOff[i] > FFalloffDecrement then
+          FFallOff[i]:= FFallOff[i] - FFalloffDecrement
+        else
+          FFallOff[i]:= 0;
+      end;
     end;
     HStep := FGridR.Width / (Length(FData) - 1);
     VStep := FGridR.Height / (FAxisesData.Left.MaxValue -
@@ -946,20 +1013,27 @@ begin
         FGridR.Height - 0);
 
       FalloffR.offset((i - 0.5) * HStep, 0);
-      FalloffR.offset(FGridR.Left, FGridR.Top);
+      FallOffR:= Chart.GridToClient(FalloffR);
+//      FalloffR.offset(FGridR.Left, FGridR.Top);
 
       if FalloffR.Left < FGridR.Left then
         FalloffR.Left := FGridR.Left;
       if FalloffR.Right > FGridR.Right then
         FalloffR.Right := FGridR.Right;
-      PeakR:= FalloffR;
-      ACanvas.DrawRect(FalloffR, 0, 0, [], 1);
-      FalloffR.Inflate(-0.5, -0.5);
-      ACanvas.FillRect(FalloffR, 0, 0, [], 1);
 
-      PeakR.Bottom:=  FGridR.Height - VStep * FPeaks[i] + FGridR.Top;
-      PeakR.Top:= PeakR.Bottom - 1;
-      ACanvas.FillRect(PeakR, 0, 0, [], 1);
+      PeakR:= FalloffR;
+      if FalloffVisible then
+      begin
+        ACanvas.DrawRect(FalloffR, 0, 0, [], 1);
+        FalloffR.Inflate(-0.5, -0.5);
+        ACanvas.FillRect(FalloffR, 0, 0, [], 1);
+      end;
+      if PeakVisible then
+      begin
+        PeakR.Bottom:=  FGridR.Height - VStep * FPeaks[i] + FGridR.Top;
+        PeakR.Top:= PeakR.Bottom - 1;
+        ACanvas.FillRect(PeakR, 0, 0, [], 1);
+      end;
     end;
   end;
 end;
@@ -969,9 +1043,19 @@ begin
   FFalloffDecrement := Value;
 end;
 
+procedure TSignalRectangeDrawer.SetFalloffVisible(const Value: Boolean);
+begin
+  FFalloffVisible := Value;
+end;
+
 procedure TSignalRectangeDrawer.SetPeakeDecrement(const Value: Single);
 begin
-  FPeakeDecrement := Value;
+  FPeakDecrement := Value;
+end;
+
+procedure TSignalRectangeDrawer.SetPeakVisible(const Value: Boolean);
+begin
+  FPeakVisible := Value;
 end;
 
 { TSignalDrawer }

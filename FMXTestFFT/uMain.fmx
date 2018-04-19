@@ -69,6 +69,7 @@ object Form3: TForm3
     AxisesView.Bottom.Thinkness = 1.000000000000000000
     AxisesView.Bottom.LineColor = claDarkslategray
     AxisesView.Bottom.LabelSuffix = 'Hz'
+    Drawer = SignalRectangeDrawer1
     BKColor = claBlack
   end
   object Panel1: TPanel
@@ -85,6 +86,11 @@ object Form3: TForm3
     save = '{1D8C3D07-29A9-4779-A099-32A8691EEA69}'
   end
   object SignalRectangeDrawer1: TSignalRectangeDrawer
+    Chart = SignalChart1
+    PeakDecrement = 0.100000001490116100
+    FalloffDecrement = 0.500000000000000000
+    FalloffVisible = True
+    PeakVisible = True
     Left = 40
     Top = 344
   end
