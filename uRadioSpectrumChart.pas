@@ -122,6 +122,16 @@ type
     Property Bottom: TCustomAxis Read FBottom Write FBottom;
   End;
 
+  TSignalDrawer = Class
+  Strict Private
+    [weak]FChart: TSignalChart;
+  Strict Protected
+    function Chart: TSignalChart;
+  Public
+    Constructor Create(AChart: TSignalChart);
+    Procedure DoDraw;Virtual; Abstract;
+  End;
+
   TSignalChart = Class(TPaintBox)
   Private
     FEquationBottomIn: TLinearEquations;
@@ -134,7 +144,7 @@ type
     FLeftTextR: TRectF;
     FBottomTextR: TRectF;
   Private
-    FBitmap: TBitmap;
+    FBKGraphic: TBitmap;
   Private
     FFrameCounter: TFrameCount;
     function GetFPS: Integer;
@@ -167,6 +177,11 @@ type
     Constructor Create(AOwner: TComponent); Override;
   End;
 
+  TSignalRectangeDrawer = Class(TSignalDrawer)
+  Protected
+    Procedure DoDraw; Override;
+  End;
+
 procedure Register;
 
 implementation
@@ -186,7 +201,7 @@ begin
   inherited;
   FFrameCounter.AddFrame;
   DoCheckSize();
-  Canvas.DrawBitmap(FBitmap, FBitmap.BoundsF, FBitmap.BoundsF, 1);
+  Canvas.DrawBitmap(FBKGraphic, FBKGraphic.BoundsF, FBKGraphic.BoundsF, 1);
   PaintData();
   // CnDebugger.LogMsg('DoPaint');
 end;
@@ -211,14 +226,14 @@ begin
   w := Ceil(Width);
   h := Ceil(Height);
 
-  if FBitmap.Width <> w then
+  if FBKGraphic.Width <> w then
   begin
-    FBitmap.Width := w;
+    FBKGraphic.Width := w;
     Changed := True;
   end;
-  if FBitmap.Height <> h then
+  if FBKGraphic.Height <> h then
   begin
-    FBitmap.Height := h;
+    FBKGraphic.Height := h;
     Changed := True;
   end;
 
@@ -280,13 +295,13 @@ begin
   FEquationBottomIn := TLinearEquations.Create;
   FCoordinate := TBitmap.Create;
 
-  FBitmap := TBitmap.Create;
+  FBKGraphic := TBitmap.Create;
   FillDesigningTestData();
 end;
 
 destructor TSignalChart.Destroy;
 begin
-  FreeAndNil(FBitmap);
+  FreeAndNil(FBKGraphic);
   FreeAndNil(FCoordinate);
   FreeAndNil(FEquationBottomIn);
   FreeAndNil(FFrameCounter);
@@ -374,18 +389,18 @@ begin
     try
       FCoordinate.Clear(TAlphaColors.Null);
       With FAxisesData.Left do
-        DrawGrid(FCoordinate, CalcuMaxLabel(FBitmap, FLeftTextR));
+        DrawGrid(FCoordinate, CalcuMaxLabel(FBKGraphic, FLeftTextR));
       With FAxisesData.Bottom do
-        DrawGrid(FCoordinate, CalcuMaxLabel(FBitmap, FBottomTextR));
+        DrawGrid(FCoordinate, CalcuMaxLabel(FBKGraphic, FBottomTextR));
     finally
       ACanvas.EndScene();
     end;
   end;
   // CnDebugger.LogMsg('UpdateBitmap');
-  if FBitmap.HandleAllocated then
+  if FBKGraphic.HandleAllocated then
   begin
     // 画底图，主要是坐标轴的Label
-    ACanvas := FBitmap.Canvas;
+    ACanvas := FBKGraphic.Canvas;
     ACanvas.BeginScene();
     try
       ACanvas.Clear(TAlphaColors.Null);
@@ -872,6 +887,63 @@ end;
 procedure TTest.WriteSave(Writer: TWriter);
 begin
   Writer.WriteString(FSaveStr);
+end;
+
+{ TSignalChartDrawer }
+
+function TSignalDrawer.Chart: TSignalChart;
+begin
+  Result:= FChart;
+end;
+
+constructor TSignalDrawer.Create(AChart: TSignalChart);
+begin
+  inherited Create;
+  FChart:= AChart;
+end;
+
+{ TSignalRectangeDrawer }
+
+procedure TSignalRectangeDrawer.DoDraw;
+var
+  HStep, VStep: Single;
+  R: TRectF;
+  i: Integer;
+  ACanvas: TCanvas;
+begin
+  With Chart do
+  begin
+    if ComponentState * [csLoading, csReading] <> [] then
+      Exit;
+    HStep := FGridR.Width / (Length(FData) - 1);
+    VStep := FGridR.Height / (FAxisesData.Left.MaxValue -
+      FAxisesData.Left.MinValue + 1);
+
+    ACanvas := Canvas;
+    ACanvas.Stroke.Color := TAlphaColors.Black;
+    ACanvas.Stroke.Kind := TBrushKind.Solid;
+    ACanvas.Stroke.Thickness := 1;
+    ACanvas.Fill.Color := TAlphaColors.Lime;
+    ACanvas.Fill.Kind := TBrushKind.Solid;
+
+    for i := 0 to Length(FData) - 1 do
+    begin
+      R := TRectF.Create(0, FGridR.Height - VStep * FData[i], HStep,
+        FGridR.Height - 0);
+
+      R.offset((i - 0.5) * HStep, 0);
+
+      R.offset(FGridR.Left, FGridR.Top);
+      if R.Left < FGridR.Left then
+        R.Left := FGridR.Left;
+      if R.Right > FGridR.Right then
+        R.Right := FGridR.Right;
+
+      ACanvas.DrawRect(R, 0, 0, [], 1);
+      R.Inflate(-0.5, -0.5);
+      ACanvas.FillRect(R, 0, 0, [], 1);
+    end;
+  end;
 end;
 
 initialization
