@@ -149,13 +149,14 @@ type
   Private
     FFrameCounter: TFrameCount;
     FDrawer: TSignalDrawer;
+    FBKColor: TAlphaColor;
     function GetFPS: Integer;
     Procedure UpdateBitmap;
     Procedure UpdateGridRAndStdTextR();
-    Procedure PaintData();
     procedure DoCheckSize;
     Procedure FillDesigningTestData;
     procedure SetDrawer(const Value: TSignalDrawer);
+    procedure SetBKColor(const Value: TAlphaColor);
   Protected
     Procedure DoPaint; Override;
     Procedure Loaded; Override;
@@ -168,6 +169,7 @@ type
     Property AxisesData: TAxises Read FAxisesData Write FAxisesData;
     Property AxisesView: TAxises Read FAxisesView Write FAxisesView;
     Property Drawer: TSignalDrawer read FDrawer write SetDrawer;
+    Property BKColor: TAlphaColor read FBKColor write SetBKColor;
   End;
 
   TTest = Class(TComponent)
@@ -183,7 +185,7 @@ type
 
   TSignalRectangeDrawer = Class(TSignalDrawer)
   Strict Private
-    FPeakes: TArray<Single>;
+    FPeaks: TArray<Single>;
     FFallOff: TArray<Single>;
   private
     FFalloffDecrement: Single;
@@ -261,42 +263,15 @@ begin
   end;
 end;
 
-procedure TSignalChart.PaintData;
-var
-  HStep, VStep: Single;
-  R: TRectF;
-  i: Integer;
-  ACanvas: TCanvas;
+
+
+procedure TSignalChart.SetBKColor(const Value: TAlphaColor);
 begin
-  if ComponentState * [csLoading, csReading] <> [] then
-    Exit;
-  HStep := FGridR.Width / (Length(FData) - 1);
-  VStep := FGridR.Height / (FAxisesData.Left.MaxValue -
-    FAxisesData.Left.MinValue + 1);
-
-  ACanvas := Canvas;
-  ACanvas.Stroke.Color := TAlphaColors.Black;
-  ACanvas.Stroke.Kind := TBrushKind.Solid;
-  ACanvas.Stroke.Thickness := 1;
-  ACanvas.Fill.Color := TAlphaColors.Lime;
-  ACanvas.Fill.Kind := TBrushKind.Solid;
-
-  for i := 0 to Length(FData) - 1 do
+  if FBKColor <> Value then
   begin
-    R := TRectF.Create(0, FGridR.Height - VStep * FData[i], HStep,
-      FGridR.Height - 0);
-
-    R.offset((i - 0.5) * HStep, 0);
-
-    R.offset(FGridR.Left, FGridR.Top);
-    if R.Left < FGridR.Left then
-      R.Left := FGridR.Left;
-    if R.Right > FGridR.Right then
-      R.Right := FGridR.Right;
-
-    ACanvas.DrawRect(R, 0, 0, [], 1);
-    R.Inflate(-0.5, -0.5);
-    ACanvas.FillRect(R, 0, 0, [], 1);
+    FBKColor := Value;
+    UpdateBitmap;
+    InvalidateRect(ClipRect);
   end;
 end;
 
@@ -420,7 +395,7 @@ begin
 
     ACanvas.BeginScene();
     try
-      FCoordinate.Clear(TAlphaColors.Null);
+      FCoordinate.Clear(FBKColor);
       With FAxisesData.Left do
         DrawGrid(FCoordinate, CalcuMaxLabel(FBKGraphic, FLeftTextR));
       With FAxisesData.Bottom do
@@ -931,7 +906,8 @@ end;
 procedure TSignalRectangeDrawer.DoDraw;
 var
   HStep, VStep: Single;
-  R: TRectF;
+  FalloffR: TRectF;
+  PeakR: TRectF;
   i: Integer;
   ACanvas: TCanvas;
   di: Single;
@@ -943,14 +919,14 @@ begin
       Exit;
 
     nCount:= Length(FData);
-    if Length(FPeakes) < nCount then
-      SetLength(FPeakes, nCount);
+    if Length(FPeaks) < nCount then
+      SetLength(FPeaks, nCount);
     if Length(FFallOff) < nCount then
       SetLength(FFallOff, nCount);
     for i := 0 to nCount - 1 do
     begin
       di:= FData[i];
-      if di >= FPeakes[i] then FPeakes[i] := di else FPeakes[i] := FPeakes[i] - 0.1;
+      if di >= FPeaks[i] then FPeaks[i] := di else FPeaks[i] := FPeaks[i] - 0.1;
       if di >= FFallOff[i] then FFallOff[i] := di else FFallOff[i] := FFallOff[i] - 0.5;
     end;
     HStep := FGridR.Width / (Length(FData) - 1);
@@ -966,24 +942,24 @@ begin
 
     for i := 0 to nCount - 1 do
     begin
-      R := TRectF.Create(0, FGridR.Height - VStep * FFallOff[i], HStep,
+      FalloffR := TRectF.Create(0, FGridR.Height - VStep * FFallOff[i], HStep,
         FGridR.Height - 0);
 
-      R.offset((i - 0.5) * HStep, 0);
+      FalloffR.offset((i - 0.5) * HStep, 0);
+      FalloffR.offset(FGridR.Left, FGridR.Top);
 
-      R.offset(FGridR.Left, FGridR.Top);
-      if R.Left < FGridR.Left then
-        R.Left := FGridR.Left;
-      if R.Right > FGridR.Right then
-        R.Right := FGridR.Right;
+      if FalloffR.Left < FGridR.Left then
+        FalloffR.Left := FGridR.Left;
+      if FalloffR.Right > FGridR.Right then
+        FalloffR.Right := FGridR.Right;
+      PeakR:= FalloffR;
+      ACanvas.DrawRect(FalloffR, 0, 0, [], 1);
+      FalloffR.Inflate(-0.5, -0.5);
+      ACanvas.FillRect(FalloffR, 0, 0, [], 1);
 
-      ACanvas.DrawRect(R, 0, 0, [], 1);
-      R.Inflate(-0.5, -0.5);
-      ACanvas.FillRect(R, 0, 0, [], 1);
-
-      R.Bottom:=  FGridR.Height - VStep * FPeakes[i];
-      R.Top:= R.Bottom - 1;
-      ACanvas.FillRect(R, 0, 0, [], 1);
+      PeakR.Bottom:=  FGridR.Height - VStep * FPeaks[i] + FGridR.Top;
+      PeakR.Top:= PeakR.Bottom - 1;
+      ACanvas.FillRect(PeakR, 0, 0, [], 1);
     end;
   end;
 end;
