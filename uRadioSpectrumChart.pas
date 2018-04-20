@@ -123,10 +123,12 @@ type
   End;
 
   TSignalDrawer = Class(TComponent)
-  Strict Private
+  Private
     [weak]FChart: TSignalChart;
   private
     procedure SetChart(const Value: TSignalChart);
+  Protected
+
   Public
     Procedure DoDraw;Virtual; Abstract;
   Published
@@ -222,7 +224,11 @@ type
     Property FalloffDecrement: Single read FFalloffDecrement write SetFalloffDecrement;
     Property FalloffVisible: Boolean read FFalloffVisible write SetFalloffVisible;
     Property PeakVisible: Boolean read FPeakVisible write SetPeakVisible;
+  End;
 
+  TSplitedDrawer = Class(TSignalRectangeDrawer)
+  Public
+    Procedure DoDraw; Override;
   End;
 
 procedure Register;
@@ -236,7 +242,7 @@ uses
 
 procedure Register;
 begin
-  RegisterComponents('RadioReceiver', [TSignalChart, TSignalRectangeDrawer, TTest]);
+  RegisterComponents('RadioReceiver', [TSignalChart, TSignalRectangeDrawer, TTest, TSplitedDrawer]);
 end;
 
 procedure TSignalChart.DoPaint;
@@ -349,15 +355,20 @@ begin
 end;
 
 procedure TSignalChart.SetDrawer(const Value: TSignalDrawer);
+var
+  LastDrawer: TSignalDrawer;
 begin
+  LastDrawer:= FDrawer;
   if FDrawer <> Value then
   begin
-    if (FDrawer <> Nil) then
-    begin
-      if FDrawer.Chart <> Nil then
-        FDrawer.Chart:= Nil;
-    end;
     FDrawer := Value;
+    if (LastDrawer <> Nil) then
+    begin
+      if LastDrawer.Chart <> Nil then
+      begin
+        LastDrawer.Chart:= Nil;
+      end;
+    end;
   end;
 
   if Value <> Nil then
@@ -1132,6 +1143,8 @@ begin
   end;
 end;
 
+
+
 procedure TSignalRectangeDrawer.SetFalloffDecrement(const Value: Single);
 begin
   FFalloffDecrement := Value;
@@ -1154,20 +1167,32 @@ end;
 
 { TSignalDrawer }
 
+
 procedure TSignalDrawer.SetChart(const Value: TSignalChart);
+var
+  LastChart: TSignalChart;
 begin
+  LastChart:= FChart;
   if FChart <> Value then
   begin
-    if FChart <> Nil then
+    FChart:= Value;
+
+    if LastChart <> Nil then
     begin
-      if FChart.Drawer <> Nil then
-        FChart.Drawer:= Nil;
+      if LastChart.Drawer <> Nil then
+        LastChart.Drawer:= Nil;
     end;
-    FChart := Value;
   end;
   if FChart <> Nil then
     if FChart.Drawer <> Self then
       FChart.Drawer:= Self;
+end;
+{ TSplitedDrawer }
+
+procedure TSplitedDrawer.DoDraw;
+begin
+  inherited;
+
 end;
 
 initialization

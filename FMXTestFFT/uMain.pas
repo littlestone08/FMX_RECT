@@ -22,6 +22,7 @@ type
     Test1: TTest;
     Panel1: TPanel;
     SignalRectangeDrawer1: TSignalRectangeDrawer;
+    SplitedDrawer1: TSplitedDrawer;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -127,6 +128,7 @@ end;
 procedure TForm3.FormCreate(Sender: TObject);
 begin
   self.SignalChart1.Drawer:= Self.SignalRectangeDrawer1;
+  self.SignalChart1.Drawer:= self.SplitedDrawer1;
 end;
 
 procedure TForm3.FormPaint(Sender: TObject; Canvas: TCanvas;
