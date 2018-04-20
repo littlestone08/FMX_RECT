@@ -75,12 +75,13 @@ object Form3: TForm3
     GridBoundColor = claDarkslategray
   end
   object Panel1: TPanel
-    Position.X = 264.000000000000000000
-    Size.Width = 441.000000000000000000
+    Position.X = 248.000000000000000000
+    Size.Width = 361.000000000000000000
     Size.Height = 17.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 13
     OnMouseDown = Panel1MouseDown
+    OnPaint = Panel1Paint
   end
   object Test1: TTest
     Left = 40
@@ -101,7 +102,7 @@ object Form3: TForm3
     FalloffDecrement = 0.500000000000000000
     FalloffVisible = True
     PeakVisible = True
-    Left = 40
-    Top = 296
+    Left = 48
+    Top = 280
   end
 end

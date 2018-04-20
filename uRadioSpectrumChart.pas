@@ -124,13 +124,14 @@ type
 
   TSignalDrawer = Class(TComponent)
   Private
-    [weak]FChart: TSignalChart;
+    [weak]
+    FChart: TSignalChart;
   private
     procedure SetChart(const Value: TSignalChart);
   Protected
 
   Public
-    Procedure DoDraw;Virtual; Abstract;
+    Procedure DoDraw; Virtual; Abstract;
   Published
     Property Chart: TSignalChart Read FChart Write SetChart;
   End;
@@ -146,7 +147,6 @@ type
 
     FWaterFallRect: TRectF;
     FWaterFallGridR: TRectF;
-
 
     FData: TArray<Single>;
     FAxisesData: TAxises;
@@ -189,7 +189,8 @@ type
     Property AxisesView: TAxises Read FAxisesView Write FAxisesView;
     Property Drawer: TSignalDrawer read FDrawer write SetDrawer;
     Property BKColor: TAlphaColor read FBKColor write SetBKColor;
-    Property GridBoundColor: TAlphaColor read FGridBoundColor write SetGridBoundColor;
+    Property GridBoundColor: TAlphaColor read FGridBoundColor
+      write SetGridBoundColor;
   End;
 
   TTest = Class(TComponent)
@@ -221,18 +222,24 @@ type
     Procedure DoDraw; Override;
   Published
     Property PeakDecrement: Single read FPeakDecrement write SetPeakeDecrement;
-    Property FalloffDecrement: Single read FFalloffDecrement write SetFalloffDecrement;
-    Property FalloffVisible: Boolean read FFalloffVisible write SetFalloffVisible;
+    Property FalloffDecrement: Single read FFalloffDecrement
+      write SetFalloffDecrement;
+    Property FalloffVisible: Boolean read FFalloffVisible
+      write SetFalloffVisible;
     Property PeakVisible: Boolean read FPeakVisible write SetPeakVisible;
   End;
 
   TSplitedDrawer = Class(TSignalRectangeDrawer)
+  Private
+    FWaterFallData: TArray<TArray<Single>>;
+    FColors: TArray<TAlphaColor>;
   Public
     Procedure DoDraw; Override;
+    constructor Create(AOwner: TComponent); Override;
   End;
 
 procedure Register;
-
+Procedure spectral_color(var R, G, B: Single; l: Single);
 implementation
 
 uses
@@ -242,7 +249,8 @@ uses
 
 procedure Register;
 begin
-  RegisterComponents('RadioReceiver', [TSignalChart, TSignalRectangeDrawer, TTest, TSplitedDrawer]);
+  RegisterComponents('RadioReceiver', [TSignalChart, TSignalRectangeDrawer,
+    TTest, TSplitedDrawer]);
 end;
 
 procedure TSignalChart.DoPaint;
@@ -253,7 +261,7 @@ begin
   Canvas.DrawBitmap(FBKGraphic, FBKGraphic.BoundsF, FBKGraphic.BoundsF, 1);
   if FDrawer <> Nil then
     FDrawer.DoDraw();
-//    PaintData();
+  // PaintData();
   // CnDebugger.LogMsg('DoPaint');
 end;
 
@@ -264,26 +272,26 @@ end;
 
 function TSignalChart.GraphicToClient(const APoint: TRectF): TRectF;
 begin
-  Result:= APoint;
-  Result.Offset(-FGraphicRect.Left, -FGraphicRect.Top);
+  Result := APoint;
+  Result.offset(-FGraphicRect.Left, -FGraphicRect.Top);
 end;
 
 function TSignalChart.GraphicToGrid(const APoint: TRectF): TRectF;
 begin
-  Result:= APoint;
-  Result.Offset(FGraphicGridR.TopLeft);
+  Result := APoint;
+  Result.offset(FGraphicGridR.TopLeft);
 end;
 
 function TSignalChart.GridToClient(const APoint: TRectF): TRectF;
 begin
-  Result:= APoint;
-  Result.Offset(FGraphicGridR.TopLeft);
+  Result := APoint;
+  Result.offset(FGraphicGridR.TopLeft);
 end;
 
 function TSignalChart.GridToGraphic(const APoint: TRectF): TRectF;
 begin
-  Result:= APoint;
-  Result.Offset(-FGraphicRect.Left, -FGraphicRect.Top);
+  Result := APoint;
+  Result.offset(-FGraphicRect.Left, -FGraphicRect.Top);
 end;
 
 procedure TSignalChart.Loaded;
@@ -295,13 +303,14 @@ end;
 procedure TSignalChart.DoCheckSize;
   Procedure UpdateGraphicRect;
   begin
-    FGraphicRect:= LocalRect;
-    FGraphicRect.Top:= FGraphicRect.Top + 2;
-    FGraphicRect.Bottom:= FGraphicRect.Bottom / 2;
-    FWaterFallRect:= LocalRect;
-    FWaterFallRect.Top:= FGraphicRect.Bottom;
-    FWaterFallRect.Bottom:= LocalRect.Bottom - 2
+    FGraphicRect := LocalRect;
+    FGraphicRect.Top := FGraphicRect.Top + 2;
+    FGraphicRect.Bottom := FGraphicRect.Bottom / 2;
+    FWaterFallRect := LocalRect;
+    FWaterFallRect.Top := FGraphicRect.Bottom;
+    FWaterFallRect.Bottom := LocalRect.Bottom - 2
   end;
+
 var
   w, h: Integer;
   Changed: Boolean;
@@ -323,16 +332,12 @@ begin
     Changed := True;
   end;
 
-
-
   if Changed and (ComponentState * [csLoading, csReading] = []) then
   begin
     UpdateGridRAndStdTextR();
     UpdateBitmap;
   end;
 end;
-
-
 
 procedure TSignalChart.SetBKColor(const Value: TAlphaColor);
 begin
@@ -358,7 +363,7 @@ procedure TSignalChart.SetDrawer(const Value: TSignalDrawer);
 var
   LastDrawer: TSignalDrawer;
 begin
-  LastDrawer:= FDrawer;
+  LastDrawer := FDrawer;
   if FDrawer <> Value then
   begin
     FDrawer := Value;
@@ -366,34 +371,34 @@ begin
     begin
       if LastDrawer.Chart <> Nil then
       begin
-        LastDrawer.Chart:= Nil;
+        LastDrawer.Chart := Nil;
       end;
     end;
   end;
 
   if Value <> Nil then
     if Value.Chart <> Self then
-      Value.Chart:= Self;
+      Value.Chart := Self;
 end;
 
 { TGridLayer }
 
 function TSignalChart.ClientToGraphic(const APoint: TRectF): TRectF;
 begin
-  Result:= APoint;
-  Result.Offset(FGraphicRect.TopLeft);
+  Result := APoint;
+  Result.offset(FGraphicRect.TopLeft);
 end;
 
 function TSignalChart.ClientToGrid(const APoint: TRectF): TRectF;
 begin
-  Result:= APoint;
-  Result.Offset(-FGraphicGridR.Left, -FGraphicGridR.Top);
+  Result := APoint;
+  Result.offset(-FGraphicGridR.Left, -FGraphicGridR.Top);
 end;
 
 constructor TSignalChart.Create;
 begin
   inherited;
-  FGridBoundColor:= TAlphaColors.Darkslategray;
+  FGridBoundColor := TAlphaColors.Darkslategray;
   FAxisesData := TAxises.Create(Self);
   FAxisesView := TAxises.Create(Self);
   FFrameCounter := TFrameCount.Create;
@@ -509,6 +514,7 @@ procedure TSignalChart.UpdateBitmap;
     ACanvas.Stroke.Dash := TStrokeDash.Solid;
     ACanvas.DrawRect(FWaterFallGridR, 0, 0, [], 1);
   end;
+
 var
   ACanvas: TCanvas;
 begin
@@ -516,7 +522,8 @@ begin
   // CnDebugger.LogMsg('UpdateBitmap');
   UpdateGridRAndStdTextR();
 
-  FGrid.SetSize(TSize.Create(Ceil(FGraphicGridR.Width), Ceil(FGraphicGridR.Height)));
+  FGrid.SetSize(TSize.Create(Ceil(FGraphicGridR.Width),
+    Ceil(FGraphicGridR.Height)));
 
   FEquationBottomIn.CalcuCoff(0, 0, Length(FData), FGraphicGridR.Width - 1);
 
@@ -553,8 +560,8 @@ begin
       DrawGraphicGridBound(ACanvas);
       DrawWaterfallGridBound(ACanvas);
 
-//      DrawGraphicBound(ACanvas);
-//      DrawWaterFallBound(ACanvas);
+      // DrawGraphicBound(ACanvas);
+      // DrawWaterFallBound(ACanvas);
 
       DrawControlBound(ACanvas);
 
@@ -565,7 +572,6 @@ begin
   end;
   // DrawData(FData);
 end;
-
 
 procedure TSignalChart.UpdateGridRAndStdTextR;
   function MeasureMaxRect(ValueFrom, ValueTo: Integer; Suffix: String): TRectF;
@@ -611,9 +617,9 @@ begin
     FBottomTextR.Height;
   FGraphicGridR.Right := FGraphicGridR.Right - FBottomTextR.Width * 0.5;
 
-  FWaterFallGridR:= FGraphicGridR;
-  FWaterFallGridR.Top:= FWaterFallRect.Top;
-  FWaterFallGridR.Bottom:= FWaterFallRect.Bottom - FBottomTextR.Bottom / 2;
+  FWaterFallGridR := FGraphicGridR;
+  FWaterFallGridR.Top := FWaterFallRect.Top;
+  FWaterFallGridR.Bottom := FWaterFallRect.Bottom - FBottomTextR.Bottom / 2;
 end;
 
 { TGridAndAxis }
@@ -893,7 +899,8 @@ begin
   Result := IntToStr(FMaxValue - Round(LableStep * Index)) + LabelSuffix;
 end;
 
-function TLeftAxis.CalcuMaxLabel(const GraphicR: TRectF; StdTextR: TRectF): Integer;
+function TLeftAxis.CalcuMaxLabel(const GraphicR: TRectF;
+  StdTextR: TRectF): Integer;
 begin
   Result := Trunc(GraphicR.Height / StdTextR.Height);
 end;
@@ -934,8 +941,8 @@ begin
   Result := IntToStr(FMinValue + Round(LabelStep * Index)) + LabelSuffix;
 end;
 
-function TBottomAxis.CalcuMaxLabel(const GraphicR: TRectF; StdTextR: TRectF)
-  : Integer;
+function TBottomAxis.CalcuMaxLabel(const GraphicR: TRectF;
+  StdTextR: TRectF): Integer;
 begin
   Result := Trunc(GraphicR.Width / StdTextR.Width);
 end;
@@ -1041,17 +1048,17 @@ end;
 
 { TSignalChartDrawer }
 
-
-
 { TSignalRectangeDrawer }
 
 constructor TSignalRectangeDrawer.Create(AOwner: TComponent);
 begin
   inherited;
-  FFalloffDecrement:= 0.5;
-  FPeakDecrement:= 0.1;
-  FPeakVisible:= True;
-  FFalloffVisible:= True;
+  FFalloffDecrement := 0.5;
+  FPeakDecrement := 0.1;
+  FPeakVisible := True;
+  FFalloffVisible := True;
+
+
 end;
 
 procedure TSignalRectangeDrawer.DoDraw;
@@ -1069,14 +1076,14 @@ begin
     if ComponentState * [csLoading, csReading] <> [] then
       Exit;
 
-    nCount:= Length(FData);
+    nCount := Length(FData);
     if Length(FPeaks) < nCount then
       SetLength(FPeaks, nCount);
     if Length(FFallOff) < nCount then
       SetLength(FFallOff, nCount);
     for i := 0 to nCount - 1 do
     begin
-      di:= FData[i];
+      di := FData[i];
       if di >= FPeaks[i] then
       begin
         FPeaks[i] := di
@@ -1084,9 +1091,9 @@ begin
       else
       begin
         if FPeaks[i] > FPeakDecrement then
-          FPeaks[i]:= FPeaks[i] -FPeakDecrement
+          FPeaks[i] := FPeaks[i] - FPeakDecrement
         else
-          FPeaks[i]:= 0;
+          FPeaks[i] := 0;
       end;
 
       if di >= FFallOff[i] then
@@ -1096,14 +1103,14 @@ begin
       else
       begin
         if FFallOff[i] > FFalloffDecrement then
-          FFallOff[i]:= FFallOff[i] - FFalloffDecrement
+          FFallOff[i] := FFallOff[i] - FFalloffDecrement
         else
-          FFallOff[i]:= 0;
+          FFallOff[i] := 0;
       end;
     end;
     HStep := FGraphicGridR.Width / (Length(FData) - 1);
-    VStep := FGraphicGridR.Height / (FAxisesData.Left.MaxValue -
-      FAxisesData.Left.MinValue + 1);
+    VStep := FGraphicGridR.Height /
+      (FAxisesData.Left.MaxValue - FAxisesData.Left.MinValue + 1);
 
     ACanvas := Canvas;
     ACanvas.Stroke.Color := TAlphaColors.Black;
@@ -1114,19 +1121,19 @@ begin
 
     for i := 0 to nCount - 1 do
     begin
-      FalloffR := TRectF.Create(0, FGraphicGridR.Height - VStep * FFallOff[i], HStep,
-        FGraphicGridR.Height - 0);
+      FalloffR := TRectF.Create(0, FGraphicGridR.Height - VStep * FFallOff[i],
+        HStep, FGraphicGridR.Height - 0);
 
       FalloffR.offset((i - 0.5) * HStep, 0);
-      FallOffR:= Chart.GridToClient(FalloffR);
-//      FalloffR.offset(FGridR.Left, FGridR.Top);
+      FalloffR := Chart.GridToClient(FalloffR);
+      // FalloffR.offset(FGridR.Left, FGridR.Top);
 
       if FalloffR.Left < FGraphicGridR.Left then
         FalloffR.Left := FGraphicGridR.Left;
       if FalloffR.Right > FGraphicGridR.Right then
         FalloffR.Right := FGraphicGridR.Right;
 
-      PeakR:= FalloffR;
+      PeakR := FalloffR;
       if FalloffVisible then
       begin
         ACanvas.DrawRect(FalloffR, 0, 0, [], 1);
@@ -1135,15 +1142,14 @@ begin
       end;
       if PeakVisible then
       begin
-        PeakR.Bottom:=  FGraphicGridR.Height - VStep * FPeaks[i] + FGraphicGridR.Top;
-        PeakR.Top:= PeakR.Bottom - 1;
+        PeakR.Bottom := FGraphicGridR.Height - VStep * FPeaks[i] +
+          FGraphicGridR.Top;
+        PeakR.Top := PeakR.Bottom - 1;
         ACanvas.FillRect(PeakR, 0, 0, [], 1);
       end;
     end;
   end;
 end;
-
-
 
 procedure TSignalRectangeDrawer.SetFalloffDecrement(const Value: Single);
 begin
@@ -1167,36 +1173,270 @@ end;
 
 { TSignalDrawer }
 
-
 procedure TSignalDrawer.SetChart(const Value: TSignalChart);
 var
   LastChart: TSignalChart;
 begin
-  LastChart:= FChart;
+  LastChart := FChart;
   if FChart <> Value then
   begin
-    FChart:= Value;
+    FChart := Value;
 
     if LastChart <> Nil then
     begin
       if LastChart.Drawer <> Nil then
-        LastChart.Drawer:= Nil;
+        LastChart.Drawer := Nil;
     end;
   end;
   if FChart <> Nil then
     if FChart.Drawer <> Self then
-      FChart.Drawer:= Self;
+      FChart.Drawer := Self;
 end;
 { TSplitedDrawer }
 
-procedure TSplitedDrawer.DoDraw;
+/// /Input a value 0 to 255 to get a color value.
+/// /The colours are a transition b - g - r
+// uint32_t Wheel(byte WheelPos)
+// {
+// if (WheelPos < 85 ) {
+// return Color(0,0, WheelPos * 3);
+// } else if (WheelPos < 170) {
+// WheelPos -= 85;
+// return Color(0, WheelPos * 3 , 255 - WheelPos * 3);
+// } else {
+// WheelPos -= 170;
+// return Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+// }
+// }
+//
+function Wheel(Value: Byte): TAlphaColor;
+begin
+  With TAlphaColorRec(Result) do
+  begin
+    A := $FF;
+    if Value < 85 then
+    begin
+      B := 0;
+      G := 0;
+      R := Value * 3;
+    end
+    else if Value < 170 then
+    begin
+      Dec(Value, 85);
+      B := 0;
+      G := Value * 3;
+      R := 255 - Value * 3;
+    end
+    else
+    begin
+      Dec(Value, 170);
+      B := Value * 3;
+      G := 255 - Value * 3;
+      R := 0;
+    end;
+  end;
+end;
+
+
+// l is the wavelength in [nm] usable valueas are l = < 400.0 , 700.0 >
+// r,g,b are returning color components in range < 0.0 , 1.0 >
+
+
+// void spectral_color(double &r,double &g,double &b,double l) // RGB <0,1> <- lambda l <400,700> [nm]
+// {
+// double t;  r=0.0; g=0.0; b=0.0;
+// if ((l>=400.0)&&(l<410.0)) { t=(l-400.0)/(410.0-400.0); r=    +(0.33*t)-(0.20*t*t); }
+// else if ((l>=410.0)&&(l<475.0)) { t=(l-410.0)/(475.0-410.0); r=0.14         -(0.13*t*t); }
+// else if ((l>=545.0)&&(l<595.0)) { t=(l-545.0)/(595.0-545.0); r=    +(1.98*t)-(     t*t); }
+// else if ((l>=595.0)&&(l<650.0)) { t=(l-595.0)/(650.0-595.0); r=0.98+(0.06*t)-(0.40*t*t); }
+// else if ((l>=650.0)&&(l<700.0)) { t=(l-650.0)/(700.0-650.0); r=0.65-(0.84*t)+(0.20*t*t); }
+// if ((l>=415.0)&&(l<475.0)) { t=(l-415.0)/(475.0-415.0); g=             +(0.80*t*t); }
+// else if ((l>=475.0)&&(l<590.0)) { t=(l-475.0)/(590.0-475.0); g=0.8 +(0.76*t)-(0.80*t*t); }
+// else if ((l>=585.0)&&(l<639.0)) { t=(l-585.0)/(639.0-585.0); g=0.84-(0.84*t)           ; }
+// if ((l>=400.0)&&(l<475.0)) { t=(l-400.0)/(475.0-400.0); b=    +(2.20*t)-(1.50*t*t); }
+// else if ((l>=475.0)&&(l<560.0)) { t=(l-475.0)/(560.0-475.0); b=0.7 -(     t)+(0.30*t*t); }
+// }
+
+Procedure spectral_color(var R, G, B: Single; l: Single);
+// RGB <0,1> <- lambda l <400,700> [nm]
+var
+  t: Single;
+begin
+  R := 0.0;
+  G := 0.0;
+  B := 0.0;
+  if ((l >= 400.0) and (l < 410.0)) then
+  begin
+    t := (l - 400.0) / (410.0 - 400.0);
+    R := +(0.33 * t) - (0.20 * t * t);
+  end
+  else if ((l >= 410.0) and (l < 475.0)) then
+  begin
+    t := (l - 410.0) / (475.0 - 410.0);
+    R := 0.14 - (0.13 * t * t);
+  end
+  else if ((l >= 545.0) and (l < 595.0)) then
+  begin
+    t := (l - 545.0) / (595.0 - 545.0);
+    R := +(1.98 * t) - (t * t);;
+  end
+  else if ((l >= 595.0) and (l < 650.0)) then
+  begin
+    t := (l - 595.0) / (650.0 - 595.0);
+    R := 0.98 + (0.06 * t) - (0.40 * t * t);
+  end
+  else if ((l >= 650.0) and (l < 700.0)) then
+  begin
+    t := (l - 650.0) / (700.0 - 650.0);
+    R := 0.65 - (0.84 * t) + (0.20 * t * t);
+  end
+  else if ((l >= 415.0) and (l < 475.0)) then
+  begin
+    t := (l - 415.0) / (475.0 - 415.0);
+    G := +(0.80 * t * t);
+  end
+  else if ((l >= 475.0) and (l < 590.0)) then
+  begin
+    t := (l - 475.0) / (590.0 - 475.0);
+    G := 0.8 + (0.76 * t) - (0.80 * t * t);
+  end
+  else if ((l >= 585.0) and (l < 639.0)) then
+  begin
+    t := (l - 585.0) / (639.0 - 585.0);
+    G := 0.84 - (0.84 * t);
+  end
+  else if ((l >= 400.0) and (l < 475.0)) then
+  begin
+    t := (l - 400.0) / (475.0 - 400.0);
+    B := +(2.20 * t) - (1.50 * t * t)
+  end
+  else if ((l >= 475.0) and (l < 560.0)) then
+  begin
+    t := (l - 475.0) / (560.0 - 475.0);
+    B := 0.7 - (t) + (0.30 * t * t)
+  end
+end;
+
+var
+  TempByte: Byte;
+
+Procedure  spectrum_to_rgb(wavelength: double; r,g,b: PDouble); stdcall;  external 'specrum32.dll' name '_spectrum_to_rgb@20';
+constructor TSplitedDrawer.Create(AOwner: TComponent);
+  Procedure InitColors;
+  var
+    ar,ag,ab: double;
+    AColor: TAlphaColor;
+    wavelen: double;
+  begin
+    wavelen:= 0;
+    while wavelen < 20000 do
+    begin
+      spectrum_to_rgb(wavelen, @ar, @ag, @ab);
+      With TAlphaColorRec(AColor) do
+      begin
+        R:= Round(ar * $FF);
+        G:= Round(ag * $FF);
+        B:= Round(ab * $FF);
+        A:= $FF;
+      end;
+      Insert(AColor, FColors, Length(FColors));
+      wavelen:= wavelen + 50;
+    end;
+  end;
 begin
   inherited;
+  InitColors();
+end;
+
+procedure TSplitedDrawer.DoDraw;
+var
+  iw, ih: Integer;
+  R: TRectF;
+  HStep: Single;
+  PointStart: TPointF;
+  PointEnd: TPointF;
+  PointStart0: TPointF;
+  PointEnd0: TPointF;
+  AByte: Byte;
+  w, h: Integer;
+  TempData: TArray<Single>;
+  i: Integer;
+  AColor: TAlphaColor;
+begin
+  inherited;
+  With Chart do
+  begin
+    if ComponentState * [csLoading, csReading] <> [] then
+      Exit;
+    R := FWaterFallGridR;
+    HStep := R.Width / (Length(FData) - 1);
+
+    SetLength(TempData, Length(FData));
+    // for i := 0 to Length(TempData) - 1 do
+    // begin
+    // TempData[i] := TempByte;
+    // end;
+
+    // Inc(TempByte);
+
+    // Insert(TempData, FWaterFallData, 0);
+    if Length(FData) = 0 then
+      Exit;
+
+    System.Move(FData[0], TempData[0], SizeOf(Single) * Length(FData));
+    Insert(TempData, FWaterFallData, 0);
+    // if Length(FWaterFallData) > R.Height then
+    // SetLength(FWaterFallData, Length(FWaterFallData) - 1);
+
+    Canvas.Stroke.Kind := TBrushKind.Solid;
+
+    h := Min(Trunc(R.Height), Length(FWaterFallData));
+    for ih := 0 to h - 1 do
+    begin
+      w := Min(Trunc(R.Width), Length(FWaterFallData[ih]));
+      for iw := 0 to w - 2 do
+      begin
+        AByte := Trunc(FWaterFallData[ih, iw] * 2.55);
+        if iw = 0 then
+        begin
+          PointStart := TPointF.Create(0, ih);
+          PointStart.offset(R.TopLeft);
+        end
+        else
+          PointStart := PointEnd;
+
+        PointEnd := PointStart;
+        PointEnd.X := PointEnd.X + HStep;
+
+        AByte := AByte * 4;
+//        Canvas.Stroke.Color := Wheel(AByte);
+        if Trunc(FWaterFallData[ih, iw] * 800) > Length(FColors) - 1 then
+        begin
+          Canvas.Stroke.Color := FColors[Trunc(FWaterFallData[ih, iw] * Length(FColors) - 1)];
+        end
+        else
+        begin
+          Canvas.Stroke.Color := FColors[Trunc(FWaterFallData[ih, iw] * 800)];
+        end;
+
+
+
+        // TAlphaColor((AByte shl 16 or AByte shl 8 or AByte) or $FF000000);
+        // Canvas.Stroke.Color:= TAlphaColors.Lime;
+        // Canvas.Stroke.Color:=TAlphaColor(Trunc(FWaterFallData[ih, iw] * $FFFFFF ) and $FFFFFF or $FF000000);
+
+        Canvas.DrawLine(PointStart, PointEnd, 1);
+
+      end;
+    end;
+  end;
 
 end;
+
+
 
 initialization
 
 GlobalUseGPUCanvas := True;
-
+ ;
 end.

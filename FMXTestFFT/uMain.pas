@@ -32,6 +32,8 @@ type
     procedure Panel1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Single);
     procedure FormCreate(Sender: TObject);
+    procedure Panel1Paint(Sender: TObject; Canvas: TCanvas;
+      const ARect: TRectF);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -39,6 +41,7 @@ type
   Private
     hs: HSTREAM;
     FFTData     : TArray<Single>;
+    FColors: TArray<TAlphaColor>;
   public
     { Public declarations }
     Constructor Create(AOwner: TComponent); Override;
@@ -51,6 +54,7 @@ var
 implementation
 
 
+Procedure  spectrum_to_rgb(wavelength: double; r,g,b: PDouble); stdcall;  external 'specrum32.dll' name '_spectrum_to_rgb@20';
 
 
 {$R *.fmx}
@@ -126,9 +130,31 @@ end;
 
 
 procedure TForm3.FormCreate(Sender: TObject);
+var
+  ar,ag,ab: double;
+  AColor: TAlphaColor;
+  wavelen: double;
 begin
-  self.SignalChart1.Drawer:= Self.SignalRectangeDrawer1;
-  self.SignalChart1.Drawer:= self.SplitedDrawer1;
+  wavelen:= 0;
+  while wavelen < 20000 do
+  begin
+    spectrum_to_rgb(wavelen, @ar, @ag, @ab);
+    self.SignalChart1.Drawer:= Self.SignalRectangeDrawer1;
+    self.SignalChart1.Drawer:= self.SplitedDrawer1;
+    With TAlphaColorRec(AColor) do
+    begin
+      R:= Round(ar * $FF);
+      G:= Round(ag * $FF);
+      B:= Round(ab * $FF);
+      A:= $FF;
+    end;
+    Insert(AColor, FColors, Length(FColors));
+    wavelen:= wavelen + 50;
+  end;
+
+
+
+
 end;
 
 procedure TForm3.FormPaint(Sender: TObject; Canvas: TCanvas;
@@ -196,6 +222,25 @@ procedure TForm3.Panel1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Single);
 begin
   StartWindowDrag;
+end;
+
+procedure TForm3.Panel1Paint(Sender: TObject; Canvas: TCanvas;
+  const ARect: TRectF);
+var
+  i: Integer;
+  pa, pb: TPoint;
+begin
+  Panel1.Canvas.Stroke.Kind:= TBrushKind.Solid;
+  pa:= TPoint.Create(0, 0);
+  pb:= TPoint.Create(0, 0);
+  for i := 0 to Length(FColors) - 1 do
+  begin
+    pa.X:= i;
+    pb.X:= i;
+    pb.Y:= Trunc(Panel1.Height);
+    Panel1.Canvas.Stroke.Color:= FColors[i];
+    Panel1.Canvas.DrawLine(pa, pb, 1);
+  end;
 end;
 
 procedure TForm3.SignalChart1Resized(Sender: TObject);
