@@ -235,7 +235,6 @@ type
   Private
     FWaterFallData: TArray<TArray<Single>>;
     FColors: TArray<TAlphaColor>;
-    FPaintBox: TPaintBox;
     FWaterFallBmp: TBitmap;
   Public
     Procedure DoDraw; Override;
@@ -1270,8 +1269,6 @@ constructor TSplitedDrawer.Create(AOwner: TComponent);
 begin
   inherited;
   InitColors();
-  FPaintBox:= TPaintBox.Create(Self);
-  FPaintBox.Parent:= Chart;
   FWaterFallBmp:= TBitmap.Create;
 end;
 
@@ -1302,18 +1299,9 @@ begin
   begin
     if ComponentState * [csLoading, csReading] <> [] then
       Exit;
-    if FPaintBox.Parent <> Chart then
-      FPaintBox.Parent:= Chart;
     if FWaterFallRectUpdated then
     begin
-      if FPaintBox.Position.X <> FWaterFallGridR.Left then
-        FPaintBox.Position.X:= FWaterFallGridR.Left;
-      if FPaintBox.Position.Y <> FWaterFallGridR.Top then
-        FPaintBox.Position.Y:= FWaterFallGridR.Top;
-      if FPaintBox.Width <> FWaterFallGridR.Width then
-        FPaintBox.Width:= FWaterFallGridR.Width;
-      if FPaintBox.Height <> FWaterFallGridR.Height then
-        FPaintBox.Height:= FWaterFallGridR.Height;
+
 
       FWaterFallBmp.Width:= Ceil(FWaterFallGridR.Width);
       FWaterFallBmp.Height:= Ceil(FWaterFallGridR.Height);
@@ -1346,7 +1334,7 @@ begin
           if iw = 0 then
           begin
             PointStart := TPointF.Create(0, ih);
-  //          PointStart.offset(R.TopLeft);
+//            PointStart.offset(R.TopLeft);
           end
           else
             PointStart := PointEnd;
@@ -1370,13 +1358,13 @@ begin
 //            asum:= asum + FWaterFallData[ih, iw];
           end;
         end;
-        if ih > 100 then Exit;;
+//        if ih > 100 then Exit;;
 //        //CnDebugger.LogMsg(FloatToStr(asum));
       end;
     finally
       FWaterFallBmp.Canvas.EndScene();
-      FPaintBox.Canvas.DrawBitmap(FWaterFallBmp, TRectF.Create(0, 0, FWaterFallBmp.Width, FWaterFallBmp.Height),
-        FPaintBox.BoundsRect,   1, True);
+      Canvas.DrawBitmap(FWaterFallBmp, TRectF.Create(0, 0, FWaterFallBmp.Width, FWaterFallBmp.Height),
+        FWaterFallGridR,   1, True);
     end;
 
 
