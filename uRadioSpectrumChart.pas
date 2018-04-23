@@ -144,9 +144,11 @@ type
 
     FGraphicRect: TRectF;
     FGraphicGridR: TRectF;
+    FGraphicUpdated: Boolean;
 
     FWaterFallRect: TRectF;
     FWaterFallGridR: TRectF;
+    FWaterFallRectUpdated: Boolean;
 
     FData: TArray<Single>;
     FAxisesData: TAxises;
@@ -205,7 +207,7 @@ type
   End;
 
   TSignalRectangeDrawer = Class(TSignalDrawer)
-  Strict Private
+  Private
     FPeaks: TArray<Single>;
     FFallOff: TArray<Single>;
   private
@@ -233,6 +235,7 @@ type
   Private
     FWaterFallData: TArray<TArray<Single>>;
     FColors: TArray<TAlphaColor>;
+    FPaintBox: TPaintBox;
   Public
     Procedure DoDraw; Override;
     constructor Create(AOwner: TComponent); Override;
@@ -243,7 +246,7 @@ procedure Register;
 implementation
 
 uses
-  System.Diagnostics, SpectraLibrary; // , CnDebug;
+  System.Diagnostics, SpectraLibrary , CnDebug;
 
 { TSpectrumChart }
 
@@ -616,10 +619,12 @@ begin
   FGraphicGridR.Bottom := FGraphicGridR.Bottom - FLeftTextR.Height * 0.5 -
     FBottomTextR.Height;
   FGraphicGridR.Right := FGraphicGridR.Right - FBottomTextR.Width * 0.5;
+  FGraphicUpdated:= True;
 
   FWaterFallGridR := FGraphicGridR;
   FWaterFallGridR.Top := FWaterFallRect.Top;
   FWaterFallGridR.Bottom := FWaterFallRect.Bottom - FBottomTextR.Bottom / 2;
+  FWaterFallRectUpdated:= True;
 end;
 
 { TGridAndAxis }
@@ -1263,6 +1268,8 @@ constructor TSplitedDrawer.Create(AOwner: TComponent);
 begin
   inherited;
   InitColors();
+  FPaintBox:= TPaintBox.Create(Self);
+  FPaintBox.Parent:= Chart;
 end;
 
 procedure TSplitedDrawer.DoDraw;
@@ -1274,36 +1281,42 @@ var
   PointEnd: TPointF;
   PointStart0: TPointF;
   PointEnd0: TPointF;
-  AByte: Byte;
   w, h: Integer;
   TempData: TArray<Single>;
   i: Integer;
   AColor: TAlphaColor;
+  asum: Double;
+  aIndex: Integer;
 begin
   inherited;
   With Chart do
   begin
     if ComponentState * [csLoading, csReading] <> [] then
       Exit;
+
+    if FWaterFallRectUpdated then
+    begin
+      if FPaintBox.Position.X <> FWaterFallGridR.Left then
+        FPaintBox.Position.X:= FWaterFallGridR.Left;
+      if FPaintBox.Position.Y <> FWaterFallGridR.Top then
+        FPaintBox.Position.Y:= FWaterFallGridR.Top;
+      if FPaintBox.Width <> FWaterFallGridR.Width then
+        FPaintBox.Width:= FWaterFallGridR.Width;
+      if FPaintBox.Height <> FWaterFallGridR.Height then
+        FPaintBox.Height:= FWaterFallGridR.Height;
+      FWaterFallRectUpdated:= False;
+    end;
+
     R := FWaterFallGridR;
     HStep := R.Width / (Length(FData) - 1);
 
     SetLength(TempData, Length(FData));
-    // for i := 0 to Length(TempData) - 1 do
-    // begin
-    // TempData[i] := TempByte;
-    // end;
 
-    // Inc(TempByte);
-
-    // Insert(TempData, FWaterFallData, 0);
     if Length(FData) = 0 then
       Exit;
 
     System.Move(FData[0], TempData[0], SizeOf(Single) * Length(FData));
     Insert(TempData, FWaterFallData, 0);
-    // if Length(FWaterFallData) > R.Height then
-    // SetLength(FWaterFallData, Length(FWaterFallData) - 1);
 
     Canvas.Stroke.Kind := TBrushKind.Solid;
 
@@ -1311,9 +1324,9 @@ begin
     for ih := 0 to h - 1 do
     begin
       w := Min(Trunc(R.Width), Length(FWaterFallData[ih]));
+      asum:= 0;
       for iw := 0 to w - 2 do
       begin
-        AByte := Trunc(FWaterFallData[ih, iw] * 2.55);
         if iw = 0 then
         begin
           PointStart := TPointF.Create(0, ih);
@@ -1324,27 +1337,20 @@ begin
 
         PointEnd := PointStart;
         PointEnd.X := PointEnd.X + HStep;
-
-        AByte := AByte * 4;
-//        Canvas.Stroke.Color := Wheel(AByte);
-        if Trunc(FWaterFallData[ih, iw] * 800) > Length(FColors) - 1 then
+//        aIndex:=  Trunc(FFallOff[iw] * 10 * Length(FColors));
+        aIndex:=  Trunc(FWaterFallData[ih, iw] * 5 * Length(FColors));
+        if aIndex > Length(FColors) - 1 then
         begin
-          Canvas.Stroke.Color := FColors[Trunc(FWaterFallData[ih, iw] * Length(FColors) - 1)];
+          Canvas.Stroke.Color:= TalphaColors.White;
         end
         else
         begin
-          Canvas.Stroke.Color := FColors[Trunc(FWaterFallData[ih, iw] * 800)];
+          Canvas.Stroke.Color := FColors[aIndex];
         end;
-
-
-
-        // TAlphaColor((AByte shl 16 or AByte shl 8 or AByte) or $FF000000);
-        // Canvas.Stroke.Color:= TAlphaColors.Lime;
-        // Canvas.Stroke.Color:=TAlphaColor(Trunc(FWaterFallData[ih, iw] * $FFFFFF ) and $FFFFFF or $FF000000);
-
         Canvas.DrawLine(PointStart, PointEnd, 1);
-
+        asum:= asum + FWaterFallData[ih, iw];
       end;
+      //CnDebugger.LogMsg(FloatToStr(asum));
     end;
   end;
 
