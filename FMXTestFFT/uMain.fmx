@@ -73,6 +73,13 @@ object Form3: TForm3
     Drawer = SplitedDrawer1
     BKColor = claBlack
     GridBoundColor = claDarkslategray
+    object TPaintBox
+      Position.X = 51.673828125000000000
+      Position.Y = 255.500000000000000000
+      Size.Width = 697.489257812500000000
+      Size.Height = 243.769531250000000000
+      Size.PlatformDefault = False
+    end
   end
   object Panel1: TPanel
     Position.X = 16.000000000000000000

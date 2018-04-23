@@ -236,9 +236,11 @@ type
     FWaterFallData: TArray<TArray<Single>>;
     FColors: TArray<TAlphaColor>;
     FPaintBox: TPaintBox;
+    FWaterFallBmp: TBitmap;
   Public
     Procedure DoDraw; Override;
     constructor Create(AOwner: TComponent); Override;
+    Destructor Destroy; Override;
   End;
 
 procedure Register;
@@ -1270,6 +1272,13 @@ begin
   InitColors();
   FPaintBox:= TPaintBox.Create(Self);
   FPaintBox.Parent:= Chart;
+  FWaterFallBmp:= TBitmap.Create;
+end;
+
+destructor TSplitedDrawer.Destroy;
+begin
+  FreeAndNil(FWaterFallBmp);
+  inherited;
 end;
 
 procedure TSplitedDrawer.DoDraw;
@@ -1293,7 +1302,8 @@ begin
   begin
     if ComponentState * [csLoading, csReading] <> [] then
       Exit;
-
+    if FPaintBox.Parent <> Chart then
+      FPaintBox.Parent:= Chart;
     if FWaterFallRectUpdated then
     begin
       if FPaintBox.Position.X <> FWaterFallGridR.Left then
@@ -1304,6 +1314,9 @@ begin
         FPaintBox.Width:= FWaterFallGridR.Width;
       if FPaintBox.Height <> FWaterFallGridR.Height then
         FPaintBox.Height:= FWaterFallGridR.Height;
+
+      FWaterFallBmp.Width:= Ceil(FWaterFallGridR.Width);
+      FWaterFallBmp.Height:= Ceil(FWaterFallGridR.Height);
       FWaterFallRectUpdated:= False;
     end;
 
@@ -1318,40 +1331,57 @@ begin
     System.Move(FData[0], TempData[0], SizeOf(Single) * Length(FData));
     Insert(TempData, FWaterFallData, 0);
 
-    Canvas.Stroke.Kind := TBrushKind.Solid;
+    FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
+//    FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
 
-    h := Min(Trunc(R.Height), Length(FWaterFallData));
-    for ih := 0 to h - 1 do
-    begin
-      w := Min(Trunc(R.Width), Length(FWaterFallData[ih]));
-      asum:= 0;
-      for iw := 0 to w - 2 do
+    FWaterFallBmp.Canvas.BeginScene();
+    try
+      h := Min(Trunc(R.Height), Length(FWaterFallData));
+      for ih := 0 to h - 1 do
       begin
-        if iw = 0 then
+        w := Min(Trunc(R.Width), Length(FWaterFallData[ih]));
+        asum:= 0;
+        for iw := 0 to w - 2 do
         begin
-          PointStart := TPointF.Create(0, ih);
-          PointStart.offset(R.TopLeft);
-        end
-        else
-          PointStart := PointEnd;
+          if iw = 0 then
+          begin
+            PointStart := TPointF.Create(0, ih);
+  //          PointStart.offset(R.TopLeft);
+          end
+          else
+            PointStart := PointEnd;
 
-        PointEnd := PointStart;
-        PointEnd.X := PointEnd.X + HStep;
-//        aIndex:=  Trunc(FFallOff[iw] * 10 * Length(FColors));
-        aIndex:=  Trunc(FWaterFallData[ih, iw] * 5 * Length(FColors));
-        if aIndex > Length(FColors) - 1 then
-        begin
-          Canvas.Stroke.Color:= TalphaColors.White;
-        end
-        else
-        begin
-          Canvas.Stroke.Color := FColors[aIndex];
+          PointEnd := PointStart;
+          PointEnd.X := PointEnd.X + HStep;
+  //        aIndex:=  Trunc(FFallOff[iw] * 10 * Length(FColors));
+          aIndex:=  Trunc(FWaterFallData[ih, iw] * 5 * Length(FColors));
+          With FWaterFallBmp do
+          begin
+            if aIndex > Length(FColors) - 1 then
+            begin
+              Canvas.Stroke.Color:= TalphaColors.White;
+            end
+            else
+            begin
+              Canvas.Stroke.Color := FColors[aIndex];
+            end;
+            Canvas.DrawLine(PointStart, PointEnd, 1);
+//  //          FPaintBox.Canvas.DrawLine(PointStart, PointEnd, 1);
+//            asum:= asum + FWaterFallData[ih, iw];
+          end;
         end;
-        Canvas.DrawLine(PointStart, PointEnd, 1);
-        asum:= asum + FWaterFallData[ih, iw];
+        if ih > 100 then Exit;;
+//        //CnDebugger.LogMsg(FloatToStr(asum));
       end;
-      //CnDebugger.LogMsg(FloatToStr(asum));
+    finally
+      FWaterFallBmp.Canvas.EndScene();
+      FPaintBox.Canvas.DrawBitmap(FWaterFallBmp, TRectF.Create(0, 0, FWaterFallBmp.Width, FWaterFallBmp.Height),
+        FPaintBox.BoundsRect,   1, True);
     end;
+
+
+//    FWaterFallBmp.SaveToFile('d:\123.png');
+
   end;
 
 end;
