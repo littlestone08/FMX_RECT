@@ -75,13 +75,32 @@ object Form3: TForm3
     GridBoundColor = claDarkslategray
   end
   object Panel1: TPanel
-    Position.X = 248.000000000000000000
+    Position.X = 16.000000000000000000
+    Size.Width = 361.000000000000000000
+    Size.Height = 17.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 15
+    OnMouseDown = Panel1MouseDown
+    OnPaint = Panel1Paint
+  end
+  object Panel2: TPanel
+    Position.X = 576.000000000000000000
+    Size.Width = 361.000000000000000000
+    Size.Height = 17.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 14
+    OnMouseDown = Panel1MouseDown
+    OnPaint = Panel2Paint
+  end
+  object Panel3: TPanel
+    Position.X = 16.000000000000000000
+    Position.Y = 16.000000000000000000
     Size.Width = 361.000000000000000000
     Size.Height = 17.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 13
     OnMouseDown = Panel1MouseDown
-    OnPaint = Panel1Paint
+    OnPaint = Panel3Paint
   end
   object Test1: TTest
     Left = 40

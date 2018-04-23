@@ -40,8 +40,6 @@ object Form1: TForm1
     Caption = #25171#24320
     TabOrder = 0
     OnClick = Button1Click
-    ExplicitLeft = 109
-    ExplicitTop = 117
   end
   object Button2: TButton
     Left = 451
@@ -52,8 +50,6 @@ object Form1: TForm1
     Caption = #25773#25918
     TabOrder = 1
     OnClick = Button2Click
-    ExplicitLeft = 206
-    ExplicitTop = 117
   end
   object Button3: TButton
     Left = 645
@@ -64,8 +60,6 @@ object Form1: TForm1
     Caption = #26242#20572
     TabOrder = 2
     OnClick = Button3Click
-    ExplicitLeft = 303
-    ExplicitTop = 117
   end
   object OpenDialog1: TOpenDialog
     FileName = 'D:\WORK170908\PCIeReceiver\Test\acs_test\res\*.wav'
