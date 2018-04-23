@@ -236,6 +236,7 @@ type
     FWaterFallData: TArray<TArray<Single>>;
     FColors: TArray<TAlphaColor>;
     FWaterFallBmp: TBitmap;
+    FWaterFallBmpOld: TBitmap;
   Public
     Procedure DoDraw; Override;
     constructor Create(AOwner: TComponent); Override;
@@ -1270,10 +1271,12 @@ begin
   inherited;
   InitColors();
   FWaterFallBmp:= TBitmap.Create;
+  FWaterFallBmpOld:= Tbitmap.Create;
 end;
 
 destructor TSplitedDrawer.Destroy;
 begin
+  FreeAndNil(FWaterFallBmpOld);
   FreeAndNil(FWaterFallBmp);
   inherited;
 end;
@@ -1301,10 +1304,9 @@ begin
       Exit;
     if FWaterFallRectUpdated then
     begin
-
-
       FWaterFallBmp.Width:= Ceil(FWaterFallGridR.Width);
       FWaterFallBmp.Height:= Ceil(FWaterFallGridR.Height);
+      FWaterFallBmpOld.Assign(FWaterFallBmp);
       FWaterFallRectUpdated:= False;
     end;
 
@@ -1322,8 +1324,11 @@ begin
     FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
 //    FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
 
+
     FWaterFallBmp.Canvas.BeginScene();
     try
+
+
       h := Min(Trunc(R.Height), Length(FWaterFallData));
       for ih := 0 to h - 1 do
       begin
@@ -1358,11 +1363,15 @@ begin
 //            asum:= asum + FWaterFallData[ih, iw];
           end;
         end;
-//        if ih > 100 then Exit;;
+        if ih > 100 then Exit;;
 //        //CnDebugger.LogMsg(FloatToStr(asum));
       end;
     finally
       FWaterFallBmp.Canvas.EndScene();
+      FWaterFallBmp.CopyFromBitmap(FWaterFallBmpOld,
+            TRect.Create(0, 0, FWaterFallBmpOld.Width, FWaterFallBmpOld.Height - 1),
+            0, 1);
+      FWaterFallBmpOld.Assign(FWaterFallBmp);
       Canvas.DrawBitmap(FWaterFallBmp, TRectF.Create(0, 0, FWaterFallBmp.Width, FWaterFallBmp.Height),
         FWaterFallGridR,   1, True);
     end;

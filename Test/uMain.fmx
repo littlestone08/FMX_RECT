@@ -43,7 +43,7 @@ object Form3: TForm3
   end
   object SignalChart1: TSignalChart
     Anchors = [akLeft, akTop, akRight, akBottom]
-    Position.X = 112.000000000000000000
+    Position.X = 104.000000000000000000
     Position.Y = 40.000000000000000000
     Size.Width = 736.000000000000000000
     Size.Height = 449.000000000000000000
@@ -70,6 +70,8 @@ object Form3: TForm3
     AxisesView.Bottom.LineColor = claDarkslategray
     AxisesView.Bottom.LabelSuffix = 'MHz'
     Drawer = SignalRectangeDrawer1
+    BKColor = claNull
+    GridBoundColor = claDarkslategray
   end
   object Test1: TTest
     Left = 48
@@ -77,6 +79,11 @@ object Form3: TForm3
     save = '{1D8C3D07-29A9-4779-A099-32A8691EEA69}'
   end
   object SignalRectangeDrawer1: TSignalRectangeDrawer
+    Chart = SignalChart1
+    PeakDecrement = 0.001000000047497451
+    FalloffDecrement = 0.004999999888241291
+    FalloffVisible = True
+    PeakVisible = True
     Left = 48
     Top = 352
   end
