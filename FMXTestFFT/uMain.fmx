@@ -117,8 +117,8 @@ object Form3: TForm3
   end
   object SplitedDrawer1: TSplitedDrawer
     Chart = SignalChart1
-    PeakDecrement = 0.100000001490116100
-    FalloffDecrement = 0.500000000000000000
+    PeakDecrement = 0.001000000047497451
+    FalloffDecrement = 0.004999999888241291
     FalloffVisible = True
     PeakVisible = True
     Left = 48

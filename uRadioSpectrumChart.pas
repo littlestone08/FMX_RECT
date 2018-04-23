@@ -1053,8 +1053,8 @@ end;
 constructor TSignalRectangeDrawer.Create(AOwner: TComponent);
 begin
   inherited;
-  FFalloffDecrement := 0.5;
-  FPeakDecrement := 0.1;
+  FFalloffDecrement := 0.005;
+  FPeakDecrement := 0.001;
   FPeakVisible := True;
   FFalloffVisible := True;
 
@@ -1109,8 +1109,7 @@ begin
       end;
     end;
     HStep := FGraphicGridR.Width / (Length(FData) - 1);
-    VStep := FGraphicGridR.Height /
-      (FAxisesData.Left.MaxValue - FAxisesData.Left.MinValue + 1);
+    VStep := FGraphicGridR.Height ;
 
     ACanvas := Canvas;
     ACanvas.Stroke.Color := TAlphaColors.Black;
@@ -1121,7 +1120,7 @@ begin
 
     for i := 0 to nCount - 1 do
     begin
-      FalloffR := TRectF.Create(0, FGraphicGridR.Height - VStep * FFallOff[i],
+      FalloffR := TRectF.Create(0, FGraphicGridR.Height * (1 -  FFallOff[i]),
         HStep, FGraphicGridR.Height - 0);
 
       FalloffR.offset((i - 0.5) * HStep, 0);
@@ -1136,13 +1135,16 @@ begin
       PeakR := FalloffR;
       if FalloffVisible then
       begin
-        ACanvas.DrawRect(FalloffR, 0, 0, [], 1);
-        FalloffR.Inflate(-0.5, -0.5);
+        if (FalloffR.Width > 2) then
+        begin
+          ACanvas.DrawRect(FalloffR, 0, 0, [], 1);
+          FalloffR.Inflate(-0.5, -0.5);
+        end;
         ACanvas.FillRect(FalloffR, 0, 0, [], 1);
       end;
       if PeakVisible then
       begin
-        PeakR.Bottom := FGraphicGridR.Height - VStep * FPeaks[i] +
+        PeakR.Bottom := FGraphicGridR.Height * (1 -  FPeaks[i]) +
           FGraphicGridR.Top;
         PeakR.Top := PeakR.Bottom - 1;
         ACanvas.FillRect(PeakR, 0, 0, [], 1);
