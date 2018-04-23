@@ -239,11 +239,11 @@ type
   End;
 
 procedure Register;
-Procedure spectral_color(var R, G, B: Single; l: Single);
+
 implementation
 
 uses
-  System.Diagnostics; // , CnDebug;
+  System.Diagnostics, SpectraLibrary; // , CnDebug;
 
 { TSpectrumChart }
 
@@ -1237,110 +1237,25 @@ begin
   end;
 end;
 
-
-// l is the wavelength in [nm] usable valueas are l = < 400.0 , 700.0 >
-// r,g,b are returning color components in range < 0.0 , 1.0 >
-
-
-// void spectral_color(double &r,double &g,double &b,double l) // RGB <0,1> <- lambda l <400,700> [nm]
-// {
-// double t;  r=0.0; g=0.0; b=0.0;
-// if ((l>=400.0)&&(l<410.0)) { t=(l-400.0)/(410.0-400.0); r=    +(0.33*t)-(0.20*t*t); }
-// else if ((l>=410.0)&&(l<475.0)) { t=(l-410.0)/(475.0-410.0); r=0.14         -(0.13*t*t); }
-// else if ((l>=545.0)&&(l<595.0)) { t=(l-545.0)/(595.0-545.0); r=    +(1.98*t)-(     t*t); }
-// else if ((l>=595.0)&&(l<650.0)) { t=(l-595.0)/(650.0-595.0); r=0.98+(0.06*t)-(0.40*t*t); }
-// else if ((l>=650.0)&&(l<700.0)) { t=(l-650.0)/(700.0-650.0); r=0.65-(0.84*t)+(0.20*t*t); }
-// if ((l>=415.0)&&(l<475.0)) { t=(l-415.0)/(475.0-415.0); g=             +(0.80*t*t); }
-// else if ((l>=475.0)&&(l<590.0)) { t=(l-475.0)/(590.0-475.0); g=0.8 +(0.76*t)-(0.80*t*t); }
-// else if ((l>=585.0)&&(l<639.0)) { t=(l-585.0)/(639.0-585.0); g=0.84-(0.84*t)           ; }
-// if ((l>=400.0)&&(l<475.0)) { t=(l-400.0)/(475.0-400.0); b=    +(2.20*t)-(1.50*t*t); }
-// else if ((l>=475.0)&&(l<560.0)) { t=(l-475.0)/(560.0-475.0); b=0.7 -(     t)+(0.30*t*t); }
-// }
-
-Procedure spectral_color(var R, G, B: Single; l: Single);
-// RGB <0,1> <- lambda l <400,700> [nm]
-var
-  t: Single;
-begin
-  R := 0.0;
-  G := 0.0;
-  B := 0.0;
-  if ((l >= 400.0) and (l < 410.0)) then
-  begin
-    t := (l - 400.0) / (410.0 - 400.0);
-    R := +(0.33 * t) - (0.20 * t * t);
-  end
-  else if ((l >= 410.0) and (l < 475.0)) then
-  begin
-    t := (l - 410.0) / (475.0 - 410.0);
-    R := 0.14 - (0.13 * t * t);
-  end
-  else if ((l >= 545.0) and (l < 595.0)) then
-  begin
-    t := (l - 545.0) / (595.0 - 545.0);
-    R := +(1.98 * t) - (t * t);;
-  end
-  else if ((l >= 595.0) and (l < 650.0)) then
-  begin
-    t := (l - 595.0) / (650.0 - 595.0);
-    R := 0.98 + (0.06 * t) - (0.40 * t * t);
-  end
-  else if ((l >= 650.0) and (l < 700.0)) then
-  begin
-    t := (l - 650.0) / (700.0 - 650.0);
-    R := 0.65 - (0.84 * t) + (0.20 * t * t);
-  end
-  else if ((l >= 415.0) and (l < 475.0)) then
-  begin
-    t := (l - 415.0) / (475.0 - 415.0);
-    G := +(0.80 * t * t);
-  end
-  else if ((l >= 475.0) and (l < 590.0)) then
-  begin
-    t := (l - 475.0) / (590.0 - 475.0);
-    G := 0.8 + (0.76 * t) - (0.80 * t * t);
-  end
-  else if ((l >= 585.0) and (l < 639.0)) then
-  begin
-    t := (l - 585.0) / (639.0 - 585.0);
-    G := 0.84 - (0.84 * t);
-  end
-  else if ((l >= 400.0) and (l < 475.0)) then
-  begin
-    t := (l - 400.0) / (475.0 - 400.0);
-    B := +(2.20 * t) - (1.50 * t * t)
-  end
-  else if ((l >= 475.0) and (l < 560.0)) then
-  begin
-    t := (l - 475.0) / (560.0 - 475.0);
-    B := 0.7 - (t) + (0.30 * t * t)
-  end
-end;
-
 var
   TempByte: Byte;
 
-Procedure  spectrum_to_rgb(wavelength: double; r,g,b: PDouble); stdcall;  external 'specrum32.dll' name '_spectrum_to_rgb@20';
+//Procedure  spectrum_to_rgb(wavelength: double; r,g,b: PDouble); stdcall;  external 'specrum32.dll' name '_spectrum_to_rgb@20';
 constructor TSplitedDrawer.Create(AOwner: TComponent);
   Procedure InitColors;
   var
     ar,ag,ab: double;
     AColor: TAlphaColor;
-    wavelen: double;
+    wavelen: Integer;
   begin
-    wavelen:= 0;
-    while wavelen < 20000 do
+    for wavelen:= WavelengthMinimum to WavelengthMaximum do
     begin
-      spectrum_to_rgb(wavelen, @ar, @ag, @ab);
       With TAlphaColorRec(AColor) do
       begin
-        R:= Round(ar * $FF);
-        G:= Round(ag * $FF);
-        B:= Round(ab * $FF);
         A:= $FF;
+        WavelengthToRGB(waveLen, R, G, B);
       end;
       Insert(AColor, FColors, Length(FColors));
-      wavelen:= wavelen + 50;
     end;
   end;
 begin

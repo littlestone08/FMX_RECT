@@ -33,6 +33,7 @@ requires
   vcl;
 
 contains
-  uRadioSpectrumChart in 'uRadioSpectrumChart.pas';
+  uRadioSpectrumChart in 'uRadioSpectrumChart.pas',
+  SpectraLibrary in 'SpectraLibrary.pas';
 
 end.

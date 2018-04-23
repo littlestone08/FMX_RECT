@@ -47,6 +47,7 @@ type
     Procedure InitRainbow();
     Procedure InitSpectralColors();
     Procedure InitSpectralColors2();
+    Procedure InitSpectralColors3();
   Private
     hs: HSTREAM;
     FFTData: TArray<Single>;
@@ -63,9 +64,11 @@ var
   Form3: TForm3;
 
 implementation
+uses
+  SpectraLibrary;
 
-Procedure spectrum_to_rgb(wavelength: double; r, g, b: PDouble); stdcall;
-  external 'specrum32.dll' name '_spectrum_to_rgb@20';
+//Procedure spectrum_to_rgb(wavelength: double; r, g, b: PDouble); stdcall;
+//  external 'specrum32.dll' name '_spectrum_to_rgb@20';
 
 Procedure spectral_color(var r, g, b: double; L: double);
 // RGB <0,1> <- lambda l <400,700> [nm]
@@ -202,30 +205,12 @@ begin
 end;
 
 procedure TForm3.FormCreate(Sender: TObject);
-var
-  ar, ag, ab: double;
-  AColor: TAlphaColor;
-  wavelen: double;
 begin
   InitRainbow();
 //  InitSpectralColors();
-  InitSpectralColors2();
-  wavelen := 0;
-  while wavelen < 20000 do
-  begin
-    spectrum_to_rgb(wavelen, @ar, @ag, @ab);
-    self.SignalChart1.Drawer := self.SignalRectangeDrawer1;
-    self.SignalChart1.Drawer := self.SplitedDrawer1;
-    With TAlphaColorRec(AColor) do
-    begin
-      r := Round(ar * $FF);
-      g := Round(ag * $FF);
-      b := Round(ab * $FF);
-      A := $FF;
-    end;
-    Insert(AColor, FColors, Length(FColors));
-    wavelen := wavelen + 50;
-  end;
+//  InitSpectralColors2();
+  InitSpectralColors3();
+
 
 end;
 
@@ -434,7 +419,7 @@ var
   rr, gg, bb: Double;
   AColor: TAlphaColor;
 begin
-  for w := 400 to 700 do
+  for w := 380 to 780 do
   begin
     if (w >= 380) and (w < 440) then
     begin
@@ -491,6 +476,25 @@ begin
   end;
 end;
 
+procedure TForm3.InitSpectralColors3;
+var
+  w: Integer;
+  rr, gg, bb: Double;
+  AColor: TAlphaColor;
+begin
+  for w := 380 to 780 do
+  begin
+
+    With TAlphaColorRec(AColor) do
+    begin
+      WavelengthToRGB(w, R, G, B);
+      A:= $FF;
+    end;
+
+    Insert(AColor, FSpectralColors, Length(FSpectralColors));
+  end;
+end;
+
 procedure TForm3.Timer1Timer(Sender: TObject);
 var
   i: Integer;
@@ -502,7 +506,7 @@ begin
   BASS_ChannelGetData(hs, FFTData, BASS_DATA_FFT512);
   for i := 0 to Length(FFTData) - 1 do
   begin
-    FFTData[i] := FFTData[i] * 100;
+    FFTData[i] := FFTData[i];
   end;
   SignalChart1.DrawData(FFTData);
   Caption := 'FPS: ' + IntToStr(SignalChart1.FPS);

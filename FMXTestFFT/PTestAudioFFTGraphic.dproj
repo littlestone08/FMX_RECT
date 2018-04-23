@@ -173,6 +173,7 @@
             <Form>Form3</Form>
         </DCCReference>
         <DCCReference Include="..\TestFFT\bass.pas"/>
+        <DCCReference Include="SpectraLibrary.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
