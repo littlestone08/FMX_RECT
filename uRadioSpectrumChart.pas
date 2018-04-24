@@ -1336,6 +1336,8 @@ begin
     FWaterFallBmp.Canvas.BeginScene();
     try
       h := Min(Trunc(R.Height), Length(FWaterFallData));
+      if h > 2 then
+        h:= 2;
       for ih := 0 to h - 1 do
       begin
         w := Min(Trunc(R.Width), Length(FWaterFallData[ih]));
@@ -1356,9 +1358,12 @@ begin
           aIndex:=  Trunc(FWaterFallData[ih, iw] * 5 * Length(FColors));
           With FWaterFallBmp do
           begin
-            if aIndex > Length(FColors) - 1 then
+//            if (aIndex > Length(FColors) - 1) then
+            if (aIndex > Length(FColors) - 1) or (aIndex < 0) then
             begin
               Canvas.Stroke.Color:= TalphaColors.White;
+              if aIndex < 0 then
+                CnDebugger.LogMsg('FUCK');
             end
             else
             begin
@@ -1370,8 +1375,6 @@ begin
 
           end;
         end;
-        if ih > 1 then Exit;
-//        //CnDebugger.LogMsg(FloatToStr(asum));
       end;
     finally
 
