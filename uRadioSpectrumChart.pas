@@ -1378,12 +1378,9 @@ begin
         EndScene();
       end;
     end;
-//    FWaterFallBmp.SaveToFile('d:\1.png');
     Canvas.DrawBitmap(FWaterFallBmp, FWaterFallBmp.Bounds,
           FWaterFallGridR,
           1, True);
-
-
   end;
 
 end;
