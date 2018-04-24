@@ -166,9 +166,10 @@ end;
 procedure TForm3.Button3Click(Sender: TObject);
 const
   // SoneFile: AnsiString = 'C:\Users\mei\Desktop\AUDIO\song1.wav';
+//  SoneFile: AnsiString =
+//    'C:\Users\mei\Desktop\AUDIO\铁血丹心 (1997 Digital Remaster)_罗文_罗文 - Master Sonic.mp3';
   SoneFile: AnsiString =
-    'C:\Users\mei\Desktop\AUDIO\铁血丹心 (1997 Digital Remaster)_罗文_罗文 - Master Sonic.mp3';
-
+    '.\铁血丹心 (1997 Digital Remaster)_罗文_罗文 - Master Sonic.mp3';
 begin
   BASS_StreamFree(hs);
   hs := BASS_StreamCreateFile(False, PAnsiChar(SoneFile), 0, 0, 0);
