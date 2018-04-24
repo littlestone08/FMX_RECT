@@ -245,7 +245,7 @@ type
 
   TBitmapAccess = Class(TBitmap)
   Public
-    Procedure  CopyFromBitmap2(SrcRect: TRect; DestX, DestY: Integer);
+    Procedure CopyFromBitmap2(SrcRect: TRect; DestX, DestY: Integer);
   End;
 
 procedure Register;
@@ -253,7 +253,7 @@ procedure Register;
 implementation
 
 uses
-  System.Diagnostics, SpectraLibrary , CnDebug;
+  System.Diagnostics, SpectraLibrary, CnDebug;
 
 { TSpectrumChart }
 
@@ -626,12 +626,12 @@ begin
   FGraphicGridR.Bottom := FGraphicGridR.Bottom - FLeftTextR.Height * 0.5 -
     FBottomTextR.Height;
   FGraphicGridR.Right := FGraphicGridR.Right - FBottomTextR.Width * 0.5;
-  FGraphicUpdated:= True;
+  FGraphicUpdated := True;
 
   FWaterFallGridR := FGraphicGridR;
   FWaterFallGridR.Top := FWaterFallRect.Top;
   FWaterFallGridR.Bottom := FWaterFallRect.Bottom - FBottomTextR.Bottom / 2;
-  FWaterFallRectUpdated:= True;
+  FWaterFallRectUpdated := True;
 end;
 
 { TGridAndAxis }
@@ -1070,7 +1070,6 @@ begin
   FPeakVisible := True;
   FFalloffVisible := True;
 
-
 end;
 
 procedure TSignalRectangeDrawer.DoDraw;
@@ -1121,7 +1120,7 @@ begin
       end;
     end;
     HStep := FGraphicGridR.Width / (Length(FData) - 1);
-    VStep := FGraphicGridR.Height ;
+    VStep := FGraphicGridR.Height;
 
     ACanvas := Canvas;
     ACanvas.Stroke.Color := TAlphaColors.Black;
@@ -1132,7 +1131,7 @@ begin
 
     for i := 0 to nCount - 1 do
     begin
-      FalloffR := TRectF.Create(0, FGraphicGridR.Height * (1 -  FFallOff[i]),
+      FalloffR := TRectF.Create(0, FGraphicGridR.Height * (1 - FFallOff[i]),
         HStep, FGraphicGridR.Height - 0);
 
       FalloffR.offset((i - 0.5) * HStep, 0);
@@ -1156,7 +1155,7 @@ begin
       end;
       if PeakVisible then
       begin
-        PeakR.Bottom := FGraphicGridR.Height * (1 -  FPeaks[i]) +
+        PeakR.Bottom := FGraphicGridR.Height * (1 - FPeaks[i]) +
           FGraphicGridR.Top;
         PeakR.Top := PeakR.Bottom - 1;
         ACanvas.FillRect(PeakR, 0, 0, [], 1);
@@ -1254,29 +1253,30 @@ end;
 var
   TempByte: Byte;
 
-//Procedure  spectrum_to_rgb(wavelength: double; r,g,b: PDouble); stdcall;  external 'specrum32.dll' name '_spectrum_to_rgb@20';
+  // Procedure  spectrum_to_rgb(wavelength: double; r,g,b: PDouble); stdcall;  external 'specrum32.dll' name '_spectrum_to_rgb@20';
 constructor TSplitedDrawer.Create(AOwner: TComponent);
   Procedure InitColors;
   var
-    ar,ag,ab: double;
+    ar, ag, ab: double;
     AColor: TAlphaColor;
     wavelen: Integer;
   begin
-    for wavelen:= WavelengthMinimum to WavelengthMaximum do
+    for wavelen := WavelengthMinimum to WavelengthMaximum do
     begin
       With TAlphaColorRec(AColor) do
       begin
-        A:= $FF;
-        WavelengthToRGB(waveLen, R, G, B);
+        A := $FF;
+        WavelengthToRGB(wavelen, R, G, B);
       end;
       Insert(AColor, FColors, Length(FColors));
     end;
   end;
+
 begin
   inherited;
   InitColors();
-  FWaterFallBmp:= TBitmap.Create;
-  FWaterFallBmpOld:= Tbitmap.Create;
+  FWaterFallBmp := TBitmap.Create;
+  FWaterFallBmpOld := TBitmap.Create;
 end;
 
 destructor TSplitedDrawer.Destroy;
@@ -1288,7 +1288,7 @@ end;
 
 procedure TSplitedDrawer.DoDraw;
 var
-  iw, ih: Integer;
+  iw : Integer;
   R: TRectF;
   HStep: Single;
   PointStart: TPointF;
@@ -1299,7 +1299,6 @@ var
   TempData: TArray<Single>;
   i: Integer;
   AColor: TAlphaColor;
-  asum: Double;
   aIndex: Integer;
 begin
   inherited;
@@ -1309,151 +1308,136 @@ begin
       Exit;
     if FWaterFallRectUpdated then
     begin
-      FWaterFallBmp.Width:= Ceil(FWaterFallGridR.Width);
-      FWaterFallBmp.Height:= Ceil(FWaterFallGridR.Height);
+      FWaterFallBmp.Width := Ceil(FWaterFallGridR.Width);
+      FWaterFallBmp.Height := Ceil(FWaterFallGridR.Height);
       FWaterFallBmpOld.Assign(FWaterFallBmp);
-      FWaterFallRectUpdated:= False;
+      FWaterFallRectUpdated := False;
     end;
 
     R := FWaterFallGridR;
     HStep := R.Width / (Length(FData) - 1);
 
     SetLength(TempData, Length(FData));
+    System.Move(FData[0], TempData[0], SizeOf(Single) * Length(FData));
+    Insert(TempData, FWaterFallData, 0);
 
     if Length(FData) = 0 then
       Exit;
 
-    System.Move(FData[0], TempData[0], SizeOf(Single) * Length(FData));
-    Insert(TempData, FWaterFallData, 0);
+    h := Min(Trunc(R.Height), Length(FWaterFallData));
+    if h < 1 then
+      Exit;
 
-    FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
-    FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
 
-    TBitmapAccess(FWaterFallBmp).CopyFromBitmap2(
-          TRect.Create(0, 0, FWaterFallBmp.Width-1, FWaterFallBmp.Height - 2),
-          0, 1);
 
-    FWaterFallBmp.Canvas.BeginScene();
-    try
-      h := Min(Trunc(R.Height), Length(FWaterFallData));
-      if h > 2 then
-        h:= 2;
-      for ih := 0 to h - 1 do
-      begin
-        w := Min(Trunc(R.Width), Length(FWaterFallData[ih]));
-        asum:= 0;
+
+
+    TBitmapAccess(FWaterFallBmp).CopyFromBitmap2
+      (TRect.Create(0, 0, FWaterFallBmp.Width - 1, FWaterFallBmp.Height -
+      2), 0, 1);
+
+    With FWaterFallBmp.Canvas do
+    begin
+      BeginScene();
+      try
+        FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
+        FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
+        w := Min(Trunc(R.Width), Length(FWaterFallData[0]));
         for iw := 0 to w - 2 do
         begin
           if iw = 0 then
           begin
-            PointStart := TPointF.Create(0, ih);
-//            PointStart.offset(R.TopLeft);
+            //GPU方式和Direct2D方式，两种情况下面BITMAP的TOP座标似乎是不同的，
+            //需要用以下的方式来区分
+            if GlobalUseGPUCanvas then
+              PointStart := TPointF.Create(0,  1)
+            else
+              PointStart := TPointF.Create(0,  0);
+
+            PointStart.offset(0, 1); //为什么要这样偏移才能绘出图来？，找出原因
           end
           else
             PointStart := PointEnd;
 
           PointEnd := PointStart;
           PointEnd.X := PointEnd.X + HStep;
-  //        aIndex:=  Trunc(FFallOff[iw] * 10 * Length(FColors));
-          aIndex:=  Trunc(FWaterFallData[ih, iw] * 5 * Length(FColors));
-          With FWaterFallBmp do
+
+          aIndex := Trunc(FWaterFallData[0, iw] * 5 * Length(FColors)); //扩大颜色范围
+
+          if (aIndex > Length(FColors) - 1) or (aIndex < 0) then
           begin
-//            if (aIndex > Length(FColors) - 1) then
-            if (aIndex > Length(FColors) - 1) or (aIndex < 0) then
-            begin
-              Canvas.Stroke.Color:= TalphaColors.White;
-              if aIndex < 0 then
-                CnDebugger.LogMsg('FUCK');
-            end
-            else
-            begin
-              Canvas.Stroke.Color := FColors[aIndex];
-            end;
-            Canvas.DrawLine(PointStart, PointEnd, 1);
-//  //          FPaintBox.Canvas.DrawLine(PointStart, PointEnd, 1);
-//            asum:= asum + FWaterFallData[ih, iw];
-
+            Stroke.Color := TAlphaColors.White;
+          end
+          else
+          begin
+            Stroke.Color := FColors[aIndex];
           end;
+          DrawLine(PointStart, PointEnd, 1);
         end;
+      finally
+        EndScene();
       end;
-    finally
-
-      FWaterFallBmp.Canvas.EndScene();
-//      FWaterFallBmp.CopyFromBitmap(FWaterFallBmpOld,
-//            TRect.Create(0, 0, FWaterFallBmpOld.Width, FWaterFallBmpOld.Height - 1),
-//            0, 1);
-//      FWaterFallBmpOld.Assign(FWaterFallBmp);
-//      FWaterFallBmp.CopyFromBitmap(FWaterFallBmp,
-//            TRect.Create(0, 0, FWaterFallBmp.Width, FWaterFallBmp.Height - 1),
-//            0, 1);
-//      TBitmapAccess(FWaterFallBmp).CopyFromBitmap2(
-//            TRect.Create(0, 0, FWaterFallBmp.Width, FWaterFallBmp.Height - 1),
-//            0, 1);
-
-      Canvas.DrawBitmap(FWaterFallBmp, TRectF.Create(0, 0, FWaterFallBmp.Width, FWaterFallBmp.Height),
-        FWaterFallGridR,   1, True);
     end;
+//    FWaterFallBmp.SaveToFile('d:\1.png');
+    Canvas.DrawBitmap(FWaterFallBmp, FWaterFallBmp.Bounds,
+          FWaterFallGridR,
+          1, True);
 
-
-//    FWaterFallBmp.SaveToFile('d:\123.png');
 
   end;
 
 end;
 
-
-
 { TBitmapAccess }
 
-procedure TBitmapAccess.CopyFromBitmap2(SrcRect: TRect;
-  DestX, DestY: Integer);
+procedure TBitmapAccess.CopyFromBitmap2(SrcRect: TRect; DestX, DestY: Integer);
 var
-  I, MoveBytes: Integer;
+  i, MoveBytes: Integer;
   DestData: TBitmapData;
 begin
   if Map(TMapAccess.ReadWrite, DestData) then
-  try
-    if SrcRect.Left < 0 then
-    begin
-      Dec(DestX, SrcRect.Left);
-      SrcRect.Left := 0;
-    end;
-    if SrcRect.Top < 0 then
-    begin
-      Dec(DestY, SrcRect.Top);
-      SrcRect.Top := 0;
-    end;
-    SrcRect.Right := Min(SrcRect.Right, Width);
-    SrcRect.Bottom := Min(SrcRect.Bottom, Height);
-    if DestX < 0 then
-    begin
-      Dec(SrcRect.Left, DestX);
-      DestX := 0;
-    end;
-    if DestY < 0 then
-    begin
-      Dec(SrcRect.Top, DestY);
-      DestY := 0;
-    end;
-    if DestX + SrcRect.Width > Width then
-      SrcRect.Width := Width - DestX;
-    if DestY + SrcRect.Height > Height then
-      SrcRect.Height := Height - DestY;
+    try
+      if SrcRect.Left < 0 then
+      begin
+        Dec(DestX, SrcRect.Left);
+        SrcRect.Left := 0;
+      end;
+      if SrcRect.Top < 0 then
+      begin
+        Dec(DestY, SrcRect.Top);
+        SrcRect.Top := 0;
+      end;
+      SrcRect.Right := Min(SrcRect.Right, Width);
+      SrcRect.Bottom := Min(SrcRect.Bottom, Height);
+      if DestX < 0 then
+      begin
+        Dec(SrcRect.Left, DestX);
+        DestX := 0;
+      end;
+      if DestY < 0 then
+      begin
+        Dec(SrcRect.Top, DestY);
+        DestY := 0;
+      end;
+      if DestX + SrcRect.Width > Width then
+        SrcRect.Width := Width - DestX;
+      if DestY + SrcRect.Height > Height then
+        SrcRect.Height := Height - DestY;
 
-    if (SrcRect.Left < SrcRect.Right) and (SrcRect.Top < SrcRect.Bottom) then
-    begin
-      MoveBytes := SrcRect.Width * DestData.BytesPerPixel;
-      for I := SrcRect.Height - 1 Downto 0 do
-        Move(DestData.GetPixelAddr(SrcRect.Left, SrcRect.Top + I)^,
-          DestData.GetPixelAddr(DestX, DestY + I)^, MoveBytes);
+      if (SrcRect.Left < SrcRect.Right) and (SrcRect.Top < SrcRect.Bottom) then
+      begin
+        MoveBytes := SrcRect.Width * DestData.BytesPerPixel;
+        for i := SrcRect.Height - 1 Downto 0 do
+          Move(DestData.GetPixelAddr(SrcRect.Left, SrcRect.Top + i)^,
+            DestData.GetPixelAddr(DestX, DestY + i)^, MoveBytes);
+      end;
+    finally
+      Unmap(DestData);
     end;
-  finally
-    Unmap(DestData);
-  end;
 end;
 
 initialization
 
-GlobalUseGPUCanvas := True;
- ;
+GlobalUseGPUCanvas := True;;
+
 end.
