@@ -1328,10 +1328,6 @@ begin
     if h < 1 then
       Exit;
 
-
-
-
-
     TBitmapAccess(FWaterFallBmp).CopyFromBitmap2
       (TRect.Create(0, 0, FWaterFallBmp.Width - 1, FWaterFallBmp.Height -
       2), 0, 1);
