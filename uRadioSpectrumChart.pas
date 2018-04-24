@@ -252,7 +252,7 @@ procedure Register;
 implementation
 
 uses
-  System.Diagnostics, SpectraLibrary;//, CnDebug;
+  System.Diagnostics, SpectraLibrary; // , CnDebug;
 
 { TSpectrumChart }
 
@@ -1282,10 +1282,9 @@ var
   HStep: Single;
   PointStart: TPointF;
   PointEnd: TPointF;
-  iw, w: Integer;
+  i, w: Integer;
   ColorIndex: Cardinal;
 var
-  i: Integer;
   iPixel: Integer;
   BmpData: TBitmapData;
   MoveBytes: Integer;
@@ -1338,103 +1337,77 @@ begin
           FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
           FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
 
-//           //在最顶上画线
-//           PixelA:= 0;
-//           Ptr:= BmpData.GetPixelAddr(0, 1);
-//           for i := 0 to Length(FData) - 1 do
-//           begin
-//           PixelB:= PixelA;
-//           PixelB:= PixelB + HStep;
-//
-//           ColorIndex := Trunc(FData[i] * 5 * Length(FColors)); // 扩大颜色范围
-//
-//
-//           if ColorIndex > Length(FColors) - 1 then
-//           AColor:= TAlphaColors.White
-//           else
-//           AColor:= FColors[ColorIndex];
-//
-//           for iPixel := Ceil(PixelA) to Ceil(PixelB) do
-//           begin
-//           Ptr^:= AColor;
-//           Inc(Ptr);
-//           end;
-//           end;
         finally
           Unmap(BmpData);
         end;
     end;
 
-    with FWaterFallBmp do
-    begin
-      if Map(TMapAccess.ReadWrite, BmpData) then
-      try
-         //在最顶上画线
-         PixelA:= 0;
-         PixelB:= 0;
-         for i := 0 to Length(FData) - 1 do
-         begin
-           PixelA:= PixelB;
-           PixelB:= PixelB + HStep;
+    // with FWaterFallBmp do
+    // begin
+    // if Map(TMapAccess.ReadWrite, BmpData) then
+    // try
+    // //在最顶上画线
+    // PixelA:= 0;
+    // PixelB:= 0;
+    // for i := 0 to Length(FData) - 1 do
+    // begin
+    // PixelA:= PixelB;
+    // PixelB:= PixelB + HStep;
+    //
+    // ColorIndex := Trunc(FData[i] * 5 * Length(FColors)); // 扩大颜色范围
+    /// /           ColorIndex := Trunc(0.8 * Length(FColors)); // 扩大颜色范围
+    //
+    // if ColorIndex > Length(FColors) - 1 then
+    // AColor:= TAlphaColors.White
+    // else
+    // AColor:= FColors[ColorIndex];
+    //
+    // for iPixel := Ceil(PixelA) to Ceil(PixelB) do
+    // begin
+    // BmpData.SetPixel(iPixel, 0, AColor);
+    // end;
+    // end;
+    // finally
+    // Unmap(BmpData);
+    // end;
+    // end;
+    // ---------------
+     With FWaterFallBmp.Canvas do
+     begin
+     BeginScene();
+     try
+       FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
+       FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
+       w := Min(Trunc(R.Width), Length(FData));
 
-           ColorIndex := Trunc(FData[i] * 5 * Length(FColors)); // 扩大颜色范围
-//           ColorIndex := Trunc(0.8 * Length(FColors)); // 扩大颜色范围
+            // GPU方式和Direct2D方式，两种情况下面BITMAP的TOP座标似乎是不同的，
+            // 需要用以下的方式来区分
+        if GlobalUseGPUCanvas then
+          PointStart := TPointF.Create(0, 1)
+        else
+          PointStart := TPointF.Create(0, 0);
+        for i := 0 to w - 1 do
+        begin
+          if i > 0 then
+            PointStart := PointEnd;
 
-           if ColorIndex > Length(FColors) - 1 then
-            AColor:= TAlphaColors.White
-           else
-            AColor:= FColors[ColorIndex];
+          PointEnd := PointStart;
+          PointEnd.X := PointEnd.X + HStep;
 
-           for iPixel := Ceil(PixelA) to Ceil(PixelB) do
-           begin
-              BmpData.SetPixel(iPixel, 0, AColor);
-           end;
-         end;
+          ColorIndex := Trunc(FData[i] * 5 * Length(FColors)); // 扩大颜色范围
+
+          if ColorIndex > Length(FColors) - 1 then
+            Stroke.Color := TAlphaColors.White
+          else
+            Stroke.Color := FColors[ColorIndex];
+
+          DrawLine(PointStart, PointEnd, 1);
+        end;
       finally
-        Unmap(BmpData);
+        EndScene();
       end;
     end;
-    // ---------------
-//    With FWaterFallBmp.Canvas do
-//    begin
-//      BeginScene();
-//      try
-//        FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
-//        FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
-//        w := Min(Trunc(R.Width), Length(FData));
-//        for iw := 0 to w - 2 do
-//        begin
-//          if iw = 0 then
-//          begin
-//            // GPU方式和Direct2D方式，两种情况下面BITMAP的TOP座标似乎是不同的，
-//            // 需要用以下的方式来区分
-//            if GlobalUseGPUCanvas then
-//              PointStart := TPointF.Create(0, 1)
-//            else
-//              PointStart := TPointF.Create(0, 0);
-//          end
-//          else
-//            PointStart := PointEnd;
-//
-//          PointEnd := PointStart;
-//          PointEnd.X := PointEnd.X + HStep;
-//
-//          ColorIndex := Trunc(FData[iw] * 5 * Length(FColors)); // 扩大颜色范围
-//
-//          if (ColorIndex > Length(FColors) - 1) or (ColorIndex < 0) then
-//          begin
-//            Stroke.Color := TAlphaColors.White;
-//          end
-//          else
-//          begin
-//            Stroke.Color := FColors[ColorIndex];
-//          end;
-//          DrawLine(PointStart, PointEnd, 1);
-//        end;
-//      finally
-//        EndScene();
-//      end;
-//    end;
+
     Canvas.DrawBitmap(FWaterFallBmp, FWaterFallBmp.Bounds,
       FWaterFallGridR, 1, True);
   end;

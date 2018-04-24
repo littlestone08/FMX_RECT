@@ -28,7 +28,7 @@ object Form3: TForm3
   end
   object Timer1: TTimer
     Enabled = False
-    Interval = 5
+    Interval = 40
     OnTimer = Timer1Timer
     Left = 56
     Top = 40
@@ -124,8 +124,8 @@ object Form3: TForm3
   end
   object SplitedDrawer1: TSplitedDrawer
     Chart = SignalChart1
-    PeakDecrement = 0.001000000047497451
-    FalloffDecrement = 0.004999999888241291
+    PeakDecrement = 0.004999999888241291
+    FalloffDecrement = 0.009999999776482582
     FalloffVisible = True
     PeakVisible = True
     Left = 48
