@@ -243,6 +243,11 @@ type
     Destructor Destroy; Override;
   End;
 
+  TBitmapAccess = Class(TBitmap)
+  Public
+    Procedure  CopyFromBitmap2(SrcRect: TRect; DestX, DestY: Integer);
+  End;
+
 procedure Register;
 
 implementation
@@ -1322,13 +1327,14 @@ begin
     Insert(TempData, FWaterFallData, 0);
 
     FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
-//    FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
+    FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
 
+    TBitmapAccess(FWaterFallBmp).CopyFromBitmap2(
+          TRect.Create(0, 0, FWaterFallBmp.Width-1, FWaterFallBmp.Height - 2),
+          0, 1);
 
     FWaterFallBmp.Canvas.BeginScene();
     try
-
-
       h := Min(Trunc(R.Height), Length(FWaterFallData));
       for ih := 0 to h - 1 do
       begin
@@ -1361,17 +1367,26 @@ begin
             Canvas.DrawLine(PointStart, PointEnd, 1);
 //  //          FPaintBox.Canvas.DrawLine(PointStart, PointEnd, 1);
 //            asum:= asum + FWaterFallData[ih, iw];
+
           end;
         end;
-        if ih > 100 then Exit;;
+        if ih > 1 then Exit;
 //        //CnDebugger.LogMsg(FloatToStr(asum));
       end;
     finally
+
       FWaterFallBmp.Canvas.EndScene();
-      FWaterFallBmp.CopyFromBitmap(FWaterFallBmpOld,
-            TRect.Create(0, 0, FWaterFallBmpOld.Width, FWaterFallBmpOld.Height - 1),
-            0, 1);
-      FWaterFallBmpOld.Assign(FWaterFallBmp);
+//      FWaterFallBmp.CopyFromBitmap(FWaterFallBmpOld,
+//            TRect.Create(0, 0, FWaterFallBmpOld.Width, FWaterFallBmpOld.Height - 1),
+//            0, 1);
+//      FWaterFallBmpOld.Assign(FWaterFallBmp);
+//      FWaterFallBmp.CopyFromBitmap(FWaterFallBmp,
+//            TRect.Create(0, 0, FWaterFallBmp.Width, FWaterFallBmp.Height - 1),
+//            0, 1);
+//      TBitmapAccess(FWaterFallBmp).CopyFromBitmap2(
+//            TRect.Create(0, 0, FWaterFallBmp.Width, FWaterFallBmp.Height - 1),
+//            0, 1);
+
       Canvas.DrawBitmap(FWaterFallBmp, TRectF.Create(0, 0, FWaterFallBmp.Width, FWaterFallBmp.Height),
         FWaterFallGridR,   1, True);
     end;
@@ -1384,6 +1399,55 @@ begin
 end;
 
 
+
+{ TBitmapAccess }
+
+procedure TBitmapAccess.CopyFromBitmap2(SrcRect: TRect;
+  DestX, DestY: Integer);
+var
+  I, MoveBytes: Integer;
+  DestData: TBitmapData;
+begin
+  if Map(TMapAccess.ReadWrite, DestData) then
+  try
+    if SrcRect.Left < 0 then
+    begin
+      Dec(DestX, SrcRect.Left);
+      SrcRect.Left := 0;
+    end;
+    if SrcRect.Top < 0 then
+    begin
+      Dec(DestY, SrcRect.Top);
+      SrcRect.Top := 0;
+    end;
+    SrcRect.Right := Min(SrcRect.Right, Width);
+    SrcRect.Bottom := Min(SrcRect.Bottom, Height);
+    if DestX < 0 then
+    begin
+      Dec(SrcRect.Left, DestX);
+      DestX := 0;
+    end;
+    if DestY < 0 then
+    begin
+      Dec(SrcRect.Top, DestY);
+      DestY := 0;
+    end;
+    if DestX + SrcRect.Width > Width then
+      SrcRect.Width := Width - DestX;
+    if DestY + SrcRect.Height > Height then
+      SrcRect.Height := Height - DestY;
+
+    if (SrcRect.Left < SrcRect.Right) and (SrcRect.Top < SrcRect.Bottom) then
+    begin
+      MoveBytes := SrcRect.Width * DestData.BytesPerPixel;
+      for I := SrcRect.Height - 1 Downto 0 do
+        Move(DestData.GetPixelAddr(SrcRect.Left, SrcRect.Top + I)^,
+          DestData.GetPixelAddr(DestX, DestY + I)^, MoveBytes);
+    end;
+  finally
+    Unmap(DestData);
+  end;
+end;
 
 initialization
 
