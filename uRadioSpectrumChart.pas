@@ -233,7 +233,6 @@ type
 
   TSplitedDrawer = Class(TSignalRectangeDrawer)
   Private
-    FWaterFallData: TArray<TArray<Single>>;
     FColors: TArray<TAlphaColor>;
     FWaterFallBmp: TBitmap;
     FWaterFallBmpOld: TBitmap;
@@ -1296,16 +1295,20 @@ var
   PointStart0: TPointF;
   PointEnd0: TPointF;
   w, h: Integer;
-  TempData: TArray<Single>;
+//  TempData: TArray<Single>;
   i: Integer;
   AColor: TAlphaColor;
   aIndex: Integer;
 begin
   inherited;
+
   With Chart do
   begin
     if ComponentState * [csLoading, csReading] <> [] then
       Exit;
+    if Length(FData) = 0 then
+      Exit;
+
     if FWaterFallRectUpdated then
     begin
       FWaterFallBmp.Width := Ceil(FWaterFallGridR.Width);
@@ -1317,17 +1320,6 @@ begin
     R := FWaterFallGridR;
     HStep := R.Width / (Length(FData) - 1);
 
-    SetLength(TempData, Length(FData));
-    System.Move(FData[0], TempData[0], SizeOf(Single) * Length(FData));
-    Insert(TempData, FWaterFallData, 0);
-
-    if Length(FData) = 0 then
-      Exit;
-
-    h := Min(Trunc(R.Height), Length(FWaterFallData));
-    if h < 1 then
-      Exit;
-
     TBitmapAccess(FWaterFallBmp).CopyFromBitmap2
       (TRect.Create(0, 0, FWaterFallBmp.Width - 1, FWaterFallBmp.Height -
       2), 0, 1);
@@ -1338,7 +1330,7 @@ begin
       try
         FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
         FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
-        w := Min(Trunc(R.Width), Length(FWaterFallData[0]));
+        w := Min(Trunc(R.Width), Length(FData));
         for iw := 0 to w - 2 do
         begin
           if iw = 0 then
@@ -1358,7 +1350,7 @@ begin
           PointEnd := PointStart;
           PointEnd.X := PointEnd.X + HStep;
 
-          aIndex := Trunc(FWaterFallData[0, iw] * 5 * Length(FColors)); //À©´óÑÕÉ«·¶Î§
+          aIndex := Trunc(FData[iw] * 5 * Length(FColors)); //À©´óÑÕÉ«·¶Î§
 
           if (aIndex > Length(FColors) - 1) or (aIndex < 0) then
           begin
