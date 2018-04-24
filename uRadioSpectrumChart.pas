@@ -244,7 +244,7 @@ type
 
   TBitmapAccess = Class(TBitmap)
   Public
-    Procedure CopyFromBitmap2(SrcRect: TRect; DestX, DestY: Integer);
+    Procedure MoveDown(SrcY: Integer; DestY: Integer);
   End;
 
 procedure Register;
@@ -321,14 +321,11 @@ procedure TSignalChart.DoCheckSize;
   end;
 
 var
-  w, h: Integer;
   Changed: Boolean;
 begin
   Changed := False;
 
   UpdateGraphicRect;
-  w := Ceil(FGraphicRect.Width);
-  h := Ceil(FGraphicRect.Height);
 
   if FBKGraphic.Width <> Ceil(LocalRect.Width) then
   begin
@@ -1073,7 +1070,7 @@ end;
 
 procedure TSignalRectangeDrawer.DoDraw;
 var
-  HStep, VStep: Single;
+  HStep: Single;
   FalloffR: TRectF;
   PeakR: TRectF;
   i: Integer;
@@ -1119,7 +1116,6 @@ begin
       end;
     end;
     HStep := FGraphicGridR.Width / (Length(FData) - 1);
-    VStep := FGraphicGridR.Height;
 
     ACanvas := Canvas;
     ACanvas.Stroke.Color := TAlphaColors.Black;
@@ -1249,14 +1245,10 @@ begin
   end;
 end;
 
-var
-  TempByte: Byte;
 
-  // Procedure  spectrum_to_rgb(wavelength: double; r,g,b: PDouble); stdcall;  external 'specrum32.dll' name '_spectrum_to_rgb@20';
 constructor TSplitedDrawer.Create(AOwner: TComponent);
   Procedure InitColors;
   var
-    ar, ag, ab: double;
     AColor: TAlphaColor;
     wavelen: Integer;
   begin
@@ -1292,13 +1284,9 @@ var
   HStep: Single;
   PointStart: TPointF;
   PointEnd: TPointF;
-  PointStart0: TPointF;
-  PointEnd0: TPointF;
-  w, h: Integer;
-//  TempData: TArray<Single>;
-  i: Integer;
-  AColor: TAlphaColor;
+  w: Integer;
   aIndex: Integer;
+
 begin
   inherited;
 
@@ -1320,10 +1308,7 @@ begin
     R := FWaterFallGridR;
     HStep := R.Width / (Length(FData) - 1);
 
-    TBitmapAccess(FWaterFallBmp).CopyFromBitmap2
-      (TRect.Create(0, 0, FWaterFallBmp.Width - 1, FWaterFallBmp.Height -
-      2), 0, 1);
-
+    TBitmapAccess(FWaterFallBmp).MoveDown(0, 1);
     With FWaterFallBmp.Canvas do
     begin
       BeginScene();
@@ -1342,7 +1327,7 @@ begin
             else
               PointStart := TPointF.Create(0,  0);
 
-            PointStart.offset(0, 1); //为什么要这样偏移才能绘出图来？，找出原因
+//            PointStart.offset(0, 1); //为什么要这样偏移才能绘出图来？，找出原因
           end
           else
             PointStart := PointEnd;
@@ -1375,54 +1360,36 @@ end;
 
 { TBitmapAccess }
 
-procedure TBitmapAccess.CopyFromBitmap2(SrcRect: TRect; DestX, DestY: Integer);
+procedure TBitmapAccess.MoveDown(SrcY: Integer; DestY: Integer);
 var
-  i, MoveBytes: Integer;
-  DestData: TBitmapData;
+  i: integer;
+  MoveBytes: Integer;
+  BmpData: TBitmapData;
 begin
-  if Map(TMapAccess.ReadWrite, DestData) then
+  if Map(TMapAccess.ReadWrite, BmpData) then
     try
-      if SrcRect.Left < 0 then
       begin
-        Dec(DestX, SrcRect.Left);
-        SrcRect.Left := 0;
-      end;
-      if SrcRect.Top < 0 then
-      begin
-        Dec(DestY, SrcRect.Top);
-        SrcRect.Top := 0;
-      end;
-      SrcRect.Right := Min(SrcRect.Right, Width);
-      SrcRect.Bottom := Min(SrcRect.Bottom, Height);
-      if DestX < 0 then
-      begin
-        Dec(SrcRect.Left, DestX);
-        DestX := 0;
-      end;
-      if DestY < 0 then
-      begin
-        Dec(SrcRect.Top, DestY);
-        DestY := 0;
-      end;
-      if DestX + SrcRect.Width > Width then
-        SrcRect.Width := Width - DestX;
-      if DestY + SrcRect.Height > Height then
-        SrcRect.Height := Height - DestY;
-
-      if (SrcRect.Left < SrcRect.Right) and (SrcRect.Top < SrcRect.Bottom) then
-      begin
-        MoveBytes := SrcRect.Width * DestData.BytesPerPixel;
-        for i := SrcRect.Height - 1 Downto 0 do
-          Move(DestData.GetPixelAddr(SrcRect.Left, SrcRect.Top + i)^,
-            DestData.GetPixelAddr(DestX, DestY + i)^, MoveBytes);
+        if GlobalUseGPUCanvas then
+        begin
+          MoveBytes := Width * BmpData.BytesPerPixel * Height;
+          Move(BmpData.GetPixelAddr(0, SrcY)^,
+            BmpData.GetPixelAddr(0, DestY)^, MoveBytes);
+        end
+        else
+        begin
+          MoveBytes := Width * BmpData.BytesPerPixel;
+          for i := Height - 2 Downto 0 do
+            Move(BmpData.GetPixelAddr(0, SrcY + i)^,
+              BmpData.GetPixelAddr(0, DestY + i)^, MoveBytes);
+        end;
       end;
     finally
-      Unmap(DestData);
+      Unmap(BmpData);
     end;
 end;
 
 initialization
 
-GlobalUseGPUCanvas := True;;
+  GlobalUseGPUCanvas := True;
 
 end.
