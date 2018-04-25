@@ -71,7 +71,7 @@ object Form3: TForm3
     AxisesView.Bottom.LineColor = claDarkslategray
     AxisesView.Bottom.LabelSuffix = 'Hz'
     Drawer = SplitedDrawer1
-    BKColor = claBlack
+    BKColor = claNull
     GridBoundColor = claDarkslategray
     object TPaintBox
       Position.X = 51.673828125000000000
@@ -82,7 +82,7 @@ object Form3: TForm3
     end
   end
   object Panel1: TPanel
-    Position.X = 16.000000000000000000
+    Position.X = 200.000000000000000000
     Size.Width = 361.000000000000000000
     Size.Height = 17.000000000000000000
     Size.PlatformDefault = False
@@ -100,7 +100,7 @@ object Form3: TForm3
     OnPaint = Panel2Paint
   end
   object Panel3: TPanel
-    Position.X = 16.000000000000000000
+    Position.X = 24.000000000000000000
     Position.Y = 16.000000000000000000
     Size.Width = 361.000000000000000000
     Size.Height = 17.000000000000000000
