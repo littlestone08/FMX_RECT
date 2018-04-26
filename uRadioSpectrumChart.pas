@@ -255,7 +255,7 @@ procedure Register;
 implementation
 
 uses
-  System.Diagnostics, SpectraLibrary , FMX.PlatForm, CnDebug;
+  System.Diagnostics, SpectraLibrary, FMX.PlatForm, CnDebug;
 
 { TSpectrumChart }
 
@@ -321,40 +321,42 @@ var
   GMapC: TPointF;
 begin
   inherited;
-  //通过坐标计算是不是在Grid内，再换算成Grid内的轴物理坐标及轴的标称坐标
-  //如果在Grid内，则画十字光标
-  MouseP:= TPointF.Create(X, Y);
+  // 通过坐标计算是不是在Grid内，再换算成Grid内的轴物理坐标及轴的标称坐标
+  // 如果在Grid内，则画十字光标
+  MouseP := TPointF.Create(X, Y);
   if PtInRect(FGraphicGridR, MouseP) then
   begin
-    OffsetP:= MouseP;
-    OffsetP.Offset(-FGraphicGridR.Left, -FGraphicGridR.Top);
+    OffsetP := MouseP;
+    OffsetP.offset(-FGraphicGridR.Left, -FGraphicGridR.Top);
 
 
-//  if FTextService.HasMarkedText and TPlatformServices.Current.SupportsPlatformService(IFMXMouseService, MouseService) then
-//  try
-//    MousePos := ScreenToLocal(MouseService.GetMousePos);
-//    ContentRect := Model.ContentBounds;
-//    MousePos.X := EnsureRange(MousePos.X, ContentRect.Left, ContentRect.Right);
-//    MousePos.Y := EnsureRange(MousePos.Y, ContentRect.Top, ContentRect.Bottom);
-//    MousePos.Offset(-ContentRect.TopLeft);
-//    LCaretPosition := FLineObjects.GetPointPosition(MousePos, False);
-//    FTextService.CaretPosition := TPoint.Create(LCaretPosition.Pos, LCaretPosition.Line);
-//    IMEStateUpdated;
-//  finally
-//    MouseService := nil;
-//  end;
+    // if FTextService.HasMarkedText and TPlatformServices.Current.SupportsPlatformService(IFMXMouseService, MouseService) then
+    // try
+    // MousePos := ScreenToLocal(MouseService.GetMousePos);
+    // ContentRect := Model.ContentBounds;
+    // MousePos.X := EnsureRange(MousePos.X, ContentRect.Left, ContentRect.Right);
+    // MousePos.Y := EnsureRange(MousePos.Y, ContentRect.Top, ContentRect.Bottom);
+    // MousePos.Offset(-ContentRect.TopLeft);
+    // LCaretPosition := FLineObjects.GetPointPosition(MousePos, False);
+    // FTextService.CaretPosition := TPoint.Create(LCaretPosition.Pos, LCaretPosition.Line);
+    // IMEStateUpdated;
+    // finally
+    // MouseService := nil;
+    // end;
 
-    TPlatformServices.Current.SupportsPlatformService(IFMXMouseService, MouseSrv);
+    TPlatformServices.Current.SupportsPlatformService(IFMXMouseService,
+      MouseSrv);
     begin
-      GlobalP:= MouseSrv.GetMousePos;
+      GlobalP := MouseSrv.GetMousePos;
     end;
-    GMapC:= ScreenToLocal(GlobalP);
-    CnDebugger.LogFmt('在范围内: %.2f, %.2f, GlobalPos: %.2f, %.2f, Map: %.2f, %.2f, Mouse: %.2f, %.2f',
+    GMapC := ScreenToLocal(GlobalP);
+    CnDebugger.LogFmt
+      ('在范围内: %.2f, %.2f, GlobalPos: %.2f, %.2f, Map: %.2f, %.2f, Mouse: %.2f, %.2f',
       [OffsetP.X, OffsetP.Y, GlobalP.X, GlobalP.Y, GMapC.X, GMapC.Y, X, Y]);
   end
   else
   begin
-//    CnDebugger.LogMsg('不在范围内');
+    // CnDebugger.LogMsg('不在范围内');
   end;
 end;
 
@@ -572,6 +574,7 @@ procedure TSignalChart.UpdateBitmap;
 
 var
   ACanvas: TCanvas;
+  Clips: TClipRects;
 begin
   inherited;
   // CnDebugger.LogMsg('UpdateBitmap');
@@ -588,42 +591,43 @@ begin
     // CnDebugger.LogMsg('画坐标格');
     ACanvas := FGrid.Canvas;
 
-    ACanvas.BeginScene();
-    try
-      FGrid.Clear(FBKColor);
-      With FAxisesData.Left do
-        DrawGrid(FGrid, CalcuMaxLabel(FGraphicRect, FLeftTextR));
-      With FAxisesData.Bottom do
-        DrawGrid(FGrid, CalcuMaxLabel(FGraphicRect, FBottomTextR));
-    finally
-      ACanvas.EndScene();
-    end;
+    if ACanvas.BeginScene() then
+      try
+        FGrid.Canvas.Clear(FBKColor);
+        With FAxisesData.Left do
+          DrawGrid(FGrid, CalcuMaxLabel(FGraphicRect, FLeftTextR));
+        With FAxisesData.Bottom do
+          DrawGrid(FGrid, CalcuMaxLabel(FGraphicRect, FBottomTextR));
+      finally
+        ACanvas.EndScene();
+      end;
   end;
   // CnDebugger.LogMsg('UpdateBitmap');
   if FBKGraphic.HandleAllocated then
   begin
     // 画底图，主要是坐标轴的Label
     ACanvas := FBKGraphic.Canvas;
-    ACanvas.BeginScene();
-    try
-      ACanvas.Clear(FBKColor);
-      With FAxisesData.Left do
-        DrawLables(FGraphicGridR.Location, ACanvas, FLeftTextR);
-      With FAxisesData.Bottom do
-        DrawLables(FGraphicGridR.Location, ACanvas, FBottomTextR);
+    Insert(LocalRect, Clips, 0);
+    if ACanvas.BeginScene(@Clips, 0) then
+      try
+        ACanvas.Clear(FBKColor);
+        With FAxisesData.Left do
+          DrawLables(FGraphicGridR.Location, ACanvas, FLeftTextR);
+        With FAxisesData.Bottom do
+          DrawLables(FGraphicGridR.Location, ACanvas, FBottomTextR);
 
-      DrawGraphicGridBound(ACanvas);
-      DrawWaterfallGridBound(ACanvas);
+        DrawGraphicGridBound(ACanvas);
+        DrawWaterfallGridBound(ACanvas);
 
-      // DrawGraphicBound(ACanvas);
-      // DrawWaterFallBound(ACanvas);
+        // DrawGraphicBound(ACanvas);
+        // DrawWaterFallBound(ACanvas);
 
-      DrawControlBound(ACanvas);
+        DrawControlBound(ACanvas);
 
-      ACanvas.DrawBitmap(FGrid, FGrid.BoundsF, FGraphicGridR, 1, True);
-    finally
-      ACanvas.EndScene;
-    end;
+        ACanvas.DrawBitmap(FGrid, FGrid.BoundsF, FGraphicGridR, 1, True);
+      finally
+        ACanvas.EndScene;
+      end;
   end;
   // DrawData(FData);
 end;
@@ -1338,6 +1342,7 @@ var
   BmpData: TBitmapData;
   MoveBytes: Integer;
   AColor: TAlphaColor;
+  Clip: TClipRects;
 begin
   inherited;
 
@@ -1359,14 +1364,13 @@ begin
     R := FWaterFallGridR;
     HStep := R.Width / (Length(FData) - 1);
 
-
     // -----------------
     with FWaterFallBmp do
     begin
       if Map(TMapAccess.ReadWrite, BmpData) then
         try
-          //移动图像向下一像素 ,要每行移动，不要多行同时移动，否则会出错，
-          //而且对速度影响不大
+          // 移动图像向下一像素 ,要每行移动，不要多行同时移动，否则会出错，
+          // 而且对速度影响不大
           MoveBytes := Width * BmpData.BytesPerPixel;
           for i := Height - 2 Downto 0 do
             System.Move(BmpData.GetPixelAddr(0, 0 + i)^,
@@ -1380,22 +1384,27 @@ begin
         end;
     end;
 
-     With FWaterFallBmp.Canvas do
-     begin
-     BeginScene();
-     try
-       FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
-       FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
+    With FWaterFallBmp.Canvas do
+    begin
 
-       w := Min(Trunc(R.Width), Length(FData));
+      FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
+      FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
 
-        // GPU方式和Direct2D方式，两种情况下面BITMAP的TOP座标似乎是不同的，
-        // 需要用以下的方式来区分
-        if GlobalUseGPUCanvas then
-          PointStart := TPointF.Create(0, 1)
-        else
-          PointStart := TPointF.Create(0, 0);
+      w := Min(Trunc(R.Width), Length(FData));
 
+      // GPU方式和Direct2D方式，两种情况下面BITMAP的TOP座标似乎是不同的，
+      // 需要用以下的方式来区分
+      if GlobalUseGPUCanvas then
+        PointStart := TPointF.Create(0, 1)
+      else
+        PointStart := TPointF.Create(0, 0);
+
+      Insert(FWaterFallGridR, Clip, 0);
+      Clip[0].Inflate(0, 2);
+
+//      if BeginScene(@Clip, 0) then
+      if BeginScene() then
+      try
         for i := 0 to w - 1 do
         begin
           if i > 0 then
@@ -1404,14 +1413,14 @@ begin
           PointEnd := PointStart;
           PointEnd.X := PointEnd.X + HStep;
 
-//          ColorIndex := Trunc(FData[i] * 5 * Length(FColors)); // 扩大颜色范围
+          // ColorIndex := Trunc(FData[i] * 5 * Length(FColors)); // 扩大颜色范围
           ColorIndex := Trunc(FData[i] * Length(FColors)); // 扩大颜色范围
           if ColorIndex > Length(FColors) - 1 then
             AColor := TAlphaColors.White
           else
-            AColor:= FColors[ColorIndex];
+            AColor := FColors[ColorIndex];
 
-          Stroke.Color:= AColor;
+          Stroke.Color := AColor;
           DrawLine(PointStart, PointEnd, 1);
         end;
       finally
@@ -1457,6 +1466,6 @@ end;
 
 initialization
 
-//GlobalUseGPUCanvas := True;
-//GlobalUseDX10Software:= True;
+ GlobalUseGPUCanvas := True;
+// GlobalUseDX10Software:= True;
 end.
