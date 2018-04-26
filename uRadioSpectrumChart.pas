@@ -156,8 +156,9 @@ type
     FLeftTextR: TRectF;
     FBottomTextR: TRectF;
   Private
+    FShowCross: Boolean;
+  Private
     FBKGraphic: TBitmap;
-
   Private
     FFrameCounter: TFrameCount;
     FDrawer: TSignalDrawer;
@@ -174,6 +175,8 @@ type
   Protected
     Procedure DoPaint; Override;
     Procedure Loaded; Override;
+  Protected
+    Procedure MouseMove(Shift: TShiftState; X, Y: Single); Override;
   Public
     Constructor Create(AOwner: TComponent); Override;
     Destructor Destroy; Override;
@@ -252,7 +255,7 @@ procedure Register;
 implementation
 
 uses
-  System.Diagnostics, SpectraLibrary; // , CnDebug;
+  System.Diagnostics, SpectraLibrary , FMX.PlatForm, CnDebug;
 
 { TSpectrumChart }
 
@@ -307,6 +310,52 @@ procedure TSignalChart.Loaded;
 begin
   inherited;
 
+end;
+
+procedure TSignalChart.MouseMove(Shift: TShiftState; X, Y: Single);
+var
+  MouseP: TPointF;
+  OffsetP: TPointF;
+  MouseSrv: IFMXMouseService;
+  GlobalP: TPointF;
+  GMapC: TPointF;
+begin
+  inherited;
+  //通过坐标计算是不是在Grid内，再换算成Grid内的轴物理坐标及轴的标称坐标
+  //如果在Grid内，则画十字光标
+  MouseP:= TPointF.Create(X, Y);
+  if PtInRect(FGraphicGridR, MouseP) then
+  begin
+    OffsetP:= MouseP;
+    OffsetP.Offset(-FGraphicGridR.Left, -FGraphicGridR.Top);
+
+
+//  if FTextService.HasMarkedText and TPlatformServices.Current.SupportsPlatformService(IFMXMouseService, MouseService) then
+//  try
+//    MousePos := ScreenToLocal(MouseService.GetMousePos);
+//    ContentRect := Model.ContentBounds;
+//    MousePos.X := EnsureRange(MousePos.X, ContentRect.Left, ContentRect.Right);
+//    MousePos.Y := EnsureRange(MousePos.Y, ContentRect.Top, ContentRect.Bottom);
+//    MousePos.Offset(-ContentRect.TopLeft);
+//    LCaretPosition := FLineObjects.GetPointPosition(MousePos, False);
+//    FTextService.CaretPosition := TPoint.Create(LCaretPosition.Pos, LCaretPosition.Line);
+//    IMEStateUpdated;
+//  finally
+//    MouseService := nil;
+//  end;
+
+    TPlatformServices.Current.SupportsPlatformService(IFMXMouseService, MouseSrv);
+    begin
+      GlobalP:= MouseSrv.GetMousePos;
+    end;
+    GMapC:= ScreenToLocal(GlobalP);
+    CnDebugger.LogFmt('在范围内: %.2f, %.2f, GlobalPos: %.2f, %.2f, Map: %.2f, %.2f, Mouse: %.2f, %.2f',
+      [OffsetP.X, OffsetP.Y, GlobalP.X, GlobalP.Y, GMapC.X, GMapC.Y, X, Y]);
+  end
+  else
+  begin
+//    CnDebugger.LogMsg('不在范围内');
+  end;
 end;
 
 procedure TSignalChart.DoCheckSize;
@@ -1409,5 +1458,5 @@ end;
 initialization
 
 //GlobalUseGPUCanvas := True;
-GlobalUseDX10Software:= True;
+//GlobalUseDX10Software:= True;
 end.

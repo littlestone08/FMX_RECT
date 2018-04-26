@@ -15,6 +15,9 @@
         <Projects Include="..\FMXTestFFT\PTestAudioFFTGraphic.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="F:\Download\FlappyFiremonkey\FlappyFiremonkey.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -59,14 +62,23 @@
     <Target Name="PTestAudioFFTGraphic:Make">
         <MSBuild Projects="..\FMXTestFFT\PTestAudioFFTGraphic.dproj" Targets="Make"/>
     </Target>
+    <Target Name="FlappyFiremonkey">
+        <MSBuild Projects="F:\Download\FlappyFiremonkey\FlappyFiremonkey.dproj"/>
+    </Target>
+    <Target Name="FlappyFiremonkey:Clean">
+        <MSBuild Projects="F:\Download\FlappyFiremonkey\FlappyFiremonkey.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="FlappyFiremonkey:Make">
+        <MSBuild Projects="F:\Download\FlappyFiremonkey\FlappyFiremonkey.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="PTestGraphicA;dpkRecvGraphic;Project1;PTestAudioFFTGraphic"/>
+        <CallTarget Targets="PTestGraphicA;dpkRecvGraphic;Project1;PTestAudioFFTGraphic;FlappyFiremonkey"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="PTestGraphicA:Clean;dpkRecvGraphic:Clean;Project1:Clean;PTestAudioFFTGraphic:Clean"/>
+        <CallTarget Targets="PTestGraphicA:Clean;dpkRecvGraphic:Clean;Project1:Clean;PTestAudioFFTGraphic:Clean;FlappyFiremonkey:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="PTestGraphicA:Make;dpkRecvGraphic:Make;Project1:Make;PTestAudioFFTGraphic:Make"/>
+        <CallTarget Targets="PTestGraphicA:Make;dpkRecvGraphic:Make;Project1:Make;PTestAudioFFTGraphic:Make;FlappyFiremonkey:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

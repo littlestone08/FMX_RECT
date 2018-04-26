@@ -49,6 +49,9 @@ object Form3: TForm3
     Size.Width = 775.000000000000000000
     Size.Height = 511.000000000000000000
     Size.PlatformDefault = False
+    OnMouseMove = SignalChart1MouseMove
+    OnMouseEnter = SignalChart1MouseEnter
+    OnMouseLeave = SignalChart1MouseLeave
     OnResized = SignalChart1Resized
     AxisesData.Left.MinValue = -99
     AxisesData.Left.MaxValue = 0
@@ -73,13 +76,6 @@ object Form3: TForm3
     Drawer = SplitedDrawer1
     BKColor = claNull
     GridBoundColor = claDarkslategray
-    object TPaintBox
-      Position.X = 51.673828125000000000
-      Position.Y = 255.500000000000000000
-      Size.Width = 697.489257812500000000
-      Size.Height = 243.769531250000000000
-      Size.PlatformDefault = False
-    end
   end
   object Panel1: TPanel
     Position.X = 200.000000000000000000

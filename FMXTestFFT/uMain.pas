@@ -40,6 +40,10 @@ type
       const ARect: TRectF);
     procedure Panel3Paint(Sender: TObject; Canvas: TCanvas;
       const ARect: TRectF);
+    procedure SignalChart1MouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Single);
+    procedure SignalChart1MouseEnter(Sender: TObject);
+    procedure SignalChart1MouseLeave(Sender: TObject);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -65,7 +69,7 @@ var
 
 implementation
 uses
-  SpectraLibrary;
+  SpectraLibrary, CnDebug;
 
 //Procedure spectrum_to_rgb(wavelength: double; r, g, b: PDouble); stdcall;
 //  external 'specrum32.dll' name '_spectrum_to_rgb@20';
@@ -360,6 +364,23 @@ begin
   finally
     Panel3.Canvas.RestoreState(save);
   end;
+end;
+
+procedure TForm3.SignalChart1MouseEnter(Sender: TObject);
+begin
+  CnDebugger.LogMsg('MouseEnter');
+end;
+
+procedure TForm3.SignalChart1MouseLeave(Sender: TObject);
+begin
+  CnDebugger.LogMsg('MouseLeave');
+end;
+
+procedure TForm3.SignalChart1MouseMove(Sender: TObject; Shift: TShiftState; X,
+  Y: Single);
+begin
+  Exit;
+  CnDebugger.LogMsg('MouseMove' + Format('X: %.2f, Y: %.2f', [X, Y]));
 end;
 
 procedure TForm3.SignalChart1Resized(Sender: TObject);
