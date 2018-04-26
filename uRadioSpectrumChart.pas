@@ -5,7 +5,7 @@ interface
 uses
   System.Classes, System.SysUtils, System.Types, System.UITypes,
   System.Math, System.DateUtils, System.IOUtils,
-  FMX.Objects, FMX.Graphics, FMX.Types;
+  FMX.Objects, FMX.Graphics, FMX.Types, FMX.Controls;
 
 type
 
@@ -127,9 +127,10 @@ type
     [weak]
     FChart: TSignalChart;
   private
-    procedure SetChart(const Value: TSignalChart);
   Protected
-
+    procedure SetChart(const Value: TSignalChart); Virtual;
+    Procedure DrawCross(X, Y: Single); Virtual; Abstract;
+    Procedure DoSizeChagned(); Virtual; Abstract;
   Public
     Procedure DoDraw; Virtual; Abstract;
   Published
@@ -156,8 +157,6 @@ type
     FLeftTextR: TRectF;
     FBottomTextR: TRectF;
   Private
-    FShowCross: Boolean;
-  Private
     FBKGraphic: TBitmap;
   Private
     FFrameCounter: TFrameCount;
@@ -168,13 +167,23 @@ type
     Procedure UpdateBitmap;
     Procedure UpdateGridRAndStdTextR();
     procedure DoCheckSize;
+    Procedure DoRectSizeChagned;
     Procedure FillDesigningTestData;
     procedure SetDrawer(const Value: TSignalDrawer);
     procedure SetBKColor(const Value: TAlphaColor);
     procedure SetGridBoundColor(const Value: TAlphaColor);
+  Private
+    FCrossOpacity: Single;
+    FCrossX: Single;
+    FCrossY: Single;
+    FMouseInRect: Boolean;
+    FShowCross: Boolean;
+    FLastUpdateTime: TDateTime;
+    // Procedure DrawCross();
   Protected
     Procedure DoPaint; Override;
     Procedure Loaded; Override;
+    Procedure DoResized; Override;
   Protected
     Procedure MouseMove(Shift: TShiftState; X, Y: Single); Override;
   Public
@@ -196,6 +205,7 @@ type
     Property BKColor: TAlphaColor read FBKColor write SetBKColor;
     Property GridBoundColor: TAlphaColor read FGridBoundColor
       write SetGridBoundColor;
+    Property CrossOpacity: Single Read FCrossOpacity Write FCrossOpacity;
   End;
 
   TTest = Class(TComponent)
@@ -222,6 +232,9 @@ type
     procedure SetPeakeDecrement(const Value: Single);
     procedure SetFalloffVisible(const Value: Boolean);
     procedure SetPeakVisible(const Value: Boolean);
+  Protected
+    Procedure DrawCross(X, Y: Single); Override;
+    Procedure DoSizeChagned(); Override;
   Public
     Constructor Create(AOwner: TComponent); Override;
     Procedure DoDraw; Override;
@@ -238,7 +251,11 @@ type
   Private
     FColors: TArray<TAlphaColor>;
     FWaterFallBmp: TBitmap;
-    FWaterFallBmpOld: TBitmap;
+    FColorImage: TImage;
+  Protected
+    Procedure DrawCross(X, Y: Single); Override;
+    Procedure DoSizeChagned(); Override;
+    procedure SetChart(const Value: TSignalChart); Override;
   Public
     Procedure DoDraw; Override;
     constructor Create(AOwner: TComponent); Override;
@@ -268,6 +285,7 @@ end;
 procedure TSignalChart.DoPaint;
 begin
   inherited;
+
   FFrameCounter.AddFrame;
   DoCheckSize();
   Canvas.DrawBitmap(FBKGraphic, FBKGraphic.BoundsF, FBKGraphic.BoundsF, 1);
@@ -275,6 +293,31 @@ begin
     FDrawer.DoDraw();
   // PaintData();
   // CnDebugger.LogMsg('DoPaint');
+
+  // if FShowCross or True then
+  // DrawCross();
+
+  FLastUpdateTime := Now;
+end;
+
+procedure TSignalChart.DoResized;
+begin
+  inherited;
+  TThread.Synchronize(Nil,
+    procedure()
+    begin
+      Sleep(10);
+      DoPaint();
+    end
+  );
+end;
+
+procedure TSignalChart.DoRectSizeChagned;
+begin
+  if FDrawer <> Nil then
+  begin
+    FDrawer.DoSizeChagned();
+  end;
 end;
 
 function TSignalChart.GetFPS: Integer;
@@ -313,51 +356,62 @@ begin
 end;
 
 procedure TSignalChart.MouseMove(Shift: TShiftState; X, Y: Single);
-var
-  MouseP: TPointF;
-  OffsetP: TPointF;
-  MouseSrv: IFMXMouseService;
-  GlobalP: TPointF;
-  GMapC: TPointF;
 begin
   inherited;
-  // 通过坐标计算是不是在Grid内，再换算成Grid内的轴物理坐标及轴的标称坐标
-  // 如果在Grid内，则画十字光标
-  MouseP := TPointF.Create(X, Y);
-  if PtInRect(FGraphicGridR, MouseP) then
+  FCrossX := X;
+  FCrossY := Y;
+  FMouseInRect := PtInRect(FGraphicGridR, TPointF.Create(X, Y));
   begin
-    OffsetP := MouseP;
-    OffsetP.offset(-FGraphicGridR.Left, -FGraphicGridR.Top);
-
-
-    // if FTextService.HasMarkedText and TPlatformServices.Current.SupportsPlatformService(IFMXMouseService, MouseService) then
-    // try
-    // MousePos := ScreenToLocal(MouseService.GetMousePos);
-    // ContentRect := Model.ContentBounds;
-    // MousePos.X := EnsureRange(MousePos.X, ContentRect.Left, ContentRect.Right);
-    // MousePos.Y := EnsureRange(MousePos.Y, ContentRect.Top, ContentRect.Bottom);
-    // MousePos.Offset(-ContentRect.TopLeft);
-    // LCaretPosition := FLineObjects.GetPointPosition(MousePos, False);
-    // FTextService.CaretPosition := TPoint.Create(LCaretPosition.Pos, LCaretPosition.Line);
-    // IMEStateUpdated;
-    // finally
-    // MouseService := nil;
-    // end;
-
-    TPlatformServices.Current.SupportsPlatformService(IFMXMouseService,
-      MouseSrv);
+    if MilliSecondSpan(Now, FLastUpdateTime) > 30 then
     begin
-      GlobalP := MouseSrv.GetMousePos;
+      InvalidateRect(LocalRect);
     end;
-    GMapC := ScreenToLocal(GlobalP);
-    CnDebugger.LogFmt
-      ('在范围内: %.2f, %.2f, GlobalPos: %.2f, %.2f, Map: %.2f, %.2f, Mouse: %.2f, %.2f',
-      [OffsetP.X, OffsetP.Y, GlobalP.X, GlobalP.Y, GMapC.X, GMapC.Y, X, Y]);
-  end
-  else
-  begin
-    // CnDebugger.LogMsg('不在范围内');
   end;
+  // Exit;
+  // if MilliSecondSpan(Now, FLastUpdateTime) > 30 then
+  // begin
+  //
+  // // TPaintBox(self).SetFocus
+  // InvalidateRect(LocalRect);
+  /// /    Exit;
+  // // 通过坐标计算是不是在Grid内，再换算成Grid内的轴物理坐标及轴的标称坐标
+  // // 如果在Grid内，则画十字光标
+  // MouseP := TPointF.Create(X, Y);
+  // if PtInRect(FGraphicGridR, MouseP) then
+  // begin
+  // OffsetP := MouseP;
+  // OffsetP.offset(-FGraphicGridR.Left, -FGraphicGridR.Top);
+  //
+  //
+  // // if FTextService.HasMarkedText and TPlatformServices.Current.SupportsPlatformService(IFMXMouseService, MouseService) then
+  // // try
+  // // MousePos := ScreenToLocal(MouseService.GetMousePos);
+  // // ContentRect := Model.ContentBounds;
+  // // MousePos.X := EnsureRange(MousePos.X, ContentRect.Left, ContentRect.Right);
+  // // MousePos.Y := EnsureRange(MousePos.Y, ContentRect.Top, ContentRect.Bottom);
+  // // MousePos.Offset(-ContentRect.TopLeft);
+  // // LCaretPosition := FLineObjects.GetPointPosition(MousePos, False);
+  // // FTextService.CaretPosition := TPoint.Create(LCaretPosition.Pos, LCaretPosition.Line);
+  // // IMEStateUpdated;
+  // // finally
+  // // MouseService := nil;
+  // // end;
+  //
+  /// /      TPlatformServices.Current.SupportsPlatformService(IFMXMouseService,
+  /// /        MouseSrv);
+  /// /      begin
+  /// /        GlobalP := MouseSrv.GetMousePos;
+  /// /      end;
+  /// /      GMapC := ScreenToLocal(GlobalP);
+  /// /      CnDebugger.LogFmt
+  /// /        ('在范围内: %.2f, %.2f, GlobalPos: %.2f, %.2f, Map: %.2f, %.2f, Mouse: %.2f, %.2f',
+  /// /        [OffsetP.X, OffsetP.Y, GlobalP.X, GlobalP.Y, GMapC.X, GMapC.Y, X, Y]);
+  // end
+  // else
+  // begin
+  /// /       CnDebugger.LogMsg('不在范围内');
+  // end;
+  // end;
 end;
 
 procedure TSignalChart.DoCheckSize;
@@ -393,6 +447,7 @@ begin
   begin
     UpdateGridRAndStdTextR();
     UpdateBitmap;
+    DoRectSizeChagned();
   end;
 end;
 
@@ -434,8 +489,8 @@ begin
   end;
 
   if Value <> Nil then
-    if Value.Chart <> Self then
-      Value.Chart := Self;
+    if Value.Chart <> self then
+      Value.Chart := self;
 end;
 
 { TGridLayer }
@@ -456,14 +511,16 @@ constructor TSignalChart.Create;
 begin
   inherited;
   FGridBoundColor := TAlphaColors.Darkslategray;
-  FAxisesData := TAxises.Create(Self);
-  FAxisesView := TAxises.Create(Self);
+  FAxisesData := TAxises.Create(self);
+  FAxisesView := TAxises.Create(self);
   FFrameCounter := TFrameCount.Create;
   FEquationBottomIn := TLinearEquations.Create;
   FGrid := TBitmap.Create;
 
   FBKGraphic := TBitmap.Create;
   FillDesigningTestData();
+  FCrossOpacity := 0.3;
+  FShowCross := True;
 end;
 
 destructor TSignalChart.Destroy;
@@ -476,6 +533,47 @@ begin
   FreeAndNil(FAxisesData);
   inherited;
 end;
+//
+// procedure TSignalChart.DrawCross;
+// var
+// MouseSrv: IFMXMouseService;
+// MousePos: TPointF;
+// MousePosInClient: TPointF;
+//
+// begin
+// TPlatformServices.Current.SupportsPlatformService(IFMXMouseService, MouseSrv);
+// begin
+// MousePos := MouseSrv.GetMousePos;
+// MousePosInClient := ScreenToLocal(MousePos);;
+// end;
+// FMouseInRect:= PtInRect(FGraphicGridR, MousePosInClient);
+// if FMouseInRect then
+// begin
+// MousePosInClient := ScreenToLocal(MousePos);;
+// Canvas.Stroke.Color := TAlphaColors.Black;
+// Canvas.Stroke.Thickness := 2;
+// Canvas.Stroke.Dash := TStrokeDash.Dash;
+// Canvas.Stroke.Kind := TBrushKind.Solid;
+//
+// Canvas.DrawLine(TPointF.Create(FGraphicGridR.Left, MousePosInClient.Y),
+// TPointF.Create(FGraphicGridR.Right, MousePosInClient.Y), CrossOpacity);
+//
+// Canvas.DrawLine(TPointF.Create(MousePosInClient.X, FGraphicGridR.Top),
+// TPointF.Create(MousePosInClient.X, FGraphicGridR.Bottom), CrossOpacity);
+//
+// Canvas.DrawLine(TPointF.Create(MousePosInClient.X, FWaterFallGridR.Top),
+// TPointF.Create(MousePosInClient.X, FWaterFallGridR.Bottom), CrossOpacity);
+/// /    CnDebugger.LogMsg('Draw Line');
+// end
+// else
+// begin
+/// /    CnDebugger.LogMsg('Out of Range');
+// end;
+//
+// // CnDebugger.LogFmt
+// // ('在范围内: %.2f, %.2f, GlobalPos: %.2f, %.2f, Map: %.2f, %.2f, Mouse: %.2f, %.2f',
+// // [OffsetP.X, OffsetP.Y, GlobalP.X, GlobalP.Y, GMapC.X, GMapC.Y, X, Y]);
+// end;
 
 procedure TSignalChart.DrawData(const AData: TArray<Single>);
 begin
@@ -1210,6 +1308,36 @@ begin
       end;
     end;
   end;
+  if Chart.FShowCross and Chart.FMouseInRect then
+  begin
+    DrawCross(FChart.FCrossX, FChart.FCrossY);
+  end;
+end;
+
+procedure TSignalRectangeDrawer.DoSizeChagned;
+begin
+  // dummy
+end;
+
+procedure TSignalRectangeDrawer.DrawCross(X, Y: Single);
+begin
+  With Chart.Canvas, Chart do
+  begin
+    Stroke.Color := TAlphaColors.Black;
+    Stroke.Thickness := 2;
+    Stroke.Dash := TStrokeDash.Dash;
+    Stroke.Kind := TBrushKind.Solid;
+
+    DrawLine(TPointF.Create(FGraphicGridR.Left, FCrossY),
+      TPointF.Create(FGraphicGridR.Right, FCrossY), CrossOpacity);
+
+    Canvas.DrawLine(TPointF.Create(FCrossX, FGraphicGridR.Top),
+      TPointF.Create(FCrossX, FGraphicGridR.Bottom), CrossOpacity);
+
+    // Canvas.DrawLine(TPointF.Create(MousePosInClient.X, FWaterFallGridR.Top),
+    // TPointF.Create(MousePosInClient.X, FWaterFallGridR.Bottom), CrossOpacity);
+  end;
+
 end;
 
 procedure TSignalRectangeDrawer.SetFalloffDecrement(const Value: Single);
@@ -1250,8 +1378,8 @@ begin
     end;
   end;
   if FChart <> Nil then
-    if FChart.Drawer <> Self then
-      FChart.Drawer := Self;
+    if FChart.Drawer <> self then
+      FChart.Drawer := self;
 end;
 { TSplitedDrawer }
 
@@ -1315,16 +1443,25 @@ constructor TSplitedDrawer.Create(AOwner: TComponent);
     end;
   end;
 
+var
+  tmp: TBitmap;
 begin
   inherited;
   InitColors();
   FWaterFallBmp := TBitmap.Create;
-  FWaterFallBmpOld := TBitmap.Create;
+
+  FColorImage := TImage.Create(Self);
+  tmp := TBitmap.Create(1, 1);
+  try
+    FColorImage.Bitmap := tmp;
+  finally
+    tmp.Free;
+  end;
 end;
 
 destructor TSplitedDrawer.Destroy;
 begin
-  FreeAndNil(FWaterFallBmpOld);
+//  FreeAndNil(FColorImage);
   FreeAndNil(FWaterFallBmp);
   inherited;
 end;
@@ -1344,7 +1481,7 @@ var
   AColor: TAlphaColor;
   Clip: TClipRects;
 begin
-  inherited;
+
 
   With Chart do
   begin
@@ -1357,7 +1494,7 @@ begin
     begin
       FWaterFallBmp.Width := Ceil(FWaterFallGridR.Width);
       FWaterFallBmp.Height := Ceil(FWaterFallGridR.Height);
-      FWaterFallBmpOld.Assign(FWaterFallBmp);
+      // FWaterFallBmpOld.Assign(FWaterFallBmp);
       FWaterFallRectUpdated := False;
     end;
 
@@ -1402,36 +1539,98 @@ begin
       Insert(FWaterFallGridR, Clip, 0);
       Clip[0].Inflate(0, 2);
 
-//      if BeginScene(@Clip, 0) then
+      // if BeginScene(@Clip, 0) then
       if BeginScene() then
-      try
-        for i := 0 to w - 1 do
-        begin
-          if i > 0 then
-            PointStart := PointEnd;
+        try
+          for i := 0 to w - 1 do
+          begin
+            if i > 0 then
+              PointStart := PointEnd;
 
-          PointEnd := PointStart;
-          PointEnd.X := PointEnd.X + HStep;
+            PointEnd := PointStart;
+            PointEnd.X := PointEnd.X + HStep;
 
-          // ColorIndex := Trunc(FData[i] * 5 * Length(FColors)); // 扩大颜色范围
-          ColorIndex := Trunc(FData[i] * Length(FColors)); // 扩大颜色范围
-          if ColorIndex > Length(FColors) - 1 then
-            AColor := TAlphaColors.White
-          else
-            AColor := FColors[ColorIndex];
+            // ColorIndex := Trunc(FData[i] * 5 * Length(FColors)); // 扩大颜色范围
+            ColorIndex := Trunc(FData[i] * Length(FColors)); // 扩大颜色范围
+            if ColorIndex > Length(FColors) - 1 then
+              AColor := TAlphaColors.White
+            else
+              AColor := FColors[ColorIndex];
 
-          Stroke.Color := AColor;
-          DrawLine(PointStart, PointEnd, 1);
+            Stroke.Color := AColor;
+            DrawLine(PointStart, PointEnd, 1);
+          end;
+        finally
+          EndScene();
         end;
-      finally
-        EndScene();
-      end;
     end;
 
     Canvas.DrawBitmap(FWaterFallBmp, FWaterFallBmp.Bounds,
       FWaterFallGridR, 1, True);
   end;
+  inherited;
+end;
 
+procedure TSplitedDrawer.DoSizeChagned;
+var
+  i: Integer;
+  Step: Single;
+  ColorRect: TRectF;
+begin
+  inherited;
+  if FChart = Nil then
+    Exit;
+  FColorImage.Width := 20;
+  FColorImage.Height := FChart.FWaterFallGridR.Height;
+
+  FColorImage.Bitmap.Width := Ceil(FColorImage.Width);
+  FColorImage.Bitmap.Height := Ceil(FColorImage.Height);
+
+  FColorImage.Position.X := FChart.FWaterFallGridR.TopLeft.X - 30;
+  FColorImage.Position.Y := FChart.FWaterFallGridR.TopLeft.Y;
+
+  if FColorImage.Bitmap.HandleAllocated then
+    With FColorImage.Bitmap.Canvas do
+    begin
+      Step := FColorImage.Bitmap.Height / Length(FColors);
+      With FColorImage.Bitmap.Canvas do
+      begin
+        Fill.Kind := TBrushKind.Solid;
+        if BeginScene(Nil, 0) then
+          try
+            ColorRect := TRectF.Create(0, 0, FColorImage.Bitmap.Width, Step);
+            for i := 0 to Length(FColors) - 1 do
+            begin
+              Fill.Color := FColors[i];
+              FillRect(ColorRect, 0, 0, [], 1);
+              ColorRect.offset(0, Step);
+            end;
+          finally
+            EndScene();
+          end;
+      end;
+    end;
+
+end;
+
+procedure TSplitedDrawer.DrawCross(X, Y: Single);
+begin
+  inherited;
+  With Chart do
+  begin
+    Chart.Canvas.DrawLine(TPointF.Create(FCrossX, FWaterFallGridR.Top),
+      TPointF.Create(FCrossX, FWaterFallGridR.Bottom), CrossOpacity);
+  end;
+end;
+
+procedure TSplitedDrawer.SetChart(const Value: TSignalChart);
+begin
+  inherited;
+  if Not (csDesigning in ComponentState) then
+  begin
+    if FColorImage <> Nil then
+      FColorImage.Parent := Value;
+  end;
 end;
 
 { TBitmapAccess }
@@ -1466,6 +1665,7 @@ end;
 
 initialization
 
- GlobalUseGPUCanvas := True;
+GlobalUseGPUCanvas := True;
+
 // GlobalUseDX10Software:= True;
 end.

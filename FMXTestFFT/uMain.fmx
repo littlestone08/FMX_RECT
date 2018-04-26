@@ -76,6 +76,7 @@ object Form3: TForm3
     Drawer = SplitedDrawer1
     BKColor = claNull
     GridBoundColor = claDarkslategray
+    CrossOpacity = 0.300000011920929000
   end
   object Panel1: TPanel
     Position.X = 200.000000000000000000
@@ -104,6 +105,13 @@ object Form3: TForm3
     TabOrder = 13
     OnMouseDown = Panel1MouseDown
     OnPaint = Panel3Paint
+  end
+  object Button4: TButton
+    Position.X = 24.000000000000000000
+    Position.Y = 144.000000000000000000
+    TabOrder = 21
+    Text = 'Button4'
+    OnClick = Button4Click
   end
   object Test1: TTest
     Left = 40

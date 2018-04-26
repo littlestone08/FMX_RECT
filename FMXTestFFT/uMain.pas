@@ -25,6 +25,7 @@ type
     SplitedDrawer1: TSplitedDrawer;
     Panel2: TPanel;
     Panel3: TPanel;
+    Button4: TButton;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -44,6 +45,7 @@ type
       Y: Single);
     procedure SignalChart1MouseEnter(Sender: TObject);
     procedure SignalChart1MouseLeave(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -186,6 +188,12 @@ begin
     BASS_ChannelPlay(hs, False);
     Timer1.Enabled := True;
   end;
+end;
+
+procedure TForm3.Button4Click(Sender: TObject);
+begin
+//  InvalidateRect(Bounds);
+//  self.SignalChart1.InvalidateRect(SignalChart1.LocalRect);
 end;
 
 constructor TForm3.Create(AOwner: TComponent);
