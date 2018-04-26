@@ -291,12 +291,6 @@ begin
   Canvas.DrawBitmap(FBKGraphic, FBKGraphic.BoundsF, FBKGraphic.BoundsF, 1);
   if FDrawer <> Nil then
     FDrawer.DoDraw();
-  // PaintData();
-  // CnDebugger.LogMsg('DoPaint');
-
-  // if FShowCross or True then
-  // DrawCross();
-
   FLastUpdateTime := Now;
 end;
 
@@ -1475,7 +1469,6 @@ var
   i, w: Integer;
   ColorIndex: Cardinal;
 var
-  iPixel: Integer;
   BmpData: TBitmapData;
   MoveBytes: Integer;
   AColor: TAlphaColor;
