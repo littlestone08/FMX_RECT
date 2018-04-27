@@ -9,7 +9,7 @@ uses
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.Effects,
   FMX.Filter.Effects, FMX.Objects, FMX.Controls.Presentation, FMX.StdCtrls,
   FMX.Layouts, FMX.ExtCtrls, uRadioSpectrumChart, FMXTee.Engine, FMXTee.Series,
-  FMXTee.Procs, FMXTee.Chart, Bass;
+  FMXTee.Procs, FMXTee.Chart, FMX.PlatForm,Bass;
 
 type
 
@@ -23,10 +23,7 @@ type
     Panel1: TPanel;
     SignalRectangeDrawer1: TSignalRectangeDrawer;
     SplitedDrawer1: TSplitedDrawer;
-    Panel2: TPanel;
-    Panel3: TPanel;
     Button4: TButton;
-    MyLabel1: TLabel;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -38,17 +35,11 @@ type
     procedure FormCreate(Sender: TObject);
     procedure Panel1Paint(Sender: TObject; Canvas: TCanvas;
       const ARect: TRectF);
-    procedure Panel2Paint(Sender: TObject; Canvas: TCanvas;
-      const ARect: TRectF);
-    procedure Panel3Paint(Sender: TObject; Canvas: TCanvas;
-      const ARect: TRectF);
-    procedure SignalChart1MouseMove(Sender: TObject; Shift: TShiftState; X,
-      Y: Single);
+    procedure SignalChart1MouseMove(Sender: TObject; Shift: TShiftState;
+      X, Y: Single);
     procedure SignalChart1MouseEnter(Sender: TObject);
     procedure SignalChart1MouseLeave(Sender: TObject);
     procedure Button4Click(Sender: TObject);
-    procedure Label1Paint(Sender: TObject; Canvas: TCanvas;
-      const ARect: TRectF);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -73,11 +64,68 @@ var
   Form3: TForm3;
 
 implementation
+
 uses
   SpectraLibrary, CnDebug;
 
-//Procedure spectrum_to_rgb(wavelength: double; r, g, b: PDouble); stdcall;
-//  external 'specrum32.dll' name '_spectrum_to_rgb@20';
+function MakeScaleScreenshot(Sender: TControl): TBitmap; Overload;
+var
+  fScreenScale: Single;
+  function GetScreenScale: Single;
+  var
+    ScreenService: IFMXScreenService;
+  begin
+    Result := 1;
+    if TPlatformServices.Current.SupportsPlatformService(IFMXScreenService,
+      IInterface(ScreenService)) then
+    begin
+      Result := ScreenService.GetScreenScale;
+    end;
+  end;
+
+begin
+  fScreenScale := GetScreenScale;
+  Result := TBitmap.Create(Round(Sender.Width * fScreenScale),
+    Round(Sender.Height * fScreenScale));
+  Result.Clear(0);
+  if Result.Canvas.BeginScene then
+    try
+      Sender.PaintTo(Result.Canvas, RectF(0, 0, Result.Width, Result.Height));
+    finally
+      Result.Canvas.EndScene;
+    end;
+end;
+
+function MakeScaleScreenshot(Sender: TForm): TBitmap; Overload;
+var
+  fScreenScale: Single;
+  function GetScreenScale: Single;
+  var
+    ScreenService: IFMXScreenService;
+  begin
+    Result := 1;
+    if TPlatformServices.Current.SupportsPlatformService(IFMXScreenService,
+      IInterface(ScreenService)) then
+    begin
+      Result := ScreenService.GetScreenScale;
+    end;
+  end;
+
+begin
+  fScreenScale := GetScreenScale;
+  Result := TBitmap.Create(Round(Sender.Width * fScreenScale),
+    Round(Sender.Height * fScreenScale));
+  Result.Clear(0);
+  if Result.Canvas.BeginScene then
+    try
+//      Sender.PaintTo(Result.Canvas, RectF(0, 0, Result.Width, Result.Height));
+      Sender.PaintTo(Result.Canvas);
+    finally
+      Result.Canvas.EndScene;
+    end;
+end;
+// Procedure spectrum_to_rgb(wavelength: double; r, g, b: PDouble); stdcall;
+// external 'specrum32.dll' name '_spectrum_to_rgb@20';
 
 Procedure spectral_color(var r, g, b: double; L: double);
 // RGB <0,1> <- lambda l <400,700> [nm]
@@ -89,55 +137,55 @@ begin
   b := 0;
   if ((L >= 400.0) and (L < 410.0)) then
   begin
-    t:= (L - 400.0) / (410.0 - 400.0);
-    r:= +(0.33 * t) - (0.20 * t * t);
+    t := (L - 400.0) / (410.0 - 400.0);
+    r := +(0.33 * t) - (0.20 * t * t);
   end
   else if ((L >= 410.0) and (L < 475.0)) then
   begin
-    t:= (L - 410.0) / (475.0 - 410.0);
-    r:= 0.14 - (0.13 * t * t);
+    t := (L - 410.0) / (475.0 - 410.0);
+    r := 0.14 - (0.13 * t * t);
   end
   else if ((L >= 545.0) and (L < 595.0)) then
   begin
-    t:= (L - 545.0) / (595.0 - 545.0);
-    r:= +(1.98 * t) - (t * t);
+    t := (L - 545.0) / (595.0 - 545.0);
+    r := +(1.98 * t) - (t * t);
   end
   else if ((L >= 595.0) and (L < 650.0)) then
   begin
-    t:= (L - 595.0) / (650.0 - 595.0);
-    r:= 0.98 + (0.06 * t) - (0.40 * t * t);
+    t := (L - 595.0) / (650.0 - 595.0);
+    r := 0.98 + (0.06 * t) - (0.40 * t * t);
   end
   else if ((L >= 650.0) and (L < 700.0)) then
   begin
-    t:= (L - 650.0) / (700.0 - 650.0);
-    r:= 0.65 - (0.84 * t) + (0.20 * t * t);
+    t := (L - 650.0) / (700.0 - 650.0);
+    r := 0.65 - (0.84 * t) + (0.20 * t * t);
   end;
 
   if ((L >= 415.0) and (L < 475.0)) then
   begin
-    t:= (L - 415.0) / (475.0 - 415.0);
-    g:= +(0.80 * t * t);
+    t := (L - 415.0) / (475.0 - 415.0);
+    g := +(0.80 * t * t);
   end
   else if ((L >= 475.0) and (L < 590.0)) then
   begin
-    t:= (L - 475.0) / (590.0 - 475.0);
-    g:= 0.8 + (0.76 * t) - (0.80 * t * t);
+    t := (L - 475.0) / (590.0 - 475.0);
+    g := 0.8 + (0.76 * t) - (0.80 * t * t);
   end
   else if ((L >= 585.0) and (L < 639.0)) then
   begin
-    t:= (L - 585.0) / (639.0 - 585.0);
-    g:= 0.84 - (0.84 * t);
+    t := (L - 585.0) / (639.0 - 585.0);
+    g := 0.84 - (0.84 * t);
   end;
 
   if ((L >= 400.0) and (L < 475.0)) then
   begin
-    t:= (L - 400.0) / (475.0 - 400.0);
-    b:= +(2.20 * t) - (1.50 * t * t);
+    t := (L - 400.0) / (475.0 - 400.0);
+    b := +(2.20 * t) - (1.50 * t * t);
   end
   else if ((L >= 475.0) and (L < 560.0)) then
   begin
-    t:= (L - 475.0) / (560.0 - 475.0);
-    b:= 0.7 - (t) + (0.30 * t * t);
+    t := (L - 475.0) / (560.0 - 475.0);
+    b := 0.7 - (t) + (0.30 * t * t);
   end
 end;
 
@@ -177,8 +225,8 @@ const
   // SoneFile: AnsiString = 'C:\Users\mei\Desktop\AUDIO\song1.wav';
   SoneFile: AnsiString =
     'C:\Users\mei\Desktop\AUDIO\ÌúÑªµ¤ÐÄ (1997 Digital Remaster)_ÂÞÎÄ_ÂÞÎÄ - Master Sonic.mp3';
-//  SoneFile: AnsiString =
-//    '.\ÌúÑªµ¤ÐÄ (1997 Digital Remaster)_ÂÞÎÄ_ÂÞÎÄ - Master Sonic.mp3';
+  // SoneFile: AnsiString =
+  // '.\ÌúÑªµ¤ÐÄ (1997 Digital Remaster)_ÂÞÎÄ_ÂÞÎÄ - Master Sonic.mp3';
 begin
   BASS_StreamFree(hs);
   hs := BASS_StreamCreateFile(False, PAnsiChar(SoneFile), 0, 0, 0);
@@ -195,8 +243,13 @@ end;
 
 procedure TForm3.Button4Click(Sender: TObject);
 begin
-//  InvalidateRect(Bounds);
-//  self.SignalChart1.InvalidateRect(SignalChart1.LocalRect);
+  // InvalidateRect(Bounds);
+  // self.SignalChart1.InvalidateRect(SignalChart1.LocalRect);
+  With MakeScaleScreenshot(Self) do
+  begin
+    SaveToFile('d:\1.png');
+    DisposeOf;
+  end;
 end;
 
 constructor TForm3.Create(AOwner: TComponent);
@@ -223,10 +276,11 @@ end;
 procedure TForm3.FormCreate(Sender: TObject);
 begin
   InitRainbow();
-//  InitSpectralColors();
-//  InitSpectralColors2();
+  // InitSpectralColors();
+  // InitSpectralColors2();
   InitSpectralColors3();
-
+  self.Fill.Color := TAlphaColors.Yellowgreen;
+  self.Fill.Kind := TBrushKind.Solid;
 end;
 
 procedure TForm3.FormPaint(Sender: TObject; Canvas: TCanvas;
@@ -318,79 +372,21 @@ begin
   end;
 end;
 
-procedure TForm3.Panel2Paint(Sender: TObject; Canvas: TCanvas;
-  const ARect: TRectF);
-var
-  i: Integer;
-  pa, pb: TPoint;
-  save: TCanvasSaveState;
-begin
-  save := Panel2.Canvas.SaveState;
-  try
-    Panel2.Canvas.Stroke.Kind := TBrushKind.Solid;
-    Panel2.Canvas.Fill.Kind := TBrushKind.Solid;
-
-    pa := TPoint.Create(0, 0);
-    pb := TPoint.Create(0, 0);
-    for i := 0 to Length(FRainbowColors) - 1 do
-    begin
-      pa.X := i * 5;
-      pb.X := (i + 1) * 5;
-      pb.Y := Trunc(Panel2.Height);
-      // Canvas.Stroke.Color := FRainbowColors[i];
-      Canvas.Fill.Color := FRainbowColors[i];
-      // Canvas.DrawLine(pa, pb, 1);
-      Canvas.FillRect(TRectF.Create(pa, pb), 0, 0, [], 1);
-    end;
-  finally
-    Panel1.Canvas.RestoreState(save);
-  end;
-end;
-
-procedure TForm3.Panel3Paint(Sender: TObject; Canvas: TCanvas;
-  const ARect: TRectF);
-var
-  i: Integer;
-  pa, pb: TPoint;
-  save: TCanvasSaveState;
-begin
-  save := Panel3.Canvas.SaveState;
-  try
-    Panel3.Canvas.Stroke.Kind := TBrushKind.Solid;
-    Panel3.Canvas.Fill.Kind := TBrushKind.Solid;
-
-    pa := TPoint.Create(0, 0);
-    pb := TPoint.Create(0, 0);
-    for i := 0 to Length(FSpectralColors) - 1 do
-    begin
-      pa.X := i * 2;
-      pb.X := (i + 1) * 2;
-      pb.Y := Trunc(Panel3.Height);
-      // Canvas.Stroke.Color := FRainbowColors[i];
-      Canvas.Fill.Color := FSpectralColors[i];
-      // Canvas.DrawLine(pa, pb, 1);
-      Canvas.FillRect(TRectF.Create(pa, pb), 0, 0, [], 1);
-    end;
-  finally
-    Panel3.Canvas.RestoreState(save);
-  end;
-end;
-
 procedure TForm3.SignalChart1MouseEnter(Sender: TObject);
 begin
-  CnDebugger.LogMsg('MouseEnter');
+//  CnDebugger.LogMsg('MouseEnter');
 end;
 
 procedure TForm3.SignalChart1MouseLeave(Sender: TObject);
 begin
-  CnDebugger.LogMsg('MouseLeave');
+//  CnDebugger.LogMsg('MouseLeave');
 end;
 
-procedure TForm3.SignalChart1MouseMove(Sender: TObject; Shift: TShiftState; X,
-  Y: Single);
+procedure TForm3.SignalChart1MouseMove(Sender: TObject; Shift: TShiftState;
+  X, Y: Single);
 begin
-  Exit;
-  CnDebugger.LogMsg('MouseMove' + Format('X: %.2f, Y: %.2f', [X, Y]));
+//  Exit;
+//  CnDebugger.LogMsg('MouseMove' + Format('X: %.2f, Y: %.2f', [X, Y]));
 end;
 
 procedure TForm3.SignalChart1Resized(Sender: TObject);
@@ -426,7 +422,7 @@ end;
 procedure TForm3.InitSpectralColors;
 var
   i: Integer;
-  rr, gg, bb: Double;
+  rr, gg, bb: double;
   AColor: TAlphaColor;
 begin
   for i := 400 to 700 do
@@ -436,10 +432,10 @@ begin
     spectral_color(rr, gg, bb, i);
     With TAlphaColorRec(AColor) do
     begin
-      R:= Trunc(rr * 255);
-      G:= Trunc(gg * 255);
-      B:= Trunc(bb * 255);
-      A:= $FF;
+      r := Trunc(rr * 255);
+      g := Trunc(gg * 255);
+      b := Trunc(bb * 255);
+      A := $FF;
     end;
     Insert(AColor, FSpectralColors, Length(FSpectralColors));
   end;
@@ -448,60 +444,60 @@ end;
 procedure TForm3.InitSpectralColors2;
 var
   w: Integer;
-  rr, gg, bb: Double;
+  rr, gg, bb: double;
   AColor: TAlphaColor;
 begin
   for w := 380 to 780 do
   begin
     if (w >= 380) and (w < 440) then
     begin
-        rr:= -(w - 440) / (440 - 380);
-        gg:= 0.0;
-        bb:= 1.0;
+      rr := -(w - 440) / (440 - 380);
+      gg := 0.0;
+      bb := 1.0;
     end
-    else if  (w >= 440) and (w < 490) then
+    else if (w >= 440) and (w < 490) then
     begin
-        rr := 0.0;
-        gg := (w - 440) / (490 - 440);
-        bb := 1.0;
+      rr := 0.0;
+      gg := (w - 440) / (490 - 440);
+      bb := 1.0;
     end
-    else if  (w >= 490) and (w < 510) then
+    else if (w >= 490) and (w < 510) then
     begin
-        rr := 0.0;
-        gg := 1.0;
-        bb := -(w - 510) / (510 - 490);
+      rr := 0.0;
+      gg := 1.0;
+      bb := -(w - 510) / (510 - 490);
     end
-    else if  (w >= 510) and (w < 580) then
+    else if (w >= 510) and (w < 580) then
     begin
-        rr := (w - 510) / (580 - 510);
-        gg := 1.0;
-        bb := 0.0;
+      rr := (w - 510) / (580 - 510);
+      gg := 1.0;
+      bb := 0.0;
     end
-    else if  (w >= 580) and (w < 645) then
+    else if (w >= 580) and (w < 645) then
     begin
-        rr := 1.0;
-        gg := -(w - 645) / (645 - 580);
-        bb := 0.0
+      rr := 1.0;
+      gg := -(w - 645) / (645 - 580);
+      bb := 0.0
     end
-    else if  (w >= 645) and (w <= 780) then
+    else if (w >= 645) and (w <= 780) then
     begin
-        rr := 1.0;
-        gg := 0.0;
-        bb := 0.0;
+      rr := 1.0;
+      gg := 0.0;
+      bb := 0.0;
     end
     else
     begin
-        rr := 0.0;
-        gg := 0.0;
-        bb := 0.0;
+      rr := 0.0;
+      gg := 0.0;
+      bb := 0.0;
     end;
 
     With TAlphaColorRec(AColor) do
     begin
-      R:= Trunc(rr * 255);
-      G:= Trunc(gg * 255);
-      B:= Trunc(bb * 255);
-      A:= $FF;
+      r := Trunc(rr * 255);
+      g := Trunc(gg * 255);
+      b := Trunc(bb * 255);
+      A := $FF;
     end;
 
     Insert(AColor, FSpectralColors, Length(FSpectralColors));
@@ -511,7 +507,7 @@ end;
 procedure TForm3.InitSpectralColors3;
 var
   w: Integer;
-  rr, gg, bb: Double;
+  rr, gg, bb: double;
   AColor: TAlphaColor;
 begin
   for w := 380 to 780 do
@@ -519,35 +515,33 @@ begin
 
     With TAlphaColorRec(AColor) do
     begin
-      WavelengthToRGB(w, R, G, B);
-      A:= $FF;
+      WavelengthToRGB(w, r, g, b);
+      A := $FF;
     end;
 
     Insert(AColor, FSpectralColors, Length(FSpectralColors));
   end;
 end;
 
-procedure TForm3.Label1Paint(Sender: TObject; Canvas: TCanvas;
-  const ARect: TRectF);
-begin
-  //
-end;
+
 
 procedure TForm3.Timer1Timer(Sender: TObject);
 var
   i: Integer;
   di: Integer;
+  MYFFT: TArray<Single>;
 begin
-  self.MyLabel1.Text:= FormatdATEtIME('YYYY-MM-DD'#$D#$A'HH:NN:SS', nOW);
   if BASS_ChannelIsActive(hs) <> BASS_ACTIVE_PLAYING then
     Exit;
 
   BASS_ChannelGetData(hs, FFTData, BASS_DATA_FFT512);
-  for i := 0 to Length(FFTData) - 1 do
+  SetLength(MYFFT, Length(FFTData) div 5);
+
+  for i := 0 to Length(MYFFT) - 1 do
   begin
-    FFTData[i] := FFTData[i];
+    MYFFT[i] := FFTData[i];
   end;
-  SignalChart1.DrawData(FFTData);
+  SignalChart1.DrawData(MYFFT);
   Caption := 'FPS: ' + IntToStr(SignalChart1.FPS);
 
 end;

@@ -158,6 +158,7 @@ type
     FBottomTextR: TRectF;
   Private
     FBKGraphic: TBitmap;
+    FHint: String;
   Private
     FFrameCounter: TFrameCount;
     FDrawer: TSignalDrawer;
@@ -253,7 +254,6 @@ type
     FColors: TArray<TAlphaColor>;
     FWaterFallBmp: TBitmap;
     FColorImage: TImage;
-    FHintString: String;
   Protected
     Procedure DrawCross(X, Y: Single); Override;
     Procedure DoSizeChagned(); Override;
@@ -1214,6 +1214,59 @@ begin
 end;
 
 procedure TSignalRectangeDrawer.DoDraw;
+  function GetHint: String;
+  var
+    ptPosInGrid: TPointF;
+    RatioX, RatioY: Single;
+    DataIndex: Integer;
+    LabelX, LabelY: String;
+    PeakY: String;
+  begin
+    Result:= '';
+    With Chart do
+    begin
+      ptPosInGrid:= TPointF.Create(FCrossX - FGraphicGridR.Left, FCrossY - FGraphicGridR.Top);
+      RatioX:= ptPosInGrid.X / FGraphicGridR.Width;
+      RatioY:= ptPosInGrid.Y / FGraphicGridR.Height;
+      With Chart.FAxisesData.Bottom do
+      begin
+//      DataIndex:= Ceil(FGraphicGridR.Width * RatioX) * (FMaxValue - FMinValue + 1);
+//        DataIndex:= Ceil((FMaxValue - FMinValue + 1+0.5) * RatioX) ;
+//        DataIndex:= Ceil(Length(FData) * Min((RatioX + 0.005), 1));
+        DataIndex:= Round(Length(FData) * Min(RatioX, 1));
+      end;
+
+      Result:= Format('GridR (%.2f, %.2f)'#$D#$A
+                      +'Cross: (%.2f, %.2f)=>(%.2f, %.2f)'#$D#$A
+                      +'Cross Percent: (%.2f%%, %.2f%%)'#$D#$A,
+                      [FGraphicGridR.Left,FGraphicGridR.Top,
+                      FCrossX, FCrossY,
+                      ptPosInGrid.X, ptPosInGrid.Y,
+                      RatioX * 100 , RatioY * 100
+                      ]);
+      if Length(FData) > 0 then
+      begin
+        Result:= Result + Format('Data[%d] = %.2f'#$D#$A,
+                        [DataIndex, FPeaks[DataIndex]
+                        ]);
+        With Chart.FAxisesData.Bottom do
+          LabelX:= Format('%.2f' + FLabelSuffix, [
+                FMinValue + (FMaxValue - FMinValue + 1) * RatioX]);
+
+        With Chart.FAxisesData.Left do
+                LabelY:= Format('%.2f' + FLabelSuffix, [
+                      FMaxValue - (FMaxValue - FMinValue + 1) * RatioY]);
+        With Chart.FAxisesData.Left do
+                PeakY:= Format('%.2f' + FLabelSuffix, [
+                      FMinValue + (FMaxValue - FMinValue + 1) * FPeaks[DataIndex]]);
+
+        Result:= Result + Format('Labled Value: (%s, %s)'#$D#$A, [LabelX, LabelY]);
+        Result:= Result + Format('Peak Value: (%s, %s)', [LabelX, PeakY]);
+
+
+      end;
+    end;
+  end;
 var
   HStep: Single;
   FalloffR: TRectF;
@@ -1302,11 +1355,16 @@ begin
       end;
     end;
   end;
-  if Chart.FShowCross and Chart.FMouseInRect then
+  if Chart.FMouseInRect then
   begin
-    DrawCross(FChart.FCrossX, FChart.FCrossY);
+    Chart.FHint:= GetHint();
+    if Chart.FShowCross then
+    begin
+      DrawCross(FChart.FCrossX, FChart.FCrossY);
+    end;
+    DrawHint();
   end;
-  DrawHint();
+
 end;
 
 procedure TSignalRectangeDrawer.DoSizeChagned;
@@ -1337,7 +1395,7 @@ end;
 
 procedure TSignalRectangeDrawer.DrawHint;
 begin
-
+//dummy
 end;
 
 procedure TSignalRectangeDrawer.SetFalloffDecrement(const Value: Single);
@@ -1480,14 +1538,12 @@ var
   AColor: TAlphaColor;
   Clip: TClipRects;
 begin
-
-
   With Chart do
   begin
     if ComponentState * [csLoading, csReading] <> [] then
       Exit;
-    if Length(FData) = 0 then
-      Exit;
+//    if Length(FData) = 0 then
+//      Exit;
 
     if FWaterFallRectUpdated then
     begin
@@ -1497,15 +1553,14 @@ begin
       FWaterFallRectUpdated := False;
     end;
 
-    FHintString:= Format('GridR (%.2f, %.2f)'#$D#$A+'Mouse: (%.2f, %.2f)',
-      [Chart.FGraphicGridR.Left, Chart.FGraphicGridR.Top, Chart.FCrossX, Chart.FCrossY]);
+
     // -----------------
     with FWaterFallBmp do
     begin
       if Map(TMapAccess.ReadWrite, BmpData) then
         try
           // 移动图像向下一像素 ,要每行移动，不要多行同时移动，否则会出错，
-          // 而且对速度影响不大
+          // 而且对速度性能益处有限
           MoveBytes := Width * BmpData.BytesPerPixel;
           for i := Height - 2 Downto 0 do
             System.Move(BmpData.GetPixelAddr(0, 0 + i)^,
@@ -1513,7 +1568,6 @@ begin
 
           FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
           FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
-
         finally
           Unmap(BmpData);
         end;
@@ -1525,8 +1579,6 @@ begin
 
       FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
       FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
-
-
 
       // GPU方式和Direct2D方式，两种情况下面BITMAP的TOP座标似乎是不同的，
       // 需要用以下的方式来区分
@@ -1545,26 +1597,21 @@ begin
 
           for i := 0 to Length(FData) - 1 do
           begin
-            if i > FWaterFallGridR.Width - 1 then
-              Break;
             if i > 0 then
               PointStart := PointEnd;
 
             PointEnd := PointStart;
 
             PointEnd.X := PointEnd.X + HStep;
-            if PointStart.X > FWaterFallGridR.Width - 1 then
-              Break;
 
-
-            // ColorIndex := Trunc(FData[i] * 5 * Length(FColors)); // 扩大颜色范围
-            ColorIndex := Trunc(FData[i] * Length(FColors)); // 扩大颜色范围
+            ColorIndex := Trunc(FData[i] * Length(FColors));
             if ColorIndex > Length(FColors) - 1 then
               AColor := TAlphaColors.White
             else
               AColor := FColors[ColorIndex];
 
             Stroke.Color := AColor;
+
             DrawLine(PointStart, PointEnd, 1);
           end;
         finally
@@ -1606,7 +1653,7 @@ begin
         if BeginScene(Nil, 0) then
           try
             ColorRect := TRectF.Create(0, 0, FColorImage.Bitmap.Width, Step);
-            for i := 0 to Length(FColors) - 1 do
+            for i := Length(FColors) - 1 Downto 0 do
             begin
               Fill.Color := FColors[i];
               FillRect(ColorRect, 0, 0, [], 1);
@@ -1625,7 +1672,8 @@ begin
   inherited;
   With Chart do
   begin
-    Chart.Canvas.DrawLine(TPointF.Create(FCrossX, FWaterFallGridR.Top),
+    Canvas.Stroke.Color:= TAlphaColors.White;
+    Canvas.DrawLine(TPointF.Create(FCrossX, FWaterFallGridR.Top),
       TPointF.Create(FCrossX, FWaterFallGridR.Bottom), CrossOpacity);
   end;
 end;
@@ -1643,7 +1691,7 @@ begin
     Canvas.Fill.Kind:= TBrushKind.Solid;
     TextRect:= FGraphicGridR;
     TextRect.Offset(10, 10);
-    Canvas.FillText(TextRect, FHintString, True, 1, [], TTextAlign.Leading, TTextAlign.Leading);
+    Canvas.FillText(TextRect, FHint, True, 1, [], TTextAlign.Leading, TTextAlign.Leading);
   end;
 end;
 
