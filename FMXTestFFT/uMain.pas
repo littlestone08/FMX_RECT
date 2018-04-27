@@ -26,6 +26,7 @@ type
     Panel2: TPanel;
     Panel3: TPanel;
     Button4: TButton;
+    MyLabel1: TLabel;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -46,6 +47,8 @@ type
     procedure SignalChart1MouseEnter(Sender: TObject);
     procedure SignalChart1MouseLeave(Sender: TObject);
     procedure Button4Click(Sender: TObject);
+    procedure Label1Paint(Sender: TObject; Canvas: TCanvas;
+      const ARect: TRectF);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -223,7 +226,6 @@ begin
 //  InitSpectralColors();
 //  InitSpectralColors2();
   InitSpectralColors3();
-
 
 end;
 
@@ -525,11 +527,18 @@ begin
   end;
 end;
 
+procedure TForm3.Label1Paint(Sender: TObject; Canvas: TCanvas;
+  const ARect: TRectF);
+begin
+  //
+end;
+
 procedure TForm3.Timer1Timer(Sender: TObject);
 var
   i: Integer;
   di: Integer;
 begin
+  self.MyLabel1.Text:= FormatdATEtIME('YYYY-MM-DD'#$D#$A'HH:NN:SS', nOW);
   if BASS_ChannelIsActive(hs) <> BASS_ACTIVE_PLAYING then
     Exit;
 

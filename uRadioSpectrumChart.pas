@@ -5,7 +5,7 @@ interface
 uses
   System.Classes, System.SysUtils, System.Types, System.UITypes,
   System.Math, System.DateUtils, System.IOUtils,
-  FMX.Objects, FMX.Graphics, FMX.Types, FMX.Controls;
+  FMX.Objects, FMX.Graphics, FMX.Types, FMX.Controls, FMX.STdCtrls;
 
 type
 
@@ -235,6 +235,7 @@ type
   Protected
     Procedure DrawCross(X, Y: Single); Override;
     Procedure DoSizeChagned(); Override;
+    Procedure DrawHint; Virtual;
   Public
     Constructor Create(AOwner: TComponent); Override;
     Procedure DoDraw; Override;
@@ -252,20 +253,18 @@ type
     FColors: TArray<TAlphaColor>;
     FWaterFallBmp: TBitmap;
     FColorImage: TImage;
+    FHintString: String;
   Protected
     Procedure DrawCross(X, Y: Single); Override;
     Procedure DoSizeChagned(); Override;
     procedure SetChart(const Value: TSignalChart); Override;
+    Procedure DrawHint; Override;
   Public
     Procedure DoDraw; Override;
     constructor Create(AOwner: TComponent); Override;
     Destructor Destroy; Override;
   End;
 
-  TBitmapAccess = Class(TBitmap)
-  Public
-    Procedure MoveDown(SrcY: Integer; DestY: Integer);
-  End;
 
 procedure Register;
 
@@ -488,6 +487,7 @@ begin
 end;
 
 { TGridLayer }
+
 
 function TSignalChart.ClientToGraphic(const APoint: TRectF): TRectF;
 begin
@@ -1306,6 +1306,7 @@ begin
   begin
     DrawCross(FChart.FCrossX, FChart.FCrossY);
   end;
+  DrawHint();
 end;
 
 procedure TSignalRectangeDrawer.DoSizeChagned;
@@ -1334,6 +1335,11 @@ begin
 
 end;
 
+procedure TSignalRectangeDrawer.DrawHint;
+begin
+
+end;
+
 procedure TSignalRectangeDrawer.SetFalloffDecrement(const Value: Single);
 begin
   FFalloffDecrement := Value;
@@ -1355,6 +1361,7 @@ begin
 end;
 
 { TSignalDrawer }
+
 
 procedure TSignalDrawer.SetChart(const Value: TSignalChart);
 var
@@ -1462,11 +1469,10 @@ end;
 
 procedure TSplitedDrawer.DoDraw;
 var
-  R: TRectF;
   HStep: Single;
   PointStart: TPointF;
   PointEnd: TPointF;
-  i, w: Integer;
+  i: Integer;
   ColorIndex: Cardinal;
 var
   BmpData: TBitmapData;
@@ -1491,9 +1497,8 @@ begin
       FWaterFallRectUpdated := False;
     end;
 
-    R := FWaterFallGridR;
-    HStep := R.Width / (Length(FData) - 1);
-
+    FHintString:= Format('GridR (%.2f, %.2f)'#$D#$A+'Mouse: (%.2f, %.2f)',
+      [Chart.FGraphicGridR.Left, Chart.FGraphicGridR.Top, Chart.FCrossX, Chart.FCrossY]);
     // -----------------
     with FWaterFallBmp do
     begin
@@ -1514,13 +1519,14 @@ begin
         end;
     end;
 
+    if FWaterFallBmp.HandleAllocated then
     With FWaterFallBmp.Canvas do
     begin
 
       FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
       FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
 
-      w := Min(Trunc(R.Width), Length(FData));
+
 
       // GPU方式和Direct2D方式，两种情况下面BITMAP的TOP座标似乎是不同的，
       // 需要用以下的方式来区分
@@ -1535,13 +1541,21 @@ begin
       // if BeginScene(@Clip, 0) then
       if BeginScene() then
         try
-          for i := 0 to w - 1 do
+          HStep := FWaterFallGridR.Width / (Length(FData) - 1);
+
+          for i := 0 to Length(FData) - 1 do
           begin
+            if i > FWaterFallGridR.Width - 1 then
+              Break;
             if i > 0 then
               PointStart := PointEnd;
 
             PointEnd := PointStart;
+
             PointEnd.X := PointEnd.X + HStep;
+            if PointStart.X > FWaterFallGridR.Width - 1 then
+              Break;
+
 
             // ColorIndex := Trunc(FData[i] * 5 * Length(FColors)); // 扩大颜色范围
             ColorIndex := Trunc(FData[i] * Length(FColors)); // 扩大颜色范围
@@ -1616,6 +1630,23 @@ begin
   end;
 end;
 
+procedure TSplitedDrawer.DrawHint;
+var
+  TextRect: TRectF;
+begin
+  inherited;
+  With FChart do
+  begin
+    Canvas.Stroke.Color:= TAlphaColors.Red;
+    Canvas.Fill.Color:= TAlphaColors.Red;
+    Canvas.Stroke.Kind:= TBrushKind.Solid;
+    Canvas.Fill.Kind:= TBrushKind.Solid;
+    TextRect:= FGraphicGridR;
+    TextRect.Offset(10, 10);
+    Canvas.FillText(TextRect, FHintString, True, 1, [], TTextAlign.Leading, TTextAlign.Leading);
+  end;
+end;
+
 procedure TSplitedDrawer.SetChart(const Value: TSignalChart);
 begin
   inherited;
@@ -1626,35 +1657,9 @@ begin
   end;
 end;
 
-{ TBitmapAccess }
 
-procedure TBitmapAccess.MoveDown(SrcY: Integer; DestY: Integer);
-var
-  i: Integer;
-  MoveBytes: Integer;
-  BmpData: TBitmapData;
-begin
-  if Map(TMapAccess.ReadWrite, BmpData) then
-    try
-      begin
-        if GlobalUseGPUCanvas then
-        begin
-          MoveBytes := Width * BmpData.BytesPerPixel * Height;
-          Move(BmpData.GetPixelAddr(0, SrcY)^, BmpData.GetPixelAddr(0, DestY)^,
-            MoveBytes);
-        end
-        else
-        begin
-          MoveBytes := Width * BmpData.BytesPerPixel;
-          for i := Height - 2 Downto 0 do
-            Move(BmpData.GetPixelAddr(0, SrcY + i)^,
-              BmpData.GetPixelAddr(0, DestY + i)^, MoveBytes);
-        end;
-      end;
-    finally
-      Unmap(BmpData);
-    end;
-end;
+
+
 
 initialization
 
