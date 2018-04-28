@@ -24,6 +24,7 @@ type
     SignalRectangeDrawer1: TSignalRectangeDrawer;
     SplitedDrawer1: TSplitedDrawer;
     Button4: TButton;
+    Button5: TButton;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -40,6 +41,7 @@ type
     procedure SignalChart1MouseEnter(Sender: TObject);
     procedure SignalChart1MouseLeave(Sender: TObject);
     procedure Button4Click(Sender: TObject);
+    procedure Button5Click(Sender: TObject);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -253,6 +255,11 @@ begin
   end;
 end;
 
+procedure TForm3.Button5Click(Sender: TObject);
+begin
+  SplitedDrawer1.ShowWaterfall:= Not SplitedDrawer1.ShowWaterfall;
+end;
+
 constructor TForm3.Create(AOwner: TComponent);
 begin
   inherited;
@@ -277,11 +284,10 @@ end;
 procedure TForm3.FormCreate(Sender: TObject);
 begin
   InitRainbow();
-  // InitSpectralColors();
-  // InitSpectralColors2();
   InitSpectralColors3();
   self.Fill.Color := TAlphaColors.Yellowgreen;
   self.Fill.Kind := TBrushKind.Solid;
+  self.SignalChart1.Drawer:= SplitedDrawer1
 end;
 
 procedure TForm3.FormPaint(Sender: TObject; Canvas: TCanvas;
