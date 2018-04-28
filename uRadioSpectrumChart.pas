@@ -122,20 +122,8 @@ type
     Property Bottom: TCustomAxis Read FBottom Write FBottom;
   End;
 
-  TSignalDrawer = Class(TComponent)
-  Private
-    [weak]
-    FChart: TSignalChart;
-  private
-  Protected
-    procedure SetChart(const Value: TSignalChart); Virtual;
-    Procedure DrawCross(X, Y: Single); Virtual; Abstract;
-    Procedure DoSizeChagned(); Virtual; Abstract;
-  Public
-    Procedure DoDraw; Virtual; Abstract;
-  Published
-    Property Chart: TSignalChart Read FChart Write SetChart;
-  End;
+  TSignalDrawer = Class;
+
 
   TSignalChart = Class(TPaintBox)
   Private
@@ -193,12 +181,12 @@ type
     Procedure DrawData(const AData: TArray<Single>);
     Property FPS: Integer Read GetFPS;
   Public
-    function GridToClient(const APoint: TRectF): TRectF; inline;
-    function ClientToGrid(const APoint: TRectF): TRectF; inline;
-    function GridToGraphic(const APoint: TRectF): TRectF; inline;
-    function GraphicToGrid(const APoint: TRectF): TRectF; inline;
-    function ClientToGraphic(const APoint: TRectF): TRectF; inline;
-    function GraphicToClient(const APoint: TRectF): TRectF; inline;
+//    function GridToClient(const APoint: TRectF): TRectF; inline;
+//    function ClientToGrid(const APoint: TRectF): TRectF; inline;
+//    function GridToGraphic(const APoint: TRectF): TRectF; inline;
+//    function GraphicToGrid(const APoint: TRectF): TRectF; inline;
+//    function ClientToGraphic(const APoint: TRectF): TRectF; inline;
+//    function GraphicToClient(const APoint: TRectF): TRectF; inline;
   Published
     Property AxisesData: TAxises Read FAxisesData Write FAxisesData;
     Property AxisesView: TAxises Read FAxisesView Write FAxisesView;
@@ -218,6 +206,21 @@ type
     Procedure DefineProperties(Filer: TFiler); Override;
   Public
     Constructor Create(AOwner: TComponent); Override;
+  End;
+
+  TSignalDrawer = Class(TComponent)
+  Private
+    [weak]
+    FChart: TSignalChart;
+  private
+  Protected
+    procedure SetChart(const Value: TSignalChart); Virtual;
+    Procedure DrawCross(X, Y: Single); Virtual; Abstract;
+    Procedure DoSizeChagned(); Virtual; Abstract;
+  Public
+    Procedure DoDraw; Virtual; Abstract;
+  Published
+    Property Chart: TSignalChart Read FChart Write SetChart;
   End;
 
   TSignalRectangeDrawer = Class(TSignalDrawer)
@@ -318,29 +321,29 @@ begin
   Result := FFrameCounter.FPS;
 end;
 
-function TSignalChart.GraphicToClient(const APoint: TRectF): TRectF;
-begin
-  Result := APoint;
-  Result.offset(-FGraphicRect.Left, -FGraphicRect.Top);
-end;
-
-function TSignalChart.GraphicToGrid(const APoint: TRectF): TRectF;
-begin
-  Result := APoint;
-  Result.offset(FGraphicGridR.TopLeft);
-end;
-
-function TSignalChart.GridToClient(const APoint: TRectF): TRectF;
-begin
-  Result := APoint;
-  Result.offset(FGraphicGridR.TopLeft);
-end;
-
-function TSignalChart.GridToGraphic(const APoint: TRectF): TRectF;
-begin
-  Result := APoint;
-  Result.offset(-FGraphicRect.Left, -FGraphicRect.Top);
-end;
+//function TSignalChart.GraphicToClient(const APoint: TRectF): TRectF;
+//begin
+//  Result := APoint;
+//  Result.offset(-FGraphicRect.Left, -FGraphicRect.Top);
+//end;
+//
+//function TSignalChart.GraphicToGrid(const APoint: TRectF): TRectF;
+//begin
+//  Result := APoint;
+//  Result.offset(FGraphicGridR.TopLeft);
+//end;
+//
+//function TSignalChart.GridToClient(const APoint: TRectF): TRectF;
+//begin
+//  Result := APoint;
+//  Result.offset(FGraphicGridR.TopLeft);
+//end;
+//
+//function TSignalChart.GridToGraphic(const APoint: TRectF): TRectF;
+//begin
+//  Result := APoint;
+//  Result.offset(-FGraphicRect.Left, -FGraphicRect.Top);
+//end;
 
 procedure TSignalChart.Loaded;
 begin
@@ -489,17 +492,17 @@ end;
 { TGridLayer }
 
 
-function TSignalChart.ClientToGraphic(const APoint: TRectF): TRectF;
-begin
-  Result := APoint;
-  Result.offset(FGraphicRect.TopLeft);
-end;
-
-function TSignalChart.ClientToGrid(const APoint: TRectF): TRectF;
-begin
-  Result := APoint;
-  Result.offset(-FGraphicGridR.Left, -FGraphicGridR.Top);
-end;
+//function TSignalChart.ClientToGraphic(const APoint: TRectF): TRectF;
+//begin
+//  Result := APoint;
+//  Result.offset(FGraphicRect.TopLeft);
+//end;
+//
+//function TSignalChart.ClientToGrid(const APoint: TRectF): TRectF;
+//begin
+//  Result := APoint;
+//  Result.offset(-FGraphicGridR.Left, -FGraphicGridR.Top);
+//end;
 
 constructor TSignalChart.Create;
 begin
@@ -1328,13 +1331,8 @@ begin
         HStep, FGraphicGridR.Height - 0);
 
       FalloffR.offset((i - 0.5) * HStep, 0);
-      FalloffR := Chart.GridToClient(FalloffR);
-      // FalloffR.offset(FGridR.Left, FGridR.Top);
-
-      if FalloffR.Left < FGraphicGridR.Left then
-        FalloffR.Left := FGraphicGridR.Left;
-      if FalloffR.Right > FGraphicGridR.Right then
-        FalloffR.Right := FGraphicGridR.Right;
+      FalloffR.Offset(FGraphicGridR.TopLeft);
+      FalloffR.Left:= EnsureRange(FalloffR.Left, FGraphicGridR.Left, FGraphicGridR.Right);
 
       PeakR := FalloffR;
       if FalloffVisible then

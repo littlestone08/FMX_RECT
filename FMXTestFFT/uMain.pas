@@ -535,7 +535,7 @@ begin
     Exit;
 
   BASS_ChannelGetData(hs, FFTData, BASS_DATA_FFT512);
-  SetLength(MYFFT, Length(FFTData) div 5);
+  SetLength(MYFFT, Length(FFTData) div 1);
 
   for i := 0 to Length(MYFFT) - 1 do
   begin
