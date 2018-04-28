@@ -66,7 +66,7 @@ var
 implementation
 
 uses
-  SpectraLibrary, CnDebug;
+  SpectraLibrary, FMX.Printer, CnDebug;
 
 function MakeScaleScreenshot(Sender: TControl): TBitmap; Overload;
 var
