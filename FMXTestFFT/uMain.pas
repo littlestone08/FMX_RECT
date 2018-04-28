@@ -201,8 +201,9 @@ procedure TForm3.Button2Click(Sender: TObject);
 var
   X: TBitmap;
 begin
-  SignalChart1.AxisesData.Left.MinValue :=
-    self.SignalChart1.AxisesData.Left.MinValue - 1;
+
+  SplitedDrawer1.AxisesData.Left.MinValue :=
+    SplitedDrawer1.AxisesData.Left.MinValue - 1;
   SignalChart1.InvalidateRect(SignalChart1.ClipRect);
 
   SignalChart1.Repaint;
