@@ -12,7 +12,7 @@ object Form3: TForm3
   DesignerMasterStyle = 0
   object Button2: TButton
     Anchors = [akBottom]
-    Position.X = 840.645263671874900000
+    Position.X = 840.645263671875000000
     Position.Y = 538.000000000000000000
     TabOrder = 9
     Text = 'Button2'
@@ -84,7 +84,7 @@ object Form3: TForm3
     Top = 432
     save = '{1D8C3D07-29A9-4779-A099-32A8691EEA69}'
   end
-  object SignalRectangeDrawer1: TSignalRectangeDrawer
+  object SignalRectangeDrawer1: TSpectrumDrawer
     PeakDecrement = 0.100000001490116100
     FalloffDecrement = 0.500000000000000000
     FalloffVisible = True
@@ -115,7 +115,7 @@ object Form3: TForm3
     Left = 48
     Top = 344
   end
-  object SplitedDrawer1: TSplitedDrawer
+  object SplitedDrawer1: TWaterFallDrawer
     Chart = SignalChart1
     PeakDecrement = 0.004999999888241291
     FalloffDecrement = 0.009999999776482582

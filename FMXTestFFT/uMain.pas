@@ -21,8 +21,8 @@ type
     SignalChart1: TSignalChart;
     Test1: TTest;
     Panel1: TPanel;
-    SignalRectangeDrawer1: TSignalRectangeDrawer;
-    SplitedDrawer1: TSplitedDrawer;
+    SignalRectangeDrawer1: TSpectrumDrawer;
+    SplitedDrawer1: TWaterFallDrawer;
     Button4: TButton;
     Button5: TButton;
     procedure Button3Click(Sender: TObject);
