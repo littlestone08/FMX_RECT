@@ -25,17 +25,19 @@ type
   end;
 
   TSignalChart = Class;
-  TSignalDrawer = Class;
+  TAbstractSignalDrawer = Class;
 
   TCustomAxis = Class(TPersistent)
   Private
     [weak]
-    FDrawer: TSignalDrawer;
+    FDrawer: TAbstractSignalDrawer;
     FLines: TArray<TLine>;
     FMinValue: Integer;
     FThinkness: Single;
     FMaxValue: Integer;
     FLineColor: TAlphaColor;
+    FViewMin: Integer;
+    FViewMax: Integer;
     FUnitStr: String;
     procedure SetMaxValue(const Value: Integer);
     procedure SetMinValue(const Value: Integer);
@@ -44,6 +46,9 @@ type
     Procedure DoChanged;
     procedure SetUnitStr(const Value: String);
     function FChart: TSignalChart;
+    Procedure CheckViewRange;
+    procedure SetViewMax(const Value: Integer);
+    procedure SetViewMin(const Value: Integer);
   Protected
     function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF;
       const offset: TPointF): TRectF; Virtual; Abstract;
@@ -54,7 +59,7 @@ type
       Virtual; Abstract;
     function GetHTextAlign: TTextAlign; Virtual; Abstract;
   Public
-    Constructor Create(ADrawer: TSignalDrawer); Virtual;
+    Constructor Create(ADrawer: TAbstractSignalDrawer); Virtual;
 
     Class function CalcuStep(Range: Integer; N: Integer): Integer;
     Class Function CalcuValueStep(Limits: Single;
@@ -69,6 +74,8 @@ type
   Published
     Property MinValue: Integer read FMinValue write SetMinValue;
     Property MaxValue: Integer read FMaxValue write SetMaxValue;
+    Property ViewMin: Integer read FViewMin write SetViewMin;
+    Property ViewMax: Integer read FViewMax write SetViewMax;
     Property Thinkness: Single read FThinkness write SetThinkness;
     Property LineColor: TAlphaColor read FLineColor write SetLineColor;
     Property HTextAlign: TTextAlign Read GetHTextAlign;
@@ -86,7 +93,7 @@ type
       Override;
     function GetHTextAlign: TTextAlign; Override;
   Public
-    Constructor Create(ADrawer: TSignalDrawer); Override;
+    Constructor Create(ADrawer: TAbstractSignalDrawer); Override;
   end;
 
   TBottomAxis = Class(TCustomAxis)
@@ -100,7 +107,7 @@ type
       Override;
     function GetHTextAlign: TTextAlign; Override;
   Public
-    Constructor Create(ADrawer: TSignalDrawer); Override;
+    Constructor Create(ADrawer: TAbstractSignalDrawer); Override;
   end;
 
   TLinearEquations = Class
@@ -119,12 +126,13 @@ type
     FLeft: TCustomAxis;
     FBottom: TCustomAxis;
   Public
-    Constructor Create(ADrawer: TSignalDrawer);
+    Constructor Create(ADrawer: TAbstractSignalDrawer);
     Destructor Destroy; Override;
   Published
     Property Left: TCustomAxis Read FLeft Write FLeft;
     Property Bottom: TCustomAxis Read FBottom Write FBottom;
   End;
+
 
 
   TSignalChart = Class(TPaintBox)
@@ -133,13 +141,13 @@ type
     FHint: String;
   Private
     FFrameCounter: TFrameCount;
-    FDrawer: TSignalDrawer;
+    FDrawer: TAbstractSignalDrawer;
 
     function GetFPS: Integer;
     Procedure UpdateBitmap;
     procedure DoCheckSize;
     Procedure DoRectSizeChagned;
-    procedure SetDrawer(const Value: TSignalDrawer);
+    procedure SetDrawer(const Value: TAbstractSignalDrawer);
   Private
     FLastUpdateTime: TDateTime;
   Protected
@@ -154,7 +162,7 @@ type
     Procedure DrawData(const AData: TArray<Single>);
     Property FPS: Integer Read GetFPS;
   Published
-    Property Drawer: TSignalDrawer read FDrawer write SetDrawer;
+    Property Drawer: TAbstractSignalDrawer read FDrawer write SetDrawer;
   End;
 
   TTest = Class(TComponent)
@@ -168,7 +176,7 @@ type
     Constructor Create(AOwner: TComponent); Override;
   End;
 
-  TSignalDrawer = Class(TComponent)
+  TAbstractSignalDrawer = Class(TComponent)
   Private
     [weak]
     FChart: TSignalChart;
@@ -177,19 +185,19 @@ type
     Procedure DrawCross(X, Y: Single); Virtual; Abstract;
     Procedure DoSizeChanged(); Virtual; Abstract;
     Procedure UpdateGraphicRect; Virtual; Abstract;
+    Procedure UpdateGridRAndStdTextR(); Virtual; Abstract;
   Public
     Procedure ChartSinkMouseMove(Chart: TSignalChart; Shift: TShiftState; X, Y: Single); Virtual; Abstract;
     Procedure ChartSinkCheckSize(); Virtual; Abstract;
     Procedure ChartSinkDrawData(const AData: TArray<Single>); Virtual; Abstract;
     Procedure ChartSinkUpdateBitmap(BK: TBitmap); Virtual; Abstract;
-    Procedure UpdateGridRAndStdTextR(); Virtual; Abstract;
   Public
     Procedure DoDraw; Virtual; Abstract;
   Published
     Property Chart: TSignalChart Read FChart Write SetChart;
   End;
 
-  TSignalRectangeDrawer = Class(TSignalDrawer)
+  TSpectrumDrawer = Class(TAbstractSignalDrawer)
   Private
     FGrid: TBitmap;
     //corss cursor
@@ -202,7 +210,7 @@ type
     FData: TArray<Single>;
     //
     FAxisesData: TAxises;
-    FAxisesView: TAxises;
+//    FAxisesView: TAxises;
     FLeftTextR: TRectF;
     FBottomTextR: TRectF;
     //
@@ -252,12 +260,12 @@ type
     Property PeakVisible: Boolean read FPeakVisible write SetPeakVisible;
     Property CrossOpacity: Single Read FCrossOpacity Write FCrossOpacity;
     Property AxisesData: TAxises Read FAxisesData Write FAxisesData;
-    Property AxisesView: TAxises Read FAxisesView Write FAxisesView;
+//    Property AxisesView: TAxises Read FAxisesView Write FAxisesView;
     Property BKColor: TAlphaColor read FBKColor write SetBKColor;
     Property GridBoundColor: TAlphaColor read FGridBoundColor write SetGridBoundColor;
   End;
 
-  TSplitedDrawer = Class(TSignalRectangeDrawer)
+  TWaterFallDrawer = Class(TSpectrumDrawer)
   Private
     FWaterFallRect: TRectF;
     FWaterFallGridR: TRectF;
@@ -296,8 +304,8 @@ uses
 
 procedure Register;
 begin
-  RegisterComponents('RadioReceiver', [TSignalChart, TSignalRectangeDrawer,
-    TTest, TSplitedDrawer]);
+  RegisterComponents('RadioReceiver', [TSignalChart, TSpectrumDrawer,
+    TTest, TWaterFallDrawer]);
 end;
 
 procedure TSignalChart.DoPaint;
@@ -388,9 +396,9 @@ end;
 
 
 
-procedure TSignalChart.SetDrawer(const Value: TSignalDrawer);
+procedure TSignalChart.SetDrawer(const Value: TAbstractSignalDrawer);
 var
-  LastDrawer: TSignalDrawer;
+  LastDrawer: TAbstractSignalDrawer;
 begin
   LastDrawer := FDrawer;
   if FDrawer <> Value then
@@ -602,7 +610,21 @@ begin
 {$ENDIF}
 end;
 
-constructor TCustomAxis.Create(ADrawer: TSignalDrawer);
+procedure TCustomAxis.CheckViewRange;
+begin
+  if FViewMin > FViewMax then
+  begin
+    FViewMin:= FViewMin xor FViewMax;
+    FViewMax:= FViewMax xor FViewMin;
+    FViewMin:= FViewMin xor FViewMax;
+  end;
+  if FViewMin < FMinValue then
+    FViewMin:= FMinValue;
+  if FViewMax > FMaxValue then
+    FViewMax:= FMaxValue;
+end;
+
+constructor TCustomAxis.Create(ADrawer: TAbstractSignalDrawer);
 begin
   inherited Create;
   FDrawer := ADrawer;
@@ -618,6 +640,7 @@ begin
   begin
     if [csReading, csLoading] * FChart.ComponentState = [] then
     begin
+      if FDrawer <> Nil then FDrawer.UpdateGraphicRect();
       FChart.UpdateBitmap;
       FChart.InvalidateRect(FChart.LocalRect);
     end;
@@ -685,6 +708,24 @@ begin
   end;
 end;
 
+procedure TCustomAxis.SetViewMax(const Value: Integer);
+begin
+  if FViewMax <> Value then
+  begin
+    FViewMax:= Value;
+    CheckViewRange();
+  end;
+end;
+
+procedure TCustomAxis.SetViewMin(const Value: Integer);
+begin
+  if FViewMin <> Value then
+  begin
+    FViewMin:= Value;
+    CheckViewRange();
+  end;
+end;
+
 procedure TCustomAxis.SetLineColor(const Value: TAlphaColor);
 begin
   if FLineColor <> Value then
@@ -698,7 +739,11 @@ procedure TCustomAxis.SetMaxValue(const Value: Integer);
 begin
   if FMaxValue <> Value then
   begin
+    if FViewMax = FMaxValue then
+      FViewMax:= Value;
+
     FMaxValue := Value;
+    CheckViewRange();
     DoChanged();
   end;
 end;
@@ -707,7 +752,11 @@ procedure TCustomAxis.SetMinValue(const Value: Integer);
 begin
   if FMinValue <> Value then
   begin
+    if FViewMin = FMinValue then
+      FViewMin:= Value;
+
     FMinValue := Value;
+    CheckViewRange();
     DoChanged();
   end;
 end;
@@ -795,7 +844,7 @@ begin
   Result := Trunc(GraphicR.Height / StdTextR.Height);
 end;
 
-constructor TLeftAxis.Create(ADrawer: TSignalDrawer);
+constructor TLeftAxis.Create(ADrawer: TAbstractSignalDrawer);
 begin
   inherited;
   FMaxValue := 0;
@@ -837,7 +886,7 @@ begin
   Result := Trunc(GraphicR.Width / StdTextR.Width);
 end;
 
-constructor TBottomAxis.Create(ADrawer: TSignalDrawer);
+constructor TBottomAxis.Create(ADrawer: TAbstractSignalDrawer);
 begin
   inherited;
   FMaxValue := 1023;
@@ -898,7 +947,7 @@ end;
 
 { TAxises }
 
-constructor TAxises.Create(ADrawer: TSignalDrawer);
+constructor TAxises.Create(ADrawer: TAbstractSignalDrawer);
 begin
   inherited Create;
   FLeft := TLeftAxis.Create(ADrawer);
@@ -940,7 +989,7 @@ end;
 
 { TSignalRectangeDrawer }
 
-procedure TSignalRectangeDrawer.ChartSinkCheckSize;
+procedure TSpectrumDrawer.ChartSinkCheckSize;
 var
   Changed: Boolean;
 begin
@@ -970,12 +1019,12 @@ begin
   end;
 end;
 
-procedure TSignalRectangeDrawer.ChartSinkDrawData(const AData: TArray<Single>);
+procedure TSpectrumDrawer.ChartSinkDrawData(const AData: TArray<Single>);
 begin
   FData := AData;
 end;
 
-procedure TSignalRectangeDrawer.ChartSinkMouseMove(Chart: TSignalChart;
+procedure TSpectrumDrawer.ChartSinkMouseMove(Chart: TSignalChart;
   Shift: TShiftState; X, Y: Single);
 begin
   inherited;
@@ -1032,7 +1081,7 @@ begin
   // end;
 end;
 
-procedure TSignalRectangeDrawer.ChartSinkUpdateBitmap(BK: TBitmap);
+procedure TSpectrumDrawer.ChartSinkUpdateBitmap(BK: TBitmap);
   Procedure DrawControlBound(ACanvas: TCanvas);
   const
     CONST_FRAME_COLOR: TAlphaColor = TAlphaColors.Black;
@@ -1103,12 +1152,12 @@ begin
   // DrawData(FData);
 end;
 
-constructor TSignalRectangeDrawer.Create(AOwner: TComponent);
+constructor TSpectrumDrawer.Create(AOwner: TComponent);
 begin
   inherited;
   FGrid := TBitmap.Create;
   FAxisesData := TAxises.Create(self);
-  FAxisesView := TAxises.Create(self);
+//  FAxisesView := TAxises.Create(self);
 
   FFalloffDecrement := 0.005;
   FPeakDecrement := 0.001;
@@ -1123,15 +1172,15 @@ begin
     FillDesigningTestData();
 end;
 
-destructor TSignalRectangeDrawer.Destroy;
+destructor TSpectrumDrawer.Destroy;
 begin
-  FreeAndNil(FAxisesView);
+//  FreeAndNil(FAxisesView);
   FreeAndNil(FAxisesData);
   FreeAndNil(FGrid);
   inherited;
 end;
 
-procedure TSignalRectangeDrawer.DoDraw;
+procedure TSpectrumDrawer.DoDraw;
   function GetHint: String;
   var
     ptPosInGrid: TPointF;
@@ -1280,12 +1329,12 @@ begin
 
 end;
 
-procedure TSignalRectangeDrawer.DoSizeChanged;
+procedure TSpectrumDrawer.DoSizeChanged;
 begin
   // dummy
 end;
 
-procedure TSignalRectangeDrawer.DrawCross(X, Y: Single);
+procedure TSpectrumDrawer.DrawCross(X, Y: Single);
 begin
   With Chart.Canvas, Chart do
   begin
@@ -1306,7 +1355,7 @@ begin
 
 end;
 
-procedure TSignalRectangeDrawer.DrawHint;
+procedure TSpectrumDrawer.DrawHint;
 var
   TextRect: TRectF;
 begin
@@ -1323,7 +1372,7 @@ begin
   end;
 end;
 
-procedure TSignalRectangeDrawer.FillDesigningTestData;
+procedure TSpectrumDrawer.FillDesigningTestData;
 var
   i: Integer;
   nCount: Integer;
@@ -1345,7 +1394,7 @@ begin
   end;
 end;
 
-procedure TSignalRectangeDrawer.Internal_DrawGraphicBound(ACanvas: TCanvas);
+procedure TSpectrumDrawer.Internal_DrawGraphicBound(ACanvas: TCanvas);
 const
   CONST_FRAME_COLOR: TAlphaColor = TAlphaColors.Lime;
   CONST_FRAME_THICKNESS: Single = 2;
@@ -1358,7 +1407,7 @@ begin
 
 end;
 
-procedure TSignalRectangeDrawer.Internal_DrawGraphicFrame(ACanvas: TCanvas);
+procedure TSpectrumDrawer.Internal_DrawGraphicFrame(ACanvas: TCanvas);
 var
   GridFrameR: TRectF;
 begin
@@ -1372,7 +1421,7 @@ begin
   ACanvas.DrawRect(GridFrameR, 0, 0, [], 1);
 end;
 
-procedure TSignalRectangeDrawer.SetBKColor(const Value: TAlphaColor);
+procedure TSpectrumDrawer.SetBKColor(const Value: TAlphaColor);
 begin
   if FBKColor <> Value then
   begin
@@ -1382,17 +1431,17 @@ begin
   end;
 end;
 
-procedure TSignalRectangeDrawer.SetFalloffDecrement(const Value: Single);
+procedure TSpectrumDrawer.SetFalloffDecrement(const Value: Single);
 begin
   FFalloffDecrement := Value;
 end;
 
-procedure TSignalRectangeDrawer.SetFalloffVisible(const Value: Boolean);
+procedure TSpectrumDrawer.SetFalloffVisible(const Value: Boolean);
 begin
   FFalloffVisible := Value;
 end;
 
-procedure TSignalRectangeDrawer.SetGridBoundColor(const Value: TAlphaColor);
+procedure TSpectrumDrawer.SetGridBoundColor(const Value: TAlphaColor);
 begin
   if FGridBoundColor <> Value then
   begin
@@ -1402,17 +1451,17 @@ begin
   end;
 end;
 
-procedure TSignalRectangeDrawer.SetPeakeDecrement(const Value: Single);
+procedure TSpectrumDrawer.SetPeakeDecrement(const Value: Single);
 begin
   FPeakDecrement := Value;
 end;
 
-procedure TSignalRectangeDrawer.SetPeakVisible(const Value: Boolean);
+procedure TSpectrumDrawer.SetPeakVisible(const Value: Boolean);
 begin
   FPeakVisible := Value;
 end;
 
-procedure TSignalRectangeDrawer.UpdateGraphicRect;
+procedure TSpectrumDrawer.UpdateGraphicRect;
 begin
   With Chart do
   begin
@@ -1422,7 +1471,7 @@ begin
   end;
 end;
 
-procedure TSignalRectangeDrawer.UpdateGridRAndStdTextR;
+procedure TSpectrumDrawer.UpdateGridRAndStdTextR;
   function MeasureMaxRect(ValueFrom, ValueTo: Integer; Suffix: String): TRectF;
   var
     i: Integer;
@@ -1471,7 +1520,7 @@ end;
 
 
 
-procedure TSignalDrawer.SetChart(const Value: TSignalChart);
+procedure TAbstractSignalDrawer.SetChart(const Value: TSignalChart);
 var
   LastChart: TSignalChart;
 begin
@@ -1537,7 +1586,7 @@ begin
   end;
 end;
 
-constructor TSplitedDrawer.Create(AOwner: TComponent);
+constructor TWaterFallDrawer.Create(AOwner: TComponent);
   Procedure InitColors;
   var
     AColor: TAlphaColor;
@@ -1570,14 +1619,14 @@ begin
   end;
 end;
 
-destructor TSplitedDrawer.Destroy;
+destructor TWaterFallDrawer.Destroy;
 begin
 //  FreeAndNil(FColorImage);
   FreeAndNil(FWaterFallBmp);
   inherited;
 end;
 
-procedure TSplitedDrawer.DoDraw;
+procedure TWaterFallDrawer.DoDraw;
 var
   HStep: Single;
   PointStart: TPointF;
@@ -1677,7 +1726,7 @@ begin
   inherited;
 end;
 
-procedure TSplitedDrawer.DoSizeChanged;
+procedure TWaterFallDrawer.DoSizeChanged;
 var
   i: Integer;
   Step: Single;
@@ -1721,7 +1770,7 @@ begin
   end
 end;
 
-procedure TSplitedDrawer.DrawCross(X, Y: Single);
+procedure TWaterFallDrawer.DrawCross(X, Y: Single);
 begin
   inherited;
   if FShowWaterfall then
@@ -1736,7 +1785,7 @@ begin
 end;
 
 
-procedure TSplitedDrawer.Internal_DrawGraphicBound(ACanvas: TCanvas);
+procedure TWaterFallDrawer.Internal_DrawGraphicBound(ACanvas: TCanvas);
 const
   CONST_FRAME_COLOR: TAlphaColor = TAlphaColors.Red;
   CONST_FRAME_THICKNESS: Single = 2;
@@ -1751,7 +1800,7 @@ begin
   end;
 end;
 
-procedure TSplitedDrawer.Internal_DrawGraphicFrame(ACanvas: TCanvas);
+procedure TWaterFallDrawer.Internal_DrawGraphicFrame(ACanvas: TCanvas);
 var
   GridFrameR: TRectF;
 begin
@@ -1769,7 +1818,7 @@ begin
   end;
 end;
 
-procedure TSplitedDrawer.SetChart(const Value: TSignalChart);
+procedure TWaterFallDrawer.SetChart(const Value: TSignalChart);
 begin
   inherited;
   if Not (csDesigning in ComponentState) then
@@ -1780,7 +1829,7 @@ begin
 end;
 
 
-procedure TSplitedDrawer.SetShowWaterfall(const Value: Boolean);
+procedure TWaterFallDrawer.SetShowWaterfall(const Value: Boolean);
 begin
   if FShowWaterfall <> Value then
   begin
@@ -1801,7 +1850,7 @@ begin
   end;
 end;
 
-procedure TSplitedDrawer.UpdateGraphicRect;
+procedure TWaterFallDrawer.UpdateGraphicRect;
 begin
   if FShowWaterfall then
   With Chart do
@@ -1819,7 +1868,7 @@ begin
   end;
 end;
 
-procedure TSplitedDrawer.UpdateGridRAndStdTextR;
+procedure TWaterFallDrawer.UpdateGridRAndStdTextR;
 begin
   inherited;
   if FShowWaterfall then With Chart do

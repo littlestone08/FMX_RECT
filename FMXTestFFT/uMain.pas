@@ -196,6 +196,7 @@ end;
 procedure TForm3.Button1Click(Sender: TObject);
 begin
   FStop := True;
+  BASS_Stop();
   Timer1.Enabled := False;
 end;
 
@@ -238,7 +239,6 @@ begin
   else
   begin
     // Text := string(Mp3Path);
-
     BASS_ChannelPlay(hs, False);
     Timer1.Enabled := True;
   end;
