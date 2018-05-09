@@ -1325,7 +1325,7 @@ begin
     ACanvas.Fill.Color := TAlphaColors.Lime;
     ACanvas.Fill.Kind := TBrushKind.Solid;
 
-    for i := 0 to nCount - 1 do
+    for i := 0 to nViewCount - 1 do
     begin
       FalloffR := TRectF.Create(0, FGraphicGridR.Height *
         (1 - FFallOff[i + ViewIdxFrom]), HStep, FGraphicGridR.Height - 0);
@@ -1354,6 +1354,7 @@ begin
       end;
     end;
   end;
+
   if FMouseInRect then
   begin
     Chart.FHint := GetHint();
