@@ -4,12 +4,13 @@ interface
 
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes,
-  System.Variants,
+  System.Variants, System.Math,
   System.DateUtils,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.Effects,
   FMX.Filter.Effects, FMX.Objects, FMX.Controls.Presentation, FMX.StdCtrls,
   FMX.Layouts, FMX.ExtCtrls, uRadioSpectrumChart, FMXTee.Engine, FMXTee.Series,
-  FMXTee.Procs, FMXTee.Chart, FMX.PlatForm,Bass;
+  FMXTee.Procs, FMXTee.Chart, FMX.PlatForm,Bass, FMX.Edit, FMX.EditBox,
+  FMX.SpinBox;
 
 type
 
@@ -25,6 +26,10 @@ type
     SplitedDrawer1: TWaterFallDrawer;
     Button4: TButton;
     Button5: TButton;
+    Button6: TButton;
+    sbMin: TSpinBox;
+    sbMax: TSpinBox;
+    Button7: TButton;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -42,6 +47,7 @@ type
     procedure SignalChart1MouseLeave(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure Button5Click(Sender: TObject);
+    procedure Button6Click(Sender: TObject);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -205,8 +211,8 @@ var
   X: TBitmap;
 begin
 
-  SplitedDrawer1.AxisesData.Left.MinValue :=
-    SplitedDrawer1.AxisesData.Left.MinValue - 1;
+//  SplitedDrawer1.AxisesData.Left.MinValue :=
+//    SplitedDrawer1.AxisesData.Left.MinValue - 1;
   SignalChart1.InvalidateRect(SignalChart1.ClipRect);
 
   SignalChart1.Repaint;
@@ -260,6 +266,13 @@ begin
   SplitedDrawer1.ShowWaterfall:= Not SplitedDrawer1.ShowWaterfall;
 end;
 
+procedure TForm3.Button6Click(Sender: TObject);
+begin
+  SplitedDrawer1.AxisesData.Bottom.ViewMin:= 0;
+  SplitedDrawer1.AxisesData.Bottom.ViewMax:= 11025;
+  SplitedDrawer1.Chart.InvalidateRect(SplitedDrawer1.Chart.LocalRect);
+end;
+
 constructor TForm3.Create(AOwner: TComponent);
 begin
   inherited;
@@ -285,9 +298,14 @@ procedure TForm3.FormCreate(Sender: TObject);
 begin
   InitRainbow();
   InitSpectralColors3();
-  self.Fill.Color := TAlphaColors.Yellowgreen;
-  self.Fill.Kind := TBrushKind.Solid;
-  self.SignalChart1.Drawer:= SplitedDrawer1
+//  self.Fill.Color := TAlphaColors.Yellowgreen;
+  self.Fill.Color := TAlphaColors.Black;
+//  self.Fill.Color := TAlphaColors.Gray;
+//  self.Fill.Kind := TBrushKind.Solid;
+  self.SignalChart1.Drawer:= SplitedDrawer1;
+
+  self.sbMin.Value:= SplitedDrawer1.AxisesData.Bottom.ViewMin;
+  self.sbMax.Value:= SplitedDrawer1.AxisesData.Bottom.ViewMax;
 end;
 
 procedure TForm3.FormPaint(Sender: TObject; Canvas: TCanvas;

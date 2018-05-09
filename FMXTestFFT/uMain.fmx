@@ -66,22 +66,70 @@ object Form3: TForm3
     OnPaint = Panel1Paint
   end
   object Button4: TButton
-    Position.X = 24.000000000000000000
+    Position.X = 8.000000000000000000
     Position.Y = 144.000000000000000000
+    Size.Width = 105.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
     TabOrder = 19
-    Text = 'Button4'
+    Text = 'SnapShot'
     OnClick = Button4Click
   end
   object Button5: TButton
-    Position.X = 24.000000000000000000
+    Position.X = 8.000000000000000000
     Position.Y = 176.000000000000000000
+    Size.Width = 105.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
     TabOrder = 25
-    Text = 'Button5'
+    Text = 'WaterFall Visible'
     OnClick = Button5Click
   end
+  object Button6: TButton
+    Position.X = 8.000000000000000000
+    Position.Y = 280.000000000000000000
+    Size.Width = 105.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 32
+    Text = 'Set View Half'
+    OnClick = Button6Click
+  end
+  object sbMin: TSpinBox
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 34
+    Cursor = crIBeam
+    Max = 0.000000000000000000
+    Position.X = 8.000000000000000000
+    Position.Y = 216.000000000000000000
+    Size.Width = 108.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+  end
+  object sbMax: TSpinBox
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 33
+    Cursor = crIBeam
+    Max = 65535.000000000000000000
+    Position.X = 8.000000000000000000
+    Position.Y = 248.000000000000000000
+    Size.Width = 108.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+  end
+  object Button7: TButton
+    Position.X = 8.000000000000000000
+    Position.Y = 312.000000000000000000
+    Size.Width = 105.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 31
+    Text = 'Set View Full'
+    OnClick = Button6Click
+  end
   object Test1: TTest
-    Left = 48
-    Top = 432
+    Left = 88
+    Top = 472
     save = '{1D8C3D07-29A9-4779-A099-32A8691EEA69}'
   end
   object SignalRectangeDrawer1: TSpectrumDrawer
@@ -90,15 +138,15 @@ object Form3: TForm3
     FalloffVisible = True
     PeakVisible = True
     CrossOpacity = 0.300000011920929000
-    AxisesData.Left.MinValue = -140
-    AxisesData.Left.MaxValue = 0
+    AxisesData.Left.Min = -140
+    AxisesData.Left.Max = 0
     AxisesData.Left.ViewMin = 0
     AxisesData.Left.ViewMax = 0
     AxisesData.Left.Thinkness = 1.000000000000000000
     AxisesData.Left.LineColor = claDarkslategray
     AxisesData.Left.UnitStr = 'dB'
-    AxisesData.Bottom.MinValue = 0
-    AxisesData.Bottom.MaxValue = 1023
+    AxisesData.Bottom.Min = 0
+    AxisesData.Bottom.Max = 1023
     AxisesData.Bottom.ViewMin = 0
     AxisesData.Bottom.ViewMax = 0
     AxisesData.Bottom.Thinkness = 1.000000000000000000
@@ -106,8 +154,8 @@ object Form3: TForm3
     AxisesData.Bottom.UnitStr = 'MHz'
     BKColor = claNull
     GridBoundColor = claDarkslategray
-    Left = 48
-    Top = 344
+    Left = 16
+    Top = 472
   end
   object SplitedDrawer1: TWaterFallDrawer
     Chart = SignalChart1
@@ -116,24 +164,24 @@ object Form3: TForm3
     FalloffVisible = True
     PeakVisible = True
     CrossOpacity = 0.300000011920929000
-    AxisesData.Left.MinValue = -140
-    AxisesData.Left.MaxValue = 0
+    AxisesData.Left.Min = -140
+    AxisesData.Left.Max = 0
     AxisesData.Left.ViewMin = -140
     AxisesData.Left.ViewMax = 0
     AxisesData.Left.Thinkness = 1.000000000000000000
     AxisesData.Left.LineColor = claDarkslategray
     AxisesData.Left.UnitStr = 'dB'
-    AxisesData.Bottom.MinValue = 0
-    AxisesData.Bottom.MaxValue = 1023
+    AxisesData.Bottom.Min = 0
+    AxisesData.Bottom.Max = 22050
     AxisesData.Bottom.ViewMin = 0
-    AxisesData.Bottom.ViewMax = 1023
+    AxisesData.Bottom.ViewMax = 22050
     AxisesData.Bottom.Thinkness = 1.000000000000000000
     AxisesData.Bottom.LineColor = claDarkslategray
-    AxisesData.Bottom.UnitStr = 'MHz'
+    AxisesData.Bottom.UnitStr = 'Hz'
     BKColor = claNull
     GridBoundColor = claDarkslategray
     ShowWaterfall = True
-    Left = 48
-    Top = 272
+    Left = 88
+    Top = 504
   end
 end

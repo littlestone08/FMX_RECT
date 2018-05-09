@@ -29,18 +29,20 @@ type
 
   TCustomAxis = Class(TPersistent)
   Private
+    FMin: Integer;
+    FMax: Integer;
+    FViewMin: Integer;
+    FViewMax: Integer;
+  Private
     [weak]
     FDrawer: TAbstractSignalDrawer;
     FLines: TArray<TLine>;
-    FMinValue: Integer;
     FThinkness: Single;
-    FMaxValue: Integer;
     FLineColor: TAlphaColor;
-    FViewMin: Integer;
-    FViewMax: Integer;
+
     FUnitStr: String;
-    procedure SetMaxValue(const Value: Integer);
-    procedure SetMinValue(const Value: Integer);
+    procedure SetMax(const Value: Integer);
+    procedure SetMin(const Value: Integer);
     procedure SetThinkness(const Value: Single);
     procedure SetLineColor(const Value: TAlphaColor);
     Procedure DoChanged;
@@ -72,8 +74,8 @@ type
       StdTextR: TRectF);
 
   Published
-    Property MinValue: Integer read FMinValue write SetMinValue;
-    Property MaxValue: Integer read FMaxValue write SetMaxValue;
+    Property Min: Integer read FMin write SetMin;
+    Property Max: Integer read FMax write SetMax;
     Property ViewMin: Integer read FViewMin write SetViewMin;
     Property ViewMax: Integer read FViewMax write SetViewMax;
     Property Thinkness: Single read FThinkness write SetThinkness;
@@ -139,6 +141,7 @@ type
   Private
     FBKGraphic: TBitmap;
     FHint: String;
+    FNeedUpdateBG: Boolean;
   Private
     FFrameCounter: TFrameCount;
     FDrawer: TAbstractSignalDrawer;
@@ -160,6 +163,7 @@ type
     Constructor Create(AOwner: TComponent); Override;
     Destructor Destroy; Override;
     Procedure DrawData(const AData: TArray<Single>);
+    Procedure InvalidBackGround;
     Property FPS: Integer Read GetFPS;
   Published
     Property Drawer: TAbstractSignalDrawer read FDrawer write SetDrawer;
@@ -186,6 +190,8 @@ type
     Procedure DoSizeChanged(); Virtual; Abstract;
     Procedure UpdateGraphicRect; Virtual; Abstract;
     Procedure UpdateGridRAndStdTextR(); Virtual; Abstract;
+  Protected
+    Procedure CheckUpdateBackGround;
   Public
     Procedure ChartSinkMouseMove(Chart: TSignalChart; Shift: TShiftState; X, Y: Single); Virtual; Abstract;
     Procedure ChartSinkCheckSize(); Virtual; Abstract;
@@ -343,6 +349,11 @@ end;
 function TSignalChart.GetFPS: Integer;
 begin
   Result := FFrameCounter.FPS;
+end;
+
+procedure TSignalChart.InvalidBackGround;
+begin
+  FNeedUpdateBG:= True;;
 end;
 
 //function TSignalChart.GraphicToClient(const APoint: TRectF): TRectF;
@@ -618,18 +629,18 @@ begin
     FViewMax:= FViewMax xor FViewMin;
     FViewMin:= FViewMin xor FViewMax;
   end;
-  if FViewMin < FMinValue then
-    FViewMin:= FMinValue;
-  if FViewMax > FMaxValue then
-    FViewMax:= FMaxValue;
+  if FViewMin < FMin then
+    FViewMin:= FMin;
+  if FViewMax > FMax then
+    FViewMax:= FMax;
 end;
 
 constructor TCustomAxis.Create(ADrawer: TAbstractSignalDrawer);
 begin
   inherited Create;
   FDrawer := ADrawer;
-  FMaxValue := 0;
-  FMinValue := -140;
+  FMax := 0;
+  FMin := -140;
   FThinkness := 1;
   FLineColor := TAlphaColors.Darkslategray;
 end;
@@ -656,7 +667,7 @@ begin
   if MaxLableCount < 2 then
     Exit; { TODO: 不符合此条件的以后怎么处理? }
 
-  UpdateLinesPos(FLines, FMaxValue - FMinValue, Coordinate.Width,
+  UpdateLinesPos(FLines, FViewMax - FViewMin, Coordinate.Width,
     Coordinate.Height, MaxLableCount, IsVertical);
 
   SaveState := Coordinate.Canvas.SaveState;
@@ -684,7 +695,7 @@ begin
     Font.Family := '宋体';
     Fill.Color := TAlphaColors.Red;
 
-    LableStep := (FMaxValue - FMinValue) / (Length(FLines) - 1);
+    LableStep := (FViewMax - FViewMin) / (Length(FLines) - 1);
     for i := 0 to Length(FLines) - 1 do
     begin
       R := CalcuLabelR(FLines[i], StdTextR, GridLocation);
@@ -735,27 +746,27 @@ begin
   end;
 end;
 
-procedure TCustomAxis.SetMaxValue(const Value: Integer);
+procedure TCustomAxis.SetMax(const Value: Integer);
 begin
-  if FMaxValue <> Value then
+  if FMax <> Value then
   begin
-    if FViewMax = FMaxValue then
+    if FViewMax = FMax then
       FViewMax:= Value;
 
-    FMaxValue := Value;
+    FMax := Value;
     CheckViewRange();
     DoChanged();
   end;
 end;
 
-procedure TCustomAxis.SetMinValue(const Value: Integer);
+procedure TCustomAxis.SetMin(const Value: Integer);
 begin
-  if FMinValue <> Value then
+  if FMin <> Value then
   begin
-    if FViewMin = FMinValue then
+    if FViewMin = FMin then
       FViewMin:= Value;
 
-    FMinValue := Value;
+    FMin := Value;
     CheckViewRange();
     DoChanged();
   end;
@@ -835,7 +846,7 @@ end;
 
 function TLeftAxis.CalcuLableText(Index: Integer; LableStep: Single): String;
 begin
-  Result := IntToStr(FMaxValue - Round(LableStep * Index)) + UnitStr;
+  Result := IntToStr(FViewMax - Round(LableStep * Index)) + UnitStr;
 end;
 
 function TLeftAxis.CalcuMaxLabel(const GraphicR: TRectF;
@@ -847,8 +858,8 @@ end;
 constructor TLeftAxis.Create(ADrawer: TAbstractSignalDrawer);
 begin
   inherited;
-  FMaxValue := 0;
-  FMinValue := -140;
+  FMax := 0;
+  FMin := -140;
   FUnitStr := 'dB'
 end;
 
@@ -877,7 +888,7 @@ end;
 
 function TBottomAxis.CalcuLableText(Index: Integer; LabelStep: Single): String;
 begin
-  Result := IntToStr(FMinValue + Round(LabelStep * Index)) + UnitStr;
+  Result := IntToStr(FViewMin + Round(LabelStep * Index)) + UnitStr;
 end;
 
 function TBottomAxis.CalcuMaxLabel(const GraphicR: TRectF;
@@ -889,8 +900,8 @@ end;
 constructor TBottomAxis.Create(ADrawer: TAbstractSignalDrawer);
 begin
   inherited;
-  FMaxValue := 1023;
-  FMinValue := 0;
+  FMax := 1023;
+  FMin := 0;
   FUnitStr := 'MHz'
 end;
 
@@ -1009,13 +1020,8 @@ begin
       FBKGraphic.Height := Ceil(LocalRect.Height);
       Changed := True;
     end;
-
-    if Changed and (ComponentState * [csLoading, csReading] = []) then
-    begin
-      UpdateGridRAndStdTextR();
-      UpdateBitmap;
-      DoRectSizeChagned();
-    end;
+    FNeedupdateBG:= FNeedUpdateBG or Changed;
+    CheckUpdateBackGround();
   end;
 end;
 
@@ -1200,7 +1206,8 @@ procedure TSpectrumDrawer.DoDraw;
 //      DataIndex:= Ceil(FGraphicGridR.Width * RatioX) * (FMaxValue - FMinValue + 1);
 //        DataIndex:= Ceil((FMaxValue - FMinValue + 1+0.5) * RatioX) ;
 //        DataIndex:= Ceil(Length(FData) * Min((RatioX + 0.005), 1));
-        DataIndex:= Round(Length(FData) * Min(RatioX, 1));
+        DataIndex:= Round(Length(FData) * System.Math.Min(RatioX, 1));
+
       end;
 
       Result:= Format('GridR (%.2f, %.2f)'#$D#$A
@@ -1218,14 +1225,14 @@ procedure TSpectrumDrawer.DoDraw;
                         ]);
         With FAxisesData.Bottom do
           LabelX:= Format('%.2f' + FUnitStr, [
-                FMinValue + (FMaxValue - FMinValue + 1) * RatioX]);
+                FViewMin + (FViewMax - FViewMin + 1) * RatioX]);
 
         With FAxisesData.Left do
                 LabelY:= Format('%.2f' + FUnitStr, [
-                      FMaxValue - (FMaxValue - FMinValue + 1) * RatioY]);
+                      FViewMax - (FViewMax - FViewMin + 1) * RatioY]);
         With FAxisesData.Left do
                 PeakY:= Format('%.2f' + FUnitStr, [
-                      FMinValue + (FMaxValue - FMinValue + 1) * FPeaks[DataIndex]]);
+                      FViewMin + (FViewMax - FViewMin + 1) * FPeaks[DataIndex]]);
 
         Result:= Result + Format('Labled Value: (%s, %s)'#$D#$A, [LabelX, LabelY]);
         Result:= Result + Format('Peak Value: (%s, %s)', [LabelX, PeakY]);
@@ -1380,7 +1387,7 @@ begin
 //  Exit;
   if csDesigning in ComponentState then
   begin
-    nCount := FAxisesData.Bottom.MaxValue - FAxisesData.Bottom.MinValue + 1;
+    nCount := FAxisesData.Bottom.Max - FAxisesData.Bottom.Min + 1;
     if nCount > 100 then
       nCount := 100;
     if nCount < 0 then
@@ -1503,10 +1510,10 @@ procedure TSpectrumDrawer.UpdateGridRAndStdTextR;
 
 begin
   With FAxisesData.Left do
-    FLeftTextR := MeasureMaxRect(MinValue, MaxValue, UnitStr);
+    FLeftTextR := MeasureMaxRect(FMin, FMax, UnitStr);
 
   With FAxisesData.Bottom do
-    FBottomTextR := MeasureMaxRect(MinValue, MaxValue, UnitStr);
+    FBottomTextR := MeasureMaxRect(FMin, FMax, UnitStr);
 
   FGraphicGridR := FGraphicRect;
   FGraphicGridR.Top := FGraphicGridR.Top + FLeftTextR.Height * 0.5;
@@ -1880,6 +1887,20 @@ begin
   end;
 end;
 
+
+procedure TAbstractSignalDrawer.CheckUpdateBackGround;
+begin
+  if Chart <> Nil then
+  begin
+    if Chart.FNeedUpdateBG and (ComponentState * [csLoading, csReading] = []) then
+    begin
+      UpdateGridRAndStdTextR();
+      Chart.UpdateBitmap;
+      Chart.DoRectSizeChagned();      //语义不清
+      Chart.FNeedupdateBG:= False;
+    end;
+  end;
+end;
 
 initialization
 
