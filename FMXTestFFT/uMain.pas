@@ -48,6 +48,7 @@ type
     procedure Button4Click(Sender: TObject);
     procedure Button5Click(Sender: TObject);
     procedure Button6Click(Sender: TObject);
+    procedure Button7Click(Sender: TObject);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -72,6 +73,8 @@ var
   Form3: TForm3;
 
 implementation
+
+{$R *.fmx}
 
 uses
   SpectraLibrary, FMX.Printer, CnDebug;
@@ -197,8 +200,6 @@ begin
   end
 end;
 
-{$R *.fmx}
-
 procedure TForm3.Button1Click(Sender: TObject);
 begin
   FStop := True;
@@ -270,7 +271,14 @@ procedure TForm3.Button6Click(Sender: TObject);
 begin
   SplitedDrawer1.AxisesData.Bottom.ViewMin:= 0;
   SplitedDrawer1.AxisesData.Bottom.ViewMax:= 11025;
-  SplitedDrawer1.Chart.InvalidateRect(SplitedDrawer1.Chart.LocalRect);
+  SplitedDrawer1.Chart.InvalidBackGround;
+end;
+
+procedure TForm3.Button7Click(Sender: TObject);
+begin
+  SplitedDrawer1.AxisesData.Bottom.ViewMin:= 0;
+  SplitedDrawer1.AxisesData.Bottom.ViewMax:= 22050;
+  SplitedDrawer1.Chart.InvalidBackGround;
 end;
 
 constructor TForm3.Create(AOwner: TComponent);

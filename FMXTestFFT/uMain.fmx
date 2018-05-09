@@ -57,9 +57,9 @@ object Form3: TForm3
   end
   object Panel1: TPanel
     Align = Scale
-    Position.X = 214.480316162109400000
-    Size.Width = 431.912384033203100000
-    Size.Height = 16.457136154174800000
+    Position.X = 254.000000000000000000
+    Size.Width = 432.000000000000000000
+    Size.Height = 16.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 13
     OnMouseDown = Panel1MouseDown
@@ -125,7 +125,7 @@ object Form3: TForm3
     Size.PlatformDefault = False
     TabOrder = 31
     Text = 'Set View Full'
-    OnClick = Button6Click
+    OnClick = Button7Click
   end
   object Test1: TTest
     Left = 88

@@ -33,6 +33,9 @@ type
     FMax: Integer;
     FViewMin: Integer;
     FViewMax: Integer;
+    FViewRatioFrom : Single;
+    FViewRatioTo  : Single;
+    Procedure UpdateViewRatio;
   Private
     [weak]
     FDrawer: TAbstractSignalDrawer;
@@ -72,7 +75,8 @@ type
     Procedure DrawGrid(Coordinate: TBitmap; MaxLableCount: Integer);
     Procedure DrawLables(const GridLocation: TPointF; ACanvas: TCanvas;
       StdTextR: TRectF);
-
+    Property ViewRatioFrom : Single Read FViewRatioFrom;
+    Property ViewRatioTo  : Single Read FViewRatioTo;
   Published
     Property Min: Integer read FMin write SetMin;
     Property Max: Integer read FMax write SetMax;
@@ -149,7 +153,6 @@ type
     function GetFPS: Integer;
     Procedure UpdateBitmap;
     procedure DoCheckSize;
-    Procedure DoRectSizeChagned;
     procedure SetDrawer(const Value: TAbstractSignalDrawer);
   Private
     FLastUpdateTime: TDateTime;
@@ -187,7 +190,7 @@ type
   Protected
     procedure SetChart(const Value: TSignalChart); Virtual;
     Procedure DrawCross(X, Y: Single); Virtual; Abstract;
-    Procedure DoSizeChanged(); Virtual; Abstract;
+    Procedure AfterChangeSize(); Virtual; Abstract;
     Procedure UpdateGraphicRect; Virtual; Abstract;
     Procedure UpdateGridRAndStdTextR(); Virtual; Abstract;
   Protected
@@ -241,7 +244,7 @@ type
     FGraphicRect: TRectF;
     FGraphicGridR: TRectF;
     Procedure DrawCross(X, Y: Single); Override;
-    Procedure DoSizeChanged(); Override;
+    Procedure AfterChangeSize(); Override;
     Procedure DrawHint; Virtual;
     Procedure UpdateGridRAndStdTextR(); Override;
     Procedure UpdateGraphicRect; Override;
@@ -284,7 +287,7 @@ type
     procedure SetShowWaterfall(const Value: Boolean);
   Protected
     Procedure DrawCross(X, Y: Single); Override;
-    Procedure DoSizeChanged(); Override;
+    Procedure AfterChangeSize(); Override;
     procedure SetChart(const Value: TSignalChart); Override;
     Procedure UpdateGridRAndStdTextR(); Override;
     Procedure UpdateGraphicRect; Override;
@@ -338,13 +341,6 @@ begin
   );
 end;
 
-procedure TSignalChart.DoRectSizeChagned;
-begin
-  if FDrawer <> Nil then
-  begin
-    FDrawer.DoSizeChanged();
-  end;
-end;
 
 function TSignalChart.GetFPS: Integer;
 begin
@@ -354,6 +350,7 @@ end;
 procedure TSignalChart.InvalidBackGround;
 begin
   FNeedUpdateBG:= True;;
+  InvalidateRect(LocalRect);
 end;
 
 //function TSignalChart.GraphicToClient(const APoint: TRectF): TRectF;
@@ -633,6 +630,8 @@ begin
     FViewMin:= FMin;
   if FViewMax > FMax then
     FViewMax:= FMax;
+
+  UpdateViewRatio();
 end;
 
 constructor TCustomAxis.Create(ADrawer: TAbstractSignalDrawer);
@@ -821,6 +820,15 @@ begin
         TPointF.Create(i * Spacing, HeightLimits));
     end;
   end;
+end;
+
+procedure TCustomAxis.UpdateViewRatio;
+var
+  Total: Single;
+begin
+  Total:= FMax - FMin;
+  FViewRatioFrom:= (FViewMin - FMin) / Total;
+  FViewRatioFrom:= (FViewMax - FMin) / Total;
 end;
 
 { TLine }
@@ -1336,7 +1344,7 @@ begin
 
 end;
 
-procedure TSpectrumDrawer.DoSizeChanged;
+procedure TSpectrumDrawer.AfterChangeSize;
 begin
   // dummy
 end;
@@ -1733,7 +1741,7 @@ begin
   inherited;
 end;
 
-procedure TWaterFallDrawer.DoSizeChanged;
+procedure TWaterFallDrawer.AfterChangeSize;
 var
   i: Integer;
   Step: Single;
@@ -1847,7 +1855,7 @@ begin
       UpdateGraphicRect();
       Chart.UpdateBitmap;
       Chart.InvalidateRect(Chart.LocalRect);
-      DoSizeChanged(); //重新定位彩条图像
+      AfterChangeSize(); //重新定位彩条图像
     end
     else
     begin
@@ -1896,7 +1904,7 @@ begin
     begin
       UpdateGridRAndStdTextR();
       Chart.UpdateBitmap;
-      Chart.DoRectSizeChagned();      //语义不清
+      AfterChangeSize();
       Chart.FNeedupdateBG:= False;
     end;
   end;
