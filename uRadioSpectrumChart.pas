@@ -33,8 +33,10 @@ type
     FMax: Integer;
     FViewMin: Integer;
     FViewMax: Integer;
-    FViewRatioFrom : Single;
-    FViewRatioTo  : Single;
+    FViewRatioFrom: Single;
+    FViewRatioTo: Single;
+    FViewIdxFrom: Integer;
+    FViewIdxTo: Integer;
     Procedure UpdateViewRatio;
   Private
     [weak]
@@ -75,8 +77,10 @@ type
     Procedure DrawGrid(Coordinate: TBitmap; MaxLableCount: Integer);
     Procedure DrawLables(const GridLocation: TPointF; ACanvas: TCanvas;
       StdTextR: TRectF);
-    Property ViewRatioFrom : Single Read FViewRatioFrom;
-    Property ViewRatioTo  : Single Read FViewRatioTo;
+    Property ViewRatioFrom: Single Read FViewRatioFrom;
+    Property ViewRatioTo: Single Read FViewRatioTo;
+    Property ViewIdxFrom: Integer Read FViewIdxFrom;
+    Property ViewIdxTo: Integer Read FViewIdxTo;
   Published
     Property Min: Integer read FMin write SetMin;
     Property Max: Integer read FMax write SetMax;
@@ -125,8 +129,6 @@ type
     Function CalcuY(X: Single): Single;
   End;
 
-
-
   TAxises = class(TPersistent)
   Strict Private
     FLeft: TCustomAxis;
@@ -138,8 +140,6 @@ type
     Property Left: TCustomAxis Read FLeft Write FLeft;
     Property Bottom: TCustomAxis Read FBottom Write FBottom;
   End;
-
-
 
   TSignalChart = Class(TPaintBox)
   Private
@@ -193,10 +193,12 @@ type
     Procedure AfterChangeSize(); Virtual; Abstract;
     Procedure UpdateGraphicRect; Virtual; Abstract;
     Procedure UpdateGridRAndStdTextR(); Virtual; Abstract;
+    Procedure UpdateViewRangeIndex(Axis: TCustomAxis); Virtual; Abstract;
   Protected
     Procedure CheckUpdateBackGround;
   Public
-    Procedure ChartSinkMouseMove(Chart: TSignalChart; Shift: TShiftState; X, Y: Single); Virtual; Abstract;
+    Procedure ChartSinkMouseMove(Chart: TSignalChart; Shift: TShiftState;
+      X, Y: Single); Virtual; Abstract;
     Procedure ChartSinkCheckSize(); Virtual; Abstract;
     Procedure ChartSinkDrawData(const AData: TArray<Single>); Virtual; Abstract;
     Procedure ChartSinkUpdateBitmap(BK: TBitmap); Virtual; Abstract;
@@ -209,17 +211,18 @@ type
   TSpectrumDrawer = Class(TAbstractSignalDrawer)
   Private
     FGrid: TBitmap;
-    //corss cursor
+    // corss cursor
     FCrossOpacity: Single;
     FCrossX: Single;
     FCrossY: Single;
     FMouseInRect: Boolean;
     FShowCross: Boolean;
     //
+    FDataCount: Integer;
     FData: TArray<Single>;
     //
     FAxisesData: TAxises;
-//    FAxisesView: TAxises;
+    // FAxisesView: TAxises;
     FLeftTextR: TRectF;
     FBottomTextR: TRectF;
     //
@@ -229,6 +232,7 @@ type
   Private
     FPeaks: TArray<Single>;
     FFallOff: TArray<Single>;
+
   private
     FFalloffDecrement: Single;
     FPeakDecrement: Single;
@@ -248,11 +252,14 @@ type
     Procedure DrawHint; Virtual;
     Procedure UpdateGridRAndStdTextR(); Override;
     Procedure UpdateGraphicRect; Override;
+    Procedure UpdateViewRangeIndex(Axis: TCustomAxis); Override;
+
   Protected
     Procedure Internal_DrawGraphicBound(ACanvas: TCanvas); Virtual;
     Procedure Internal_DrawGraphicFrame(ACanvas: TCanvas); Virtual;
   Public
-    Procedure ChartSinkMouseMove(Chart: TSignalChart; Shift: TShiftState; X, Y: Single); Override;
+    Procedure ChartSinkMouseMove(Chart: TSignalChart; Shift: TShiftState;
+      X, Y: Single); Override;
     Procedure ChartSinkDrawData(const AData: TArray<Single>); Override;
     Procedure ChartSinkUpdateBitmap(BK: TBitmap); Override;
     Procedure ChartSinkCheckSize(); Override;
@@ -269,9 +276,10 @@ type
     Property PeakVisible: Boolean read FPeakVisible write SetPeakVisible;
     Property CrossOpacity: Single Read FCrossOpacity Write FCrossOpacity;
     Property AxisesData: TAxises Read FAxisesData Write FAxisesData;
-//    Property AxisesView: TAxises Read FAxisesView Write FAxisesView;
+    // Property AxisesView: TAxises Read FAxisesView Write FAxisesView;
     Property BKColor: TAlphaColor read FBKColor write SetBKColor;
-    Property GridBoundColor: TAlphaColor read FGridBoundColor write SetGridBoundColor;
+    Property GridBoundColor: TAlphaColor read FGridBoundColor
+      write SetGridBoundColor;
   End;
 
   TWaterFallDrawer = Class(TSpectrumDrawer)
@@ -301,7 +309,6 @@ type
     Property ShowWaterfall: Boolean read FShowWaterfall write SetShowWaterfall;
   End;
 
-
 procedure Register;
 
 implementation
@@ -313,8 +320,8 @@ uses
 
 procedure Register;
 begin
-  RegisterComponents('RadioReceiver', [TSignalChart, TSpectrumDrawer,
-    TTest, TWaterFallDrawer]);
+  RegisterComponents('RadioReceiver', [TSignalChart, TSpectrumDrawer, TTest,
+    TWaterFallDrawer]);
 end;
 
 procedure TSignalChart.DoPaint;
@@ -337,10 +344,8 @@ begin
     begin
       Sleep(10);
       DoPaint();
-    end
-  );
+    end);
 end;
-
 
 function TSignalChart.GetFPS: Integer;
 begin
@@ -349,33 +354,33 @@ end;
 
 procedure TSignalChart.InvalidBackGround;
 begin
-  FNeedUpdateBG:= True;;
+  FNeedUpdateBG := True;;
   InvalidateRect(LocalRect);
 end;
 
-//function TSignalChart.GraphicToClient(const APoint: TRectF): TRectF;
-//begin
-//  Result := APoint;
-//  Result.offset(-FGraphicRect.Left, -FGraphicRect.Top);
-//end;
+// function TSignalChart.GraphicToClient(const APoint: TRectF): TRectF;
+// begin
+// Result := APoint;
+// Result.offset(-FGraphicRect.Left, -FGraphicRect.Top);
+// end;
 //
-//function TSignalChart.GraphicToGrid(const APoint: TRectF): TRectF;
-//begin
-//  Result := APoint;
-//  Result.offset(FGraphicGridR.TopLeft);
-//end;
+// function TSignalChart.GraphicToGrid(const APoint: TRectF): TRectF;
+// begin
+// Result := APoint;
+// Result.offset(FGraphicGridR.TopLeft);
+// end;
 //
-//function TSignalChart.GridToClient(const APoint: TRectF): TRectF;
-//begin
-//  Result := APoint;
-//  Result.offset(FGraphicGridR.TopLeft);
-//end;
+// function TSignalChart.GridToClient(const APoint: TRectF): TRectF;
+// begin
+// Result := APoint;
+// Result.offset(FGraphicGridR.TopLeft);
+// end;
 //
-//function TSignalChart.GridToGraphic(const APoint: TRectF): TRectF;
-//begin
-//  Result := APoint;
-//  Result.offset(-FGraphicRect.Left, -FGraphicRect.Top);
-//end;
+// function TSignalChart.GridToGraphic(const APoint: TRectF): TRectF;
+// begin
+// Result := APoint;
+// Result.offset(-FGraphicRect.Left, -FGraphicRect.Top);
+// end;
 
 procedure TSignalChart.Loaded;
 begin
@@ -402,8 +407,6 @@ begin
     FDrawer.ChartSinkCheckSize();
 end;
 
-
-
 procedure TSignalChart.SetDrawer(const Value: TAbstractSignalDrawer);
 var
   LastDrawer: TAbstractSignalDrawer;
@@ -422,11 +425,12 @@ begin
   end;
 
   if Value <> Nil then
-    if Value.Chart <> self then
+    if Value.Chart <> Self then
     begin
-      Value.Chart := self;
-      //redraw with the new drawer
-      if FDrawer <> Nil then FDrawer.UpdateGraphicRect();
+      Value.Chart := Self;
+      // redraw with the new drawer
+      if FDrawer <> Nil then
+        FDrawer.UpdateGraphicRect();
       UpdateBitmap;
       InvalidateRect(LocalRect);
     end;
@@ -435,30 +439,30 @@ end;
 { TGridLayer }
 
 
-//function TSignalChart.ClientToGraphic(const APoint: TRectF): TRectF;
-//begin
-//  Result := APoint;
-//  Result.offset(FGraphicRect.TopLeft);
-//end;
+// function TSignalChart.ClientToGraphic(const APoint: TRectF): TRectF;
+// begin
+// Result := APoint;
+// Result.offset(FGraphicRect.TopLeft);
+// end;
 //
-//function TSignalChart.ClientToGrid(const APoint: TRectF): TRectF;
-//begin
-//  Result := APoint;
-//  Result.offset(-FGraphicGridR.Left, -FGraphicGridR.Top);
-//end;
+// function TSignalChart.ClientToGrid(const APoint: TRectF): TRectF;
+// begin
+// Result := APoint;
+// Result.offset(-FGraphicGridR.Left, -FGraphicGridR.Top);
+// end;
 
 constructor TSignalChart.Create;
 begin
   inherited;
   FFrameCounter := TFrameCount.Create;
-//  FEquationBottomIn := TLinearEquations.Create;
+  // FEquationBottomIn := TLinearEquations.Create;
   FBKGraphic := TBitmap.Create;
 end;
 
 destructor TSignalChart.Destroy;
 begin
   FreeAndNil(FBKGraphic);
-//  FreeAndNil(FEquationBottomIn);
+  // FreeAndNil(FEquationBottomIn);
   FreeAndNil(FFrameCounter);
   inherited;
 end;
@@ -506,10 +510,10 @@ end;
 
 procedure TSignalChart.DrawData(const AData: TArray<Single>);
 begin
-//  if Length(AData) <> Length(FData) then
-//  begin
-//    FEquationBottomIn.CalcuCoff(0, 0, Length(AData), FGraphicGridR.Width - 1);
-//  end;
+  // if Length(AData) <> Length(FData) then
+  // begin
+  // FEquationBottomIn.CalcuCoff(0, 0, Length(AData), FGraphicGridR.Width - 1);
+  // end;
   if FDrawer <> Nil then
   begin
     FDrawer.ChartSinkDrawData(AData);
@@ -517,16 +521,11 @@ begin
   end;
 end;
 
-
-
-
 procedure TSignalChart.UpdateBitmap;
 begin
   if FDrawer <> Nil then
     FDrawer.ChartSinkUpdateBitmap(FBKGraphic);
 end;
-
-
 
 { TGridAndAxis }
 
@@ -573,7 +572,7 @@ begin
 end;
 
 Class function TCustomAxis.CalcuValueStep(Limits: Single;
-  MaxLableCount: Integer): Integer;
+MaxLableCount: Integer): Integer;
 {$IFDEF x}
 {$ELSE}
   function test_Step(A1, A2: Single): Single;
@@ -622,14 +621,14 @@ procedure TCustomAxis.CheckViewRange;
 begin
   if FViewMin > FViewMax then
   begin
-    FViewMin:= FViewMin xor FViewMax;
-    FViewMax:= FViewMax xor FViewMin;
-    FViewMin:= FViewMin xor FViewMax;
+    FViewMin := FViewMin xor FViewMax;
+    FViewMax := FViewMax xor FViewMin;
+    FViewMin := FViewMin xor FViewMax;
   end;
   if FViewMin < FMin then
-    FViewMin:= FMin;
+    FViewMin := FMin;
   if FViewMax > FMax then
-    FViewMax:= FMax;
+    FViewMax := FMax;
 
   UpdateViewRatio();
 end;
@@ -642,6 +641,9 @@ begin
   FMin := -140;
   FThinkness := 1;
   FLineColor := TAlphaColors.Darkslategray;
+  FViewMax := 0;
+  FViewMin := -140;
+  UpdateViewRatio;
 end;
 
 procedure TCustomAxis.DoChanged;
@@ -650,7 +652,8 @@ begin
   begin
     if [csReading, csLoading] * FChart.ComponentState = [] then
     begin
-      if FDrawer <> Nil then FDrawer.UpdateGraphicRect();
+      if FDrawer <> Nil then
+        FDrawer.UpdateGraphicRect();
       FChart.UpdateBitmap;
       FChart.InvalidateRect(FChart.LocalRect);
     end;
@@ -683,7 +686,7 @@ begin
 end;
 
 procedure TCustomAxis.DrawLables(const GridLocation: TPointF; ACanvas: TCanvas;
-  StdTextR: TRectF);
+StdTextR: TRectF);
 var
   i: Integer;
   LableStep: Single;
@@ -706,7 +709,7 @@ end;
 
 function TCustomAxis.FChart: TSignalChart;
 begin
-  Result:= FDrawer.FChart;
+  Result := FDrawer.FChart;
 end;
 
 procedure TCustomAxis.SetUnitStr(const Value: String);
@@ -722,7 +725,7 @@ procedure TCustomAxis.SetViewMax(const Value: Integer);
 begin
   if FViewMax <> Value then
   begin
-    FViewMax:= Value;
+    FViewMax := Value;
     CheckViewRange();
   end;
 end;
@@ -731,7 +734,7 @@ procedure TCustomAxis.SetViewMin(const Value: Integer);
 begin
   if FViewMin <> Value then
   begin
-    FViewMin:= Value;
+    FViewMin := Value;
     CheckViewRange();
   end;
 end;
@@ -750,7 +753,7 @@ begin
   if FMax <> Value then
   begin
     if FViewMax = FMax then
-      FViewMax:= Value;
+      FViewMax := Value;
 
     FMax := Value;
     CheckViewRange();
@@ -763,7 +766,7 @@ begin
   if FMin <> Value then
   begin
     if FViewMin = FMin then
-      FViewMin:= Value;
+      FViewMin := Value;
 
     FMin := Value;
     CheckViewRange();
@@ -781,8 +784,8 @@ begin
 end;
 
 Class procedure TCustomAxis.UpdateLinesPos(var Lines: TArray<TLine>;
-  MarkValueLimits, WidthLimits, HeightLimits: Integer; MaxLineCount: Integer;
-  isVeritcal: Boolean);
+MarkValueLimits, WidthLimits, HeightLimits: Integer; MaxLineCount: Integer;
+isVeritcal: Boolean);
 var
   i: Integer;
   Step: Integer;
@@ -825,10 +828,17 @@ end;
 procedure TCustomAxis.UpdateViewRatio;
 var
   Total: Single;
+  nCount: Integer;
 begin
-  Total:= FMax - FMin;
-  FViewRatioFrom:= (FViewMin - FMin) / Total;
-  FViewRatioFrom:= (FViewMax - FMin) / Total;
+  Total := FMax - FMin;
+  FViewRatioFrom := (FViewMin - FMin) / Total;
+  FViewRatioTo := (FViewMax - FMin) / Total;
+
+  if FDrawer <> Nil then
+  begin
+    FDrawer.UpdateViewRangeIndex(Self);
+  end;
+
 end;
 
 { TLine }
@@ -842,7 +852,7 @@ end;
 { TLeftAxis }
 
 function TLeftAxis.CalcuLabelR(const Line: TLine; const StdTextRect: TRectF;
-  const offset: TPointF): TRectF;
+const offset: TPointF): TRectF;
 var
   Posi: TPointF;
 begin
@@ -858,7 +868,7 @@ begin
 end;
 
 function TLeftAxis.CalcuMaxLabel(const GraphicR: TRectF;
-  StdTextR: TRectF): Integer;
+StdTextR: TRectF): Integer;
 begin
   Result := Trunc(GraphicR.Height / StdTextR.Height);
 end;
@@ -884,7 +894,7 @@ end;
 { TBottomAxis }
 
 function TBottomAxis.CalcuLabelR(const Line: TLine; const StdTextRect: TRectF;
-  const offset: TPointF): TRectF;
+const offset: TPointF): TRectF;
 var
   Posi: TPointF;
 begin
@@ -900,7 +910,7 @@ begin
 end;
 
 function TBottomAxis.CalcuMaxLabel(const GraphicR: TRectF;
-  StdTextR: TRectF): Integer;
+StdTextR: TRectF): Integer;
 begin
   Result := Trunc(GraphicR.Width / StdTextR.Width);
 end;
@@ -1028,25 +1038,32 @@ begin
       FBKGraphic.Height := Ceil(LocalRect.Height);
       Changed := True;
     end;
-    FNeedupdateBG:= FNeedUpdateBG or Changed;
+    FNeedUpdateBG := FNeedUpdateBG or Changed;
     CheckUpdateBackGround();
   end;
 end;
 
 procedure TSpectrumDrawer.ChartSinkDrawData(const AData: TArray<Single>);
+var
+  nCount: Integer;
 begin
   FData := AData;
+  nCount:= Length(FData);
+  if FDataCount <> nCount then
+  begin
+    FAxisesData.Bottom.CheckViewRange;
+    FAxisesData.Left.CheckViewRange;
+    FDatacount:= ncount;
+  end;
 end;
 
 procedure TSpectrumDrawer.ChartSinkMouseMove(Chart: TSignalChart;
-  Shift: TShiftState; X, Y: Single);
+Shift: TShiftState; X, Y: Single);
 begin
   inherited;
   FCrossX := X;
   FCrossY := Y;
   FMouseInRect := PtInRect(FGraphicGridR, TPointF.Create(X, Y));
-
-
 
   // Exit;
   // if MilliSecondSpan(Now, FLastUpdateTime) > 30 then
@@ -1107,8 +1124,6 @@ procedure TSpectrumDrawer.ChartSinkUpdateBitmap(BK: TBitmap);
     ACanvas.DrawRect(Chart.LocalRect, 0, 0, [], 1);
   end;
 
-
-
 var
   ACanvas: TCanvas;
   Clips: TClipRects;
@@ -1120,7 +1135,7 @@ begin
   FGrid.SetSize(TSize.Create(Ceil(FGraphicGridR.Width),
     Ceil(FGraphicGridR.Height)));
 
-//  FEquationBottomIn.CalcuCoff(0, 0, Length(FData), FGraphicGridR.Width - 1);
+  // FEquationBottomIn.CalcuCoff(0, 0, Length(FData), FGraphicGridR.Width - 1);
 
   // 画坐标格
   if FGrid.HandleAllocated then
@@ -1153,7 +1168,7 @@ begin
         With FAxisesData.Bottom do
           DrawLables(FGraphicGridR.Location, ACanvas, FBottomTextR);
 
-//        Internal_DrawGraphicBound(ACanvas);
+        // Internal_DrawGraphicBound(ACanvas);
         Internal_DrawGraphicFrame(ACanvas);
 
         DrawControlBound(ACanvas);
@@ -1170,8 +1185,8 @@ constructor TSpectrumDrawer.Create(AOwner: TComponent);
 begin
   inherited;
   FGrid := TBitmap.Create;
-  FAxisesData := TAxises.Create(self);
-//  FAxisesView := TAxises.Create(self);
+  FAxisesData := TAxises.Create(Self);
+  // FAxisesView := TAxises.Create(self);
 
   FFalloffDecrement := 0.005;
   FPeakDecrement := 0.001;
@@ -1181,14 +1196,13 @@ begin
   FShowCross := True;
 
   FGridBoundColor := TAlphaColors.Darkslategray;
-
   if csDesigning in ComponentState then
     FillDesigningTestData();
 end;
 
 destructor TSpectrumDrawer.Destroy;
 begin
-//  FreeAndNil(FAxisesView);
+  // FreeAndNil(FAxisesView);
   FreeAndNil(FAxisesData);
   FreeAndNil(FGrid);
   inherited;
@@ -1203,52 +1217,50 @@ procedure TSpectrumDrawer.DoDraw;
     LabelX, LabelY: String;
     PeakY: String;
   begin
-    Result:= '';
+    Result := '';
     With Chart do
     begin
-      ptPosInGrid:= TPointF.Create(FCrossX - FGraphicGridR.Left, FCrossY - FGraphicGridR.Top);
-      RatioX:= ptPosInGrid.X / FGraphicGridR.Width;
-      RatioY:= ptPosInGrid.Y / FGraphicGridR.Height;
+      ptPosInGrid := TPointF.Create(FCrossX - FGraphicGridR.Left,
+        FCrossY - FGraphicGridR.Top);
+      RatioX := ptPosInGrid.X / FGraphicGridR.Width;
+      RatioY := ptPosInGrid.Y / FGraphicGridR.Height;
       With FAxisesData.Bottom do
       begin
-//      DataIndex:= Ceil(FGraphicGridR.Width * RatioX) * (FMaxValue - FMinValue + 1);
-//        DataIndex:= Ceil((FMaxValue - FMinValue + 1+0.5) * RatioX) ;
-//        DataIndex:= Ceil(Length(FData) * Min((RatioX + 0.005), 1));
-        DataIndex:= Round(Length(FData) * System.Math.Min(RatioX, 1));
+        // DataIndex:= Ceil(FGraphicGridR.Width * RatioX) * (FMaxValue - FMinValue + 1);
+        // DataIndex:= Ceil((FMaxValue - FMinValue + 1+0.5) * RatioX) ;
+        // DataIndex:= Ceil(Length(FData) * Min((RatioX + 0.005), 1));
+        DataIndex := Round(Length(FData) * System.Math.Min(RatioX, 1));
 
       end;
 
-      Result:= Format('GridR (%.2f, %.2f)'#$D#$A
-                      +'Cross: (%.2f, %.2f)=>(%.2f, %.2f)'#$D#$A
-                      +'Cross Percent: (%.2f%%, %.2f%%)'#$D#$A,
-                      [FGraphicGridR.Left,FGraphicGridR.Top,
-                      FCrossX, FCrossY,
-                      ptPosInGrid.X, ptPosInGrid.Y,
-                      RatioX * 100 , RatioY * 100
-                      ]);
+      Result := Format('GridR (%.2f, %.2f)'#$D#$A +
+        'Cross: (%.2f, %.2f)=>(%.2f, %.2f)'#$D#$A +
+        'Cross Percent: (%.2f%%, %.2f%%)'#$D#$A,
+        [FGraphicGridR.Left, FGraphicGridR.Top, FCrossX, FCrossY, ptPosInGrid.X,
+        ptPosInGrid.Y, RatioX * 100, RatioY * 100]);
       if Length(FData) > 0 then
       begin
-        Result:= Result + Format('Data[%d] = %.2f'#$D#$A,
-                        [DataIndex, FPeaks[DataIndex]
-                        ]);
+        Result := Result + Format('Data[%d] = %.2f'#$D#$A,
+          [DataIndex, FPeaks[DataIndex]]);
         With FAxisesData.Bottom do
-          LabelX:= Format('%.2f' + FUnitStr, [
-                FViewMin + (FViewMax - FViewMin + 1) * RatioX]);
+          LabelX := Format('%.2f' + FUnitStr,
+            [FViewMin + (FViewMax - FViewMin + 1) * RatioX]);
 
         With FAxisesData.Left do
-                LabelY:= Format('%.2f' + FUnitStr, [
-                      FViewMax - (FViewMax - FViewMin + 1) * RatioY]);
+          LabelY := Format('%.2f' + FUnitStr,
+            [FViewMax - (FViewMax - FViewMin + 1) * RatioY]);
         With FAxisesData.Left do
-                PeakY:= Format('%.2f' + FUnitStr, [
-                      FViewMin + (FViewMax - FViewMin + 1) * FPeaks[DataIndex]]);
+          PeakY := Format('%.2f' + FUnitStr,
+            [FViewMin + (FViewMax - FViewMin + 1) * FPeaks[DataIndex]]);
 
-        Result:= Result + Format('Labled Value: (%s, %s)'#$D#$A, [LabelX, LabelY]);
-        Result:= Result + Format('Peak Value: (%s, %s)', [LabelX, PeakY]);
-
+        Result := Result + Format('Labled Value: (%s, %s)'#$D#$A,
+          [LabelX, LabelY]);
+        Result := Result + Format('Peak Value: (%s, %s)', [LabelX, PeakY]);
 
       end;
     end;
   end;
+
 var
   HStep: Single;
   FalloffR: TRectF;
@@ -1256,19 +1268,29 @@ var
   i: Integer;
   ACanvas: TCanvas;
   di: Single;
+
   nCount: Integer;
+  nViewCount: Integer;
 begin
-  With Chart do
+  With Chart, FAxisesData.Bottom do
   begin
     if ComponentState * [csLoading, csReading] <> [] then
       Exit;
 
-    nCount := Length(FData);
+    nCount  := Length(FData);
+
+    if (nCount = 0) or (ViewIdxTo >= nCount) or (ViewIdxTo < 0) then
+      Exit;
+
+    nViewCount := ViewIdxTo - ViewIdxFrom + 1;
+
+    HStep := FGraphicGridR.Width / (nViewCount - 1);
+
     if Length(FPeaks) < nCount then
       SetLength(FPeaks, nCount);
     if Length(FFallOff) < nCount then
       SetLength(FFallOff, nCount);
-    for i := 0 to nCount - 1 do
+    for i := 0 to Length(FData) - 1 do
     begin
       di := FData[i];
       if di >= FPeaks[i] then
@@ -1295,7 +1317,6 @@ begin
           FFallOff[i] := 0;
       end;
     end;
-    HStep := FGraphicGridR.Width / (Length(FData) - 1);
 
     ACanvas := Canvas;
     ACanvas.Stroke.Color := TAlphaColors.Black;
@@ -1306,12 +1327,13 @@ begin
 
     for i := 0 to nCount - 1 do
     begin
-      FalloffR := TRectF.Create(0, FGraphicGridR.Height * (1 - FFallOff[i]),
-        HStep, FGraphicGridR.Height - 0);
+      FalloffR := TRectF.Create(0, FGraphicGridR.Height *
+        (1 - FFallOff[i + ViewIdxFrom]), HStep, FGraphicGridR.Height - 0);
 
       FalloffR.offset((i - 0.5) * HStep, 0);
-      FalloffR.Offset(FGraphicGridR.TopLeft);
-      FalloffR.Left:= EnsureRange(FalloffR.Left, FGraphicGridR.Left, FGraphicGridR.Right);
+      FalloffR.offset(FGraphicGridR.TopLeft);
+      FalloffR.Left := EnsureRange(FalloffR.Left, FGraphicGridR.Left,
+        FGraphicGridR.Right);
 
       PeakR := FalloffR;
       if FalloffVisible then
@@ -1325,7 +1347,7 @@ begin
       end;
       if PeakVisible then
       begin
-        PeakR.Bottom := FGraphicGridR.Height * (1 - FPeaks[i]) +
+        PeakR.Bottom := FGraphicGridR.Height * (1 - FPeaks[i + ViewIdxFrom]) +
           FGraphicGridR.Top;
         PeakR.Top := PeakR.Bottom - 1;
         ACanvas.FillRect(PeakR, 0, 0, [], 1);
@@ -1334,7 +1356,7 @@ begin
   end;
   if FMouseInRect then
   begin
-    Chart.FHint:= GetHint();
+    Chart.FHint := GetHint();
     if FShowCross then
     begin
       DrawCross(FCrossX, FCrossY);
@@ -1377,13 +1399,14 @@ begin
   inherited;
   With FChart do
   begin
-    Canvas.Stroke.Color:= TAlphaColors.Red;
-    Canvas.Fill.Color:= TAlphaColors.Red;
-    Canvas.Stroke.Kind:= TBrushKind.Solid;
-    Canvas.Fill.Kind:= TBrushKind.Solid;
-    TextRect:= FGraphicGridR;
-    TextRect.Offset(10, 10);
-    Canvas.FillText(TextRect, FHint, True, 1, [], TTextAlign.Leading, TTextAlign.Leading);
+    Canvas.Stroke.Color := TAlphaColors.Red;
+    Canvas.Fill.Color := TAlphaColors.Red;
+    Canvas.Stroke.Kind := TBrushKind.Solid;
+    Canvas.Fill.Kind := TBrushKind.Solid;
+    TextRect := FGraphicGridR;
+    TextRect.offset(10, 10);
+    Canvas.FillText(TextRect, FHint, True, 1, [], TTextAlign.Leading,
+      TTextAlign.Leading);
   end;
 end;
 
@@ -1392,7 +1415,7 @@ var
   i: Integer;
   nCount: Integer;
 begin
-//  Exit;
+  // Exit;
   if csDesigning in ComponentState then
   begin
     nCount := FAxisesData.Bottom.Max - FAxisesData.Bottom.Min + 1;
@@ -1404,7 +1427,7 @@ begin
     SetLength(FData, nCount);
     for i := 0 to nCount - 1 do
     begin
-      FData[i] := (cos(2 * pi * i / (nCount - 1))  + 1) / 2
+      FData[i] := (cos(2 * pi * i / (nCount - 1)) + 1) / 2
     end;
   end;
 end;
@@ -1518,10 +1541,10 @@ procedure TSpectrumDrawer.UpdateGridRAndStdTextR;
 
 begin
   With FAxisesData.Left do
-    FLeftTextR := MeasureMaxRect(FMin, FMax, UnitStr);
+    FLeftTextR := MeasureMaxRect(FViewMin, FViewMax, UnitStr);
 
   With FAxisesData.Bottom do
-    FBottomTextR := MeasureMaxRect(FMin, FMax, UnitStr);
+    FBottomTextR := MeasureMaxRect(FViewMin, FViewMax, UnitStr);
 
   FGraphicGridR := FGraphicRect;
   FGraphicGridR.Top := FGraphicGridR.Top + FLeftTextR.Height * 0.5;
@@ -1531,9 +1554,16 @@ begin
   FGraphicGridR.Right := FGraphicGridR.Right - FBottomTextR.Width * 0.5;
 end;
 
+procedure TSpectrumDrawer.UpdateViewRangeIndex(Axis: TCustomAxis);
+var
+  nCount: Integer;
+begin
+  nCount  := Length(FData);
+  Axis.FViewRatioFrom := Trunc(nCount * Axis.ViewRatioFrom);
+  Axis.FViewIdxTo   := Round((nCount - 1) * Axis.ViewRatioTo);
+end;
+
 { TSignalDrawer }
-
-
 
 procedure TAbstractSignalDrawer.SetChart(const Value: TSignalChart);
 var
@@ -1551,9 +1581,8 @@ begin
     end;
   end;
   if FChart <> Nil then
-    if FChart.Drawer <> self then
-      FChart.Drawer := self;
-
+    if FChart.Drawer <> Self then
+      FChart.Drawer := Self;
 
 end;
 { TSplitedDrawer }
@@ -1636,7 +1665,7 @@ end;
 
 destructor TWaterFallDrawer.Destroy;
 begin
-//  FreeAndNil(FColorImage);
+  // FreeAndNil(FColorImage);
   FreeAndNil(FWaterFallBmp);
   inherited;
 end;
@@ -1654,90 +1683,90 @@ var
   AColor: TAlphaColor;
   Clip: TClipRects;
 begin
-  if FShowWaterfall then With Chart do
-  begin
-    if ComponentState * [csLoading, csReading] <> [] then
-      Exit;
-//    if Length(FData) = 0 then
-//      Exit;
-
-    if FWaterFallRectUpdated then
+  if FShowWaterfall then
+    With Chart do
     begin
-      FWaterFallBmp.Width := Ceil(FWaterFallGridR.Width);
-      FWaterFallBmp.Height := Ceil(FWaterFallGridR.Height);
-      // FWaterFallBmpOld.Assign(FWaterFallBmp);
-      FWaterFallRectUpdated := False;
-    end;
+      if ComponentState * [csLoading, csReading] <> [] then
+        Exit;
+      // if Length(FData) = 0 then
+      // Exit;
 
+      if FWaterFallRectUpdated then
+      begin
+        FWaterFallBmp.Width := Ceil(FWaterFallGridR.Width);
+        FWaterFallBmp.Height := Ceil(FWaterFallGridR.Height);
+        // FWaterFallBmpOld.Assign(FWaterFallBmp);
+        FWaterFallRectUpdated := False;
+      end;
 
-    // -----------------
-    with FWaterFallBmp do
-    begin
-      if Map(TMapAccess.ReadWrite, BmpData) then
-        try
-          // 移动图像向下一像素 ,要每行移动，不要多行同时移动，否则会出错，
-          // 而且对速度性能益处有限
-          MoveBytes := Width * BmpData.BytesPerPixel;
-          for i := Height - 2 Downto 0 do
-            System.Move(BmpData.GetPixelAddr(0, 0 + i)^,
-              BmpData.GetPixelAddr(0, 1 + i)^, MoveBytes);
+      // -----------------
+      with FWaterFallBmp do
+      begin
+        if Map(TMapAccess.ReadWrite, BmpData) then
+          try
+            // 移动图像向下一像素 ,要每行移动，不要多行同时移动，否则会出错，
+            // 而且对速度性能益处有限
+            MoveBytes := Width * BmpData.BytesPerPixel;
+            for i := Height - 2 Downto 0 do
+              System.Move(BmpData.GetPixelAddr(0, 0 + i)^,
+                BmpData.GetPixelAddr(0, 1 + i)^, MoveBytes);
+
+            FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
+            FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
+          finally
+            Unmap(BmpData);
+          end;
+      end;
+
+      if FWaterFallBmp.HandleAllocated then
+        With FWaterFallBmp.Canvas do
+        begin
 
           FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
           FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
-        finally
-          Unmap(BmpData);
+
+          // GPU方式和Direct2D方式，两种情况下面BITMAP的TOP座标似乎是不同的，
+          // 需要用以下的方式来区分
+          if GlobalUseGPUCanvas then
+            PointStart := TPointF.Create(0, 1)
+          else
+            PointStart := TPointF.Create(0, 0);
+
+          Insert(FWaterFallGridR, Clip, 0);
+          Clip[0].Inflate(0, 2);
+
+          // if BeginScene(@Clip, 0) then
+          if BeginScene() then
+            try
+              HStep := FWaterFallGridR.Width / (Length(FData) - 1);
+
+              for i := 0 to Length(FData) - 1 do
+              begin
+                if i > 0 then
+                  PointStart := PointEnd;
+
+                PointEnd := PointStart;
+
+                PointEnd.X := PointEnd.X + HStep;
+
+                ColorIndex := Trunc(FData[i] * Length(FRainBowColors));
+                if ColorIndex > Length(FRainBowColors) - 1 then
+                  AColor := TAlphaColors.White
+                else
+                  AColor := FRainBowColors[ColorIndex];
+
+                Stroke.Color := AColor;
+
+                DrawLine(PointStart, PointEnd, 1);
+              end;
+            finally
+              EndScene();
+            end;
         end;
+
+      Canvas.DrawBitmap(FWaterFallBmp, FWaterFallBmp.Bounds,
+        FWaterFallGridR, 1, True);
     end;
-
-    if FWaterFallBmp.HandleAllocated then
-    With FWaterFallBmp.Canvas do
-    begin
-
-      FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
-      FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
-
-      // GPU方式和Direct2D方式，两种情况下面BITMAP的TOP座标似乎是不同的，
-      // 需要用以下的方式来区分
-      if GlobalUseGPUCanvas then
-        PointStart := TPointF.Create(0, 1)
-      else
-        PointStart := TPointF.Create(0, 0);
-
-      Insert(FWaterFallGridR, Clip, 0);
-      Clip[0].Inflate(0, 2);
-
-      // if BeginScene(@Clip, 0) then
-      if BeginScene() then
-        try
-          HStep := FWaterFallGridR.Width / (Length(FData) - 1);
-
-          for i := 0 to Length(FData) - 1 do
-          begin
-            if i > 0 then
-              PointStart := PointEnd;
-
-            PointEnd := PointStart;
-
-            PointEnd.X := PointEnd.X + HStep;
-
-            ColorIndex := Trunc(FData[i] * Length(FRainBowColors));
-            if ColorIndex > Length(FRainBowColors) - 1 then
-              AColor := TAlphaColors.White
-            else
-              AColor := FRainBowColors[ColorIndex];
-
-            Stroke.Color := AColor;
-
-            DrawLine(PointStart, PointEnd, 1);
-          end;
-        finally
-          EndScene();
-        end;
-    end;
-
-    Canvas.DrawBitmap(FWaterFallBmp, FWaterFallBmp.Bounds,
-      FWaterFallGridR, 1, True);
-  end;
   inherited;
 end;
 
@@ -1748,8 +1777,9 @@ var
   ColorRect: TRectF;
 begin
   inherited;
-  if FChart = Nil then   Exit;
-  FColorBar.Visible:= FShowWaterfall;
+  if FChart = Nil then
+    Exit;
+  FColorBar.Visible := FShowWaterfall;
   if FShowWaterfall then
   begin
     FColorBar.Width := 20;
@@ -1792,13 +1822,12 @@ begin
   begin
     With Chart do
     begin
-      Canvas.Stroke.Color:= TAlphaColors.White;
+      Canvas.Stroke.Color := TAlphaColors.White;
       Canvas.DrawLine(TPointF.Create(FCrossX, FWaterFallGridR.Top),
         TPointF.Create(FCrossX, FWaterFallGridR.Bottom), CrossOpacity);
     end;
   end;
 end;
-
 
 procedure TWaterFallDrawer.Internal_DrawGraphicBound(ACanvas: TCanvas);
 const
@@ -1806,7 +1835,7 @@ const
   CONST_FRAME_THICKNESS: Single = 2;
 begin
   inherited;
-  if self.FShowWaterfall then
+  if Self.FShowWaterfall then
   begin
     ACanvas.Stroke.Dash := TStrokeDash.Dash;
     ACanvas.Stroke.Thickness := CONST_FRAME_THICKNESS;
@@ -1820,7 +1849,7 @@ var
   GridFrameR: TRectF;
 begin
   inherited;
-  if self.FShowWaterfall then
+  if Self.FShowWaterfall then
   begin
     // 画Grid的外边框
     GridFrameR := FWaterFallGridR;
@@ -1836,13 +1865,12 @@ end;
 procedure TWaterFallDrawer.SetChart(const Value: TSignalChart);
 begin
   inherited;
-  if Not (csDesigning in ComponentState) then
+  if Not(csDesigning in ComponentState) then
   begin
     if FColorBar <> Nil then
       FColorBar.Parent := Value;
   end;
 end;
-
 
 procedure TWaterFallDrawer.SetShowWaterfall(const Value: Boolean);
 begin
@@ -1855,7 +1883,7 @@ begin
       UpdateGraphicRect();
       Chart.UpdateBitmap;
       Chart.InvalidateRect(Chart.LocalRect);
-      AfterChangeSize(); //重新定位彩条图像
+      AfterChangeSize(); // 重新定位彩条图像
     end
     else
     begin
@@ -1868,44 +1896,45 @@ end;
 procedure TWaterFallDrawer.UpdateGraphicRect;
 begin
   if FShowWaterfall then
-  With Chart do
-  begin
-    FGraphicRect := LocalRect;
-    FGraphicRect.Top := FGraphicRect.Top + 2;
-    FGraphicRect.Bottom := FGraphicRect.Bottom / 2;
-    FWaterFallRect      := LocalRect;
-    FWaterFallRect.Top  := FGraphicRect.Bottom;
-    FWaterFallRect.Bottom := LocalRect.Bottom - 2;
-  end
+    With Chart do
+    begin
+      FGraphicRect := LocalRect;
+      FGraphicRect.Top := FGraphicRect.Top + 2;
+      FGraphicRect.Bottom := FGraphicRect.Bottom / 2;
+      FWaterFallRect := LocalRect;
+      FWaterFallRect.Top := FGraphicRect.Bottom;
+      FWaterFallRect.Bottom := LocalRect.Bottom - 2;
+    end
   else
   begin
-      inherited;
+    inherited;
   end;
 end;
 
 procedure TWaterFallDrawer.UpdateGridRAndStdTextR;
 begin
   inherited;
-  if FShowWaterfall then With Chart do
-  begin
-    FWaterFallGridR := FGraphicGridR;
-    FWaterFallGridR.Top := FWaterFallRect.Top;
-    FWaterFallGridR.Bottom := FWaterFallRect.Bottom - FBottomTextR.Bottom / 2;
-    FWaterFallRectUpdated := True;
-  end;
+  if FShowWaterfall then
+    With Chart do
+    begin
+      FWaterFallGridR := FGraphicGridR;
+      FWaterFallGridR.Top := FWaterFallRect.Top;
+      FWaterFallGridR.Bottom := FWaterFallRect.Bottom - FBottomTextR.Bottom / 2;
+      FWaterFallRectUpdated := True;
+    end;
 end;
-
 
 procedure TAbstractSignalDrawer.CheckUpdateBackGround;
 begin
   if Chart <> Nil then
   begin
-    if Chart.FNeedUpdateBG and (ComponentState * [csLoading, csReading] = []) then
+    if Chart.FNeedUpdateBG and (ComponentState * [csLoading, csReading] = [])
+    then
     begin
       UpdateGridRAndStdTextR();
       Chart.UpdateBitmap;
       AfterChangeSize();
-      Chart.FNeedupdateBG:= False;
+      Chart.FNeedUpdateBG := False;
     end;
   end;
 end;

@@ -87,7 +87,7 @@ object Form3: TForm3
   end
   object Button6: TButton
     Position.X = 8.000000000000000000
-    Position.Y = 280.000000000000000000
+    Position.Y = 312.000000000000000000
     Size.Width = 105.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
@@ -119,7 +119,7 @@ object Form3: TForm3
   end
   object Button7: TButton
     Position.X = 8.000000000000000000
-    Position.Y = 312.000000000000000000
+    Position.Y = 344.000000000000000000
     Size.Width = 105.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
@@ -127,9 +127,19 @@ object Form3: TForm3
     Text = 'Set View Full'
     OnClick = Button7Click
   end
+  object Button8: TButton
+    Position.X = 8.000000000000000000
+    Position.Y = 280.000000000000000000
+    Size.Width = 105.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 40
+    Text = 'Set View'
+    OnClick = Button8Click
+  end
   object Test1: TTest
-    Left = 88
-    Top = 472
+    Left = 80
+    Top = 416
     save = '{1D8C3D07-29A9-4779-A099-32A8691EEA69}'
   end
   object SignalRectangeDrawer1: TSpectrumDrawer

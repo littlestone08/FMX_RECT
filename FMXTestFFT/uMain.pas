@@ -30,6 +30,7 @@ type
     sbMin: TSpinBox;
     sbMax: TSpinBox;
     Button7: TButton;
+    Button8: TButton;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -49,6 +50,7 @@ type
     procedure Button5Click(Sender: TObject);
     procedure Button6Click(Sender: TObject);
     procedure Button7Click(Sender: TObject);
+    procedure Button8Click(Sender: TObject);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -278,6 +280,13 @@ procedure TForm3.Button7Click(Sender: TObject);
 begin
   SplitedDrawer1.AxisesData.Bottom.ViewMin:= 0;
   SplitedDrawer1.AxisesData.Bottom.ViewMax:= 22050;
+  SplitedDrawer1.Chart.InvalidBackGround;
+end;
+
+procedure TForm3.Button8Click(Sender: TObject);
+begin
+  SplitedDrawer1.AxisesData.Bottom.ViewMin:= Trunc(sbMin.Value);
+  SplitedDrawer1.AxisesData.Bottom.ViewMax:= Trunc(sbMax.Value);
   SplitedDrawer1.Chart.InvalidBackGround;
 end;
 
