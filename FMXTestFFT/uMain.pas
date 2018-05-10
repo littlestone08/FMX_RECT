@@ -254,6 +254,8 @@ begin
 end;
 
 procedure TForm3.Button4Click(Sender: TObject);
+var
+  aForm: TForm;
 begin
   // InvalidateRect(Bounds);
   // self.SignalChart1.InvalidateRect(SignalChart1.LocalRect);
@@ -262,6 +264,17 @@ begin
     SaveToFile('d:\1.png');
     DisposeOf;
   end;
+//  aForm:= TForm.CreateNew(Self);
+//  aForm.BorderStyle:= TFmxFormBorderStyle.None;
+//  aForm.Transparency:= True;
+//  aForm.WindowState:= TWindowState.wsMaximized;
+//  aform.show;
+//  With MakeScaleScreenshot(aform) do
+//  begin
+//    SaveToFile('d:\2.png');
+//    DisposeOf;
+//  end;
+//  aform.DisposeOf;
 end;
 
 procedure TForm3.Button5Click(Sender: TObject);

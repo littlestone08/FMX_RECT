@@ -18,6 +18,9 @@
         <Projects Include="F:\Download\FlappyFiremonkey\FlappyFiremonkey.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="..\CaptureWindowsScreen\PCaptureScreen.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -71,14 +74,23 @@
     <Target Name="FlappyFiremonkey:Make">
         <MSBuild Projects="F:\Download\FlappyFiremonkey\FlappyFiremonkey.dproj" Targets="Make"/>
     </Target>
+    <Target Name="PCaptureScreen">
+        <MSBuild Projects="..\CaptureWindowsScreen\PCaptureScreen.dproj"/>
+    </Target>
+    <Target Name="PCaptureScreen:Clean">
+        <MSBuild Projects="..\CaptureWindowsScreen\PCaptureScreen.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="PCaptureScreen:Make">
+        <MSBuild Projects="..\CaptureWindowsScreen\PCaptureScreen.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="PTestGraphicA;dpkRecvGraphic;Project1;PTestAudioFFTGraphic;FlappyFiremonkey"/>
+        <CallTarget Targets="PTestGraphicA;dpkRecvGraphic;Project1;PTestAudioFFTGraphic;FlappyFiremonkey;PCaptureScreen"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="PTestGraphicA:Clean;dpkRecvGraphic:Clean;Project1:Clean;PTestAudioFFTGraphic:Clean;FlappyFiremonkey:Clean"/>
+        <CallTarget Targets="PTestGraphicA:Clean;dpkRecvGraphic:Clean;Project1:Clean;PTestAudioFFTGraphic:Clean;FlappyFiremonkey:Clean;PCaptureScreen:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="PTestGraphicA:Make;dpkRecvGraphic:Make;Project1:Make;PTestAudioFFTGraphic:Make;FlappyFiremonkey:Make"/>
+        <CallTarget Targets="PTestGraphicA:Make;dpkRecvGraphic:Make;Project1:Make;PTestAudioFFTGraphic:Make;FlappyFiremonkey:Make;PCaptureScreen:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

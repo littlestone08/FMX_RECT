@@ -295,6 +295,7 @@ type
     FColorBar: TImage;
     FShowWaterfall: Boolean;
     procedure SetShowWaterfall(const Value: Boolean);
+    procedure DockColorBar();
   Protected
     Procedure DrawCross(X, Y: Single); Override;
     Procedure AfterChangeSize(); Override;
@@ -1741,7 +1742,7 @@ end;
 
 
 
-procedure TWaterFallDrawer.AfterChangeSize;
+procedure TWaterFallDrawer.DockColorBar;
 var
   i: Integer;
   Step: Single;
@@ -1784,6 +1785,11 @@ begin
         end;
       end;
   end
+end;
+
+procedure TWaterFallDrawer.AfterChangeSize;
+begin
+  DockColorBar();
 end;
 
 procedure TWaterFallDrawer.DrawCross(X, Y: Single);
