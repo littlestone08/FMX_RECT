@@ -203,7 +203,7 @@ type
     Procedure ChartSinkDrawData(const AData: TArray<Single>); Virtual; Abstract;
     Procedure ChartSinkUpdateBitmap(BK: TBitmap); Virtual; Abstract;
   Public
-    Procedure DoDraw; Virtual; Abstract;
+    Procedure DoDraw(); Virtual; Abstract;
   Published
     Property Chart: TSignalChart Read FChart Write SetChart;
   End;
@@ -257,6 +257,7 @@ type
   Protected
     Procedure Internal_DrawGraphicBound(ACanvas: TCanvas); Virtual;
     Procedure Internal_DrawGraphicFrame(ACanvas: TCanvas); Virtual;
+    Procedure Internal_DrawViewData(ViewIdxFrom, ViewIdxTo: Integer); Virtual;
   Public
     Procedure ChartSinkMouseMove(Chart: TSignalChart; Shift: TShiftState;
       X, Y: Single); Override;
@@ -267,6 +268,7 @@ type
     Constructor Create(AOwner: TComponent); Override;
     Destructor Destroy; Override;
     Procedure DoDraw; Override;
+
   Published
     Property PeakDecrement: Single read FPeakDecrement write SetPeakeDecrement;
     Property FalloffDecrement: Single read FFalloffDecrement
@@ -301,8 +303,8 @@ type
     Procedure UpdateGraphicRect; Override;
     Procedure Internal_DrawGraphicBound(ACanvas: TCanvas); Override;
     Procedure Internal_DrawGraphicFrame(ACanvas: TCanvas); Override;
+    Procedure Internal_DrawViewData(ViewIdxFrom, ViewIdxTo: Integer); Override;
   Public
-    Procedure DoDraw; Override;
     constructor Create(AOwner: TComponent); Override;
     Destructor Destroy; Override;
   Published
@@ -828,7 +830,6 @@ end;
 procedure TCustomAxis.UpdateViewRatio;
 var
   Total: Single;
-  nCount: Integer;
 begin
   Total := FMax - FMin;
   FViewRatioFrom := (FViewMin - FMin) / Total;
@@ -1262,29 +1263,16 @@ procedure TSpectrumDrawer.DoDraw;
   end;
 
 var
-  HStep: Single;
-  FalloffR: TRectF;
-  PeakR: TRectF;
   i: Integer;
-  ACanvas: TCanvas;
   di: Single;
-
   nCount: Integer;
-  nViewCount: Integer;
+//  nViewCount: Integer;
 begin
-  With Chart, FAxisesData.Bottom do
+  if Chart.ComponentState * [csLoading, csReading] <> [] then Exit;
+
+  With FAxisesData.Bottom do
   begin
-    if ComponentState * [csLoading, csReading] <> [] then
-      Exit;
-
     nCount  := Length(FData);
-
-    if (nCount = 0) or (ViewIdxTo >= nCount) or (ViewIdxTo < 0) then
-      Exit;
-
-    nViewCount := ViewIdxTo - ViewIdxFrom + 1;
-
-    HStep := FGraphicGridR.Width / (nViewCount - 1);
 
     if Length(FPeaks) < nCount then
       SetLength(FPeaks, nCount);
@@ -1318,43 +1306,13 @@ begin
       end;
     end;
 
-    ACanvas := Canvas;
-    ACanvas.Stroke.Color := TAlphaColors.Black;
-    ACanvas.Stroke.Kind := TBrushKind.Solid;
-    ACanvas.Stroke.Thickness := 1;
-    ACanvas.Fill.Color := TAlphaColors.Lime;
-    ACanvas.Fill.Kind := TBrushKind.Solid;
 
-    for i := 0 to nViewCount - 1 do
-    begin
-      FalloffR := TRectF.Create(0, FGraphicGridR.Height *
-        (1 - FFallOff[i + ViewIdxFrom]), HStep, FGraphicGridR.Height - 0);
+//    nViewCount := ViewIdxTo - ViewIdxFrom + 1;
+//    if (nCount = 0) or (ViewIdxTo >= nCount) or (ViewIdxTo < 0) then
+//      Exit;
 
-      FalloffR.offset((i - 0.5) * HStep, 0);
-      FalloffR.offset(FGraphicGridR.TopLeft);
-      FalloffR.Left := EnsureRange(FalloffR.Left, FGraphicGridR.Left,
-        FGraphicGridR.Right);
-      FalloffR.Right := EnsureRange(FalloffR.Right, FGraphicGridR.Left,
-        FGraphicGridR.Right);
-
-      PeakR := FalloffR;
-      if FalloffVisible then
-      begin
-        if (FalloffR.Width > 2) then
-        begin
-          ACanvas.DrawRect(FalloffR, 0, 0, [], 1);
-          FalloffR.Inflate(-0.5, -0.5);
-        end;
-        ACanvas.FillRect(FalloffR, 0, 0, [], 1);
-      end;
-      if PeakVisible then
-      begin
-        PeakR.Bottom := FGraphicGridR.Height * (1 - FPeaks[i + ViewIdxFrom]) +
-          FGraphicGridR.Top;
-        PeakR.Top := PeakR.Bottom - 1;
-        ACanvas.FillRect(PeakR, 0, 0, [], 1);
-      end;
-    end;
+    if (nCount > 0) and InRange(ViewIdxTo, 0, nCount - 1) then
+      Internal_DrawViewData(ViewIdxFrom, ViewIdxTo);
   end;
 
   if FMouseInRect then
@@ -1433,6 +1391,114 @@ begin
       FData[i] := (cos(2 * pi * i / (nCount - 1)) + 1) / 2
     end;
   end;
+end;
+
+procedure TSpectrumDrawer.Internal_DrawViewData(ViewIdxFrom, ViewIdxTo: Integer);
+  function GetHint: String;
+  var
+    ptPosInGrid: TPointF;
+    RatioX, RatioY: Single;
+    DataIndex: Integer;
+    LabelX, LabelY: String;
+    PeakY: String;
+  begin
+    Result := '';
+    With Chart do
+    begin
+      ptPosInGrid := TPointF.Create(FCrossX - FGraphicGridR.Left,
+        FCrossY - FGraphicGridR.Top);
+      RatioX := ptPosInGrid.X / FGraphicGridR.Width;
+      RatioY := ptPosInGrid.Y / FGraphicGridR.Height;
+      With FAxisesData.Bottom do
+      begin
+        // DataIndex:= Ceil(FGraphicGridR.Width * RatioX) * (FMaxValue - FMinValue + 1);
+        // DataIndex:= Ceil((FMaxValue - FMinValue + 1+0.5) * RatioX) ;
+        // DataIndex:= Ceil(Length(FData) * Min((RatioX + 0.005), 1));
+        DataIndex := Round(Length(FData) * System.Math.Min(RatioX, 1));
+
+      end;
+
+      Result := Format('GridR (%.2f, %.2f)'#$D#$A +
+        'Cross: (%.2f, %.2f)=>(%.2f, %.2f)'#$D#$A +
+        'Cross Percent: (%.2f%%, %.2f%%)'#$D#$A,
+        [FGraphicGridR.Left, FGraphicGridR.Top, FCrossX, FCrossY, ptPosInGrid.X,
+        ptPosInGrid.Y, RatioX * 100, RatioY * 100]);
+      if Length(FData) > 0 then
+      begin
+        Result := Result + Format('Data[%d] = %.2f'#$D#$A,
+          [DataIndex, FPeaks[DataIndex]]);
+        With FAxisesData.Bottom do
+          LabelX := Format('%.2f' + FUnitStr,
+            [FViewMin + (FViewMax - FViewMin + 1) * RatioX]);
+
+        With FAxisesData.Left do
+          LabelY := Format('%.2f' + FUnitStr,
+            [FViewMax - (FViewMax - FViewMin + 1) * RatioY]);
+        With FAxisesData.Left do
+          PeakY := Format('%.2f' + FUnitStr,
+            [FViewMin + (FViewMax - FViewMin + 1) * FPeaks[DataIndex]]);
+
+        Result := Result + Format('Labled Value: (%s, %s)'#$D#$A,
+          [LabelX, LabelY]);
+        Result := Result + Format('Peak Value: (%s, %s)', [LabelX, PeakY]);
+
+      end;
+    end;
+  end;
+
+var
+  HStep: Single;
+  FalloffR: TRectF;
+  PeakR: TRectF;
+  i: Integer;
+  ACanvas: TCanvas;
+  nViewCount: Integer;
+begin
+  With Chart do
+  begin
+    nViewCount := ViewIdxTo - ViewIdxFrom + 1;
+
+    HStep := FGraphicGridR.Width / (nViewCount - 1);
+
+    ACanvas := Canvas;
+    ACanvas.Stroke.Color := TAlphaColors.Black;
+    ACanvas.Stroke.Kind := TBrushKind.Solid;
+    ACanvas.Stroke.Thickness := 1;
+    ACanvas.Fill.Color := TAlphaColors.Lime;
+    ACanvas.Fill.Kind := TBrushKind.Solid;
+
+    for i := 0 to nViewCount - 1 do
+    begin
+      FalloffR := TRectF.Create(0, FGraphicGridR.Height *
+        (1 - FFallOff[i + ViewIdxFrom]), HStep, FGraphicGridR.Height - 0);
+
+      FalloffR.offset((i - 0.5) * HStep, 0);
+      FalloffR.offset(FGraphicGridR.TopLeft);
+      FalloffR.Left := EnsureRange(FalloffR.Left, FGraphicGridR.Left,
+        FGraphicGridR.Right);
+      FalloffR.Right := EnsureRange(FalloffR.Right, FGraphicGridR.Left,
+        FGraphicGridR.Right);
+
+      PeakR := FalloffR;
+      if FalloffVisible then
+      begin
+        if (FalloffR.Width > 2) then
+        begin
+          ACanvas.DrawRect(FalloffR, 0, 0, [], 1);
+          FalloffR.Inflate(-0.5, -0.5);
+        end;
+        ACanvas.FillRect(FalloffR, 0, 0, [], 1);
+      end;
+      if PeakVisible then
+      begin
+        PeakR.Bottom := FGraphicGridR.Height * (1 - FPeaks[i + ViewIdxFrom]) +
+          FGraphicGridR.Top;
+        PeakR.Top := PeakR.Bottom - 1;
+        ACanvas.FillRect(PeakR, 0, 0, [], 1);
+      end;
+    end;
+  end;
+
 end;
 
 procedure TSpectrumDrawer.Internal_DrawGraphicBound(ACanvas: TCanvas);
@@ -1673,105 +1739,7 @@ begin
   inherited;
 end;
 
-procedure TWaterFallDrawer.DoDraw;
-var
-  HStep: Single;
-  PointStart: TPointF;
-  PointEnd: TPointF;
-  i: Integer;
-  ColorIndex: Cardinal;
-var
-  BmpData: TBitmapData;
-  MoveBytes: Integer;
-  AColor: TAlphaColor;
-  Clip: TClipRects;
-begin
-  if FShowWaterfall then
-    With Chart do
-    begin
-      if ComponentState * [csLoading, csReading] <> [] then
-        Exit;
-      // if Length(FData) = 0 then
-      // Exit;
 
-      if FWaterFallRectUpdated then
-      begin
-        FWaterFallBmp.Width := Ceil(FWaterFallGridR.Width);
-        FWaterFallBmp.Height := Ceil(FWaterFallGridR.Height);
-        // FWaterFallBmpOld.Assign(FWaterFallBmp);
-        FWaterFallRectUpdated := False;
-      end;
-
-      // -----------------
-      with FWaterFallBmp do
-      begin
-        if Map(TMapAccess.ReadWrite, BmpData) then
-          try
-            // 移动图像向下一像素 ,要每行移动，不要多行同时移动，否则会出错，
-            // 而且对速度性能益处有限
-            MoveBytes := Width * BmpData.BytesPerPixel;
-            for i := Height - 2 Downto 0 do
-              System.Move(BmpData.GetPixelAddr(0, 0 + i)^,
-                BmpData.GetPixelAddr(0, 1 + i)^, MoveBytes);
-
-            FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
-            FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
-          finally
-            Unmap(BmpData);
-          end;
-      end;
-
-      if FWaterFallBmp.HandleAllocated then
-        With FWaterFallBmp.Canvas do
-        begin
-
-          FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
-          FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
-
-          // GPU方式和Direct2D方式，两种情况下面BITMAP的TOP座标似乎是不同的，
-          // 需要用以下的方式来区分
-          if GlobalUseGPUCanvas then
-            PointStart := TPointF.Create(0, 1)
-          else
-            PointStart := TPointF.Create(0, 0);
-
-          Insert(FWaterFallGridR, Clip, 0);
-          Clip[0].Inflate(0, 2);
-
-          // if BeginScene(@Clip, 0) then
-          if BeginScene() then
-            try
-              HStep := FWaterFallGridR.Width / (Length(FData) - 1);
-
-              for i := 0 to Length(FData) - 1 do
-              begin
-                if i > 0 then
-                  PointStart := PointEnd;
-
-                PointEnd := PointStart;
-
-                PointEnd.X := PointEnd.X + HStep;
-
-                ColorIndex := Trunc(FData[i] * Length(FRainBowColors));
-                if ColorIndex > Length(FRainBowColors) - 1 then
-                  AColor := TAlphaColors.White
-                else
-                  AColor := FRainBowColors[ColorIndex];
-
-                Stroke.Color := AColor;
-
-                DrawLine(PointStart, PointEnd, 1);
-              end;
-            finally
-              EndScene();
-            end;
-        end;
-
-      Canvas.DrawBitmap(FWaterFallBmp, FWaterFallBmp.Bounds,
-        FWaterFallGridR, 1, True);
-    end;
-  inherited;
-end;
 
 procedure TWaterFallDrawer.AfterChangeSize;
 var
@@ -1863,6 +1831,103 @@ begin
     ACanvas.Stroke.Dash := TStrokeDash.Solid;
     ACanvas.DrawRect(FWaterFallGridR, 0, 0, [], 1);
   end;
+end;
+
+procedure TWaterFallDrawer.Internal_DrawViewData(ViewIdxFrom,
+  ViewIdxTo: Integer);
+var
+  HStep: Single;
+  ViewCount: integer;
+  PointStart: TPointF;
+  PointEnd: TPointF;
+  i: Integer;
+  ColorIndex: Cardinal;
+var
+  BmpData: TBitmapData;
+  MoveBytes: Integer;
+  AColor: TAlphaColor;
+  Clip: TClipRects;
+
+begin
+  if FShowWaterfall then
+    With Chart do
+    begin
+      if FWaterFallRectUpdated then
+      begin
+        FWaterFallBmp.Width := Ceil(FWaterFallGridR.Width);
+        FWaterFallBmp.Height := Ceil(FWaterFallGridR.Height);
+        FWaterFallRectUpdated := False;
+      end;
+
+      // -----------------
+      with FWaterFallBmp do
+      begin
+        if Map(TMapAccess.ReadWrite, BmpData) then
+          try
+            // 移动图像向下一像素 ,要每行移动，不要多行同时移动，否则会出错，
+            // 而且对速度性能益处有限
+            MoveBytes := Width * BmpData.BytesPerPixel;
+            for i := Height - 2 Downto 0 do
+              System.Move(BmpData.GetPixelAddr(0, 0 + i)^,
+                BmpData.GetPixelAddr(0, 1 + i)^, MoveBytes);
+
+            FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
+            FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
+          finally
+            Unmap(BmpData);
+          end;
+      end;
+
+      if FWaterFallBmp.HandleAllocated then
+        With FWaterFallBmp.Canvas do
+        begin
+
+          FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
+          FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
+
+          // GPU方式和Direct2D方式，两种情况下面BITMAP的TOP座标似乎是不同的，
+          // 需要用以下的方式来区分
+          if GlobalUseGPUCanvas then
+            PointStart := TPointF.Create(0, 1)
+          else
+            PointStart := TPointF.Create(0, 0);
+
+          Insert(FWaterFallGridR, Clip, 0);
+          Clip[0].Inflate(0, 2);
+          ViewCount:=  ViewIdxTo - ViewIdxFrom + 1;
+          // if BeginScene(@Clip, 0) then
+          if BeginScene() then
+            try
+              HStep := FWaterFallGridR.Width / (ViewCount - 1);
+
+              for i := 0 to ViewCount - 1 do
+              begin
+                if i > 0 then
+                  PointStart := PointEnd;
+
+                PointEnd := PointStart;
+
+                PointEnd.X := PointEnd.X + HStep;
+
+                ColorIndex := Trunc(FData[i + ViewIdxFrom] * Length(FRainBowColors));
+                if ColorIndex > Length(FRainBowColors) - 1 then
+                  AColor := TAlphaColors.White
+                else
+                  AColor := FRainBowColors[ColorIndex];
+
+                Stroke.Color := AColor;
+
+                DrawLine(PointStart, PointEnd, 1);
+              end;
+            finally
+              EndScene();
+            end;
+        end;
+
+      Canvas.DrawBitmap(FWaterFallBmp, FWaterFallBmp.Bounds,
+        FWaterFallGridR, 1, True);
+    end;
+  inherited;
 end;
 
 procedure TWaterFallDrawer.SetChart(const Value: TSignalChart);
