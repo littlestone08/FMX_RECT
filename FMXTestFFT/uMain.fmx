@@ -9,7 +9,7 @@ object Form3: TForm3
   FormFactor.Devices = [Desktop]
   OnCreate = FormCreate
   OnPaint = FormPaint
-  DesignerMasterStyle = 0
+  DesignerMasterStyle = 3
   object Button2: TButton
     Anchors = [akBottom]
     Position.X = 840.645263671874900000
@@ -103,7 +103,7 @@ object Form3: TForm3
     Position.X = 8.000000000000000000
     Position.Y = 216.000000000000000000
     Size.Width = 108.000000000000000000
-    Size.Height = 22.000000000000000000
+    Size.Height = 32.000000000000000000
     Size.PlatformDefault = False
   end
   object sbMax: TSpinBox
@@ -114,7 +114,7 @@ object Form3: TForm3
     Position.X = 8.000000000000000000
     Position.Y = 248.000000000000000000
     Size.Width = 108.000000000000000000
-    Size.Height = 22.000000000000000000
+    Size.Height = 32.000000000000000000
     Size.PlatformDefault = False
   end
   object Button7: TButton

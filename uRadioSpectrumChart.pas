@@ -257,7 +257,7 @@ type
   Protected
     Procedure Internal_DrawGraphicBound(ACanvas: TCanvas); Virtual;
     Procedure Internal_DrawGraphicFrame(ACanvas: TCanvas); Virtual;
-    Procedure Internal_DrawViewData(ViewIdxFrom, ViewIdxTo: Integer); Virtual;
+    Procedure Internal_DrawViewData(const AData:TArray<Single>; ViewIdxFrom, ViewIdxTo: Integer); Virtual;
   Public
     Procedure ChartSinkMouseMove(Chart: TSignalChart; Shift: TShiftState;
       X, Y: Single); Override;
@@ -304,7 +304,7 @@ type
     Procedure UpdateGraphicRect; Override;
     Procedure Internal_DrawGraphicBound(ACanvas: TCanvas); Override;
     Procedure Internal_DrawGraphicFrame(ACanvas: TCanvas); Override;
-    Procedure Internal_DrawViewData(ViewIdxFrom, ViewIdxTo: Integer); Override;
+    Procedure Internal_DrawViewData(const AData:TArray<Single>; ViewIdxFrom, ViewIdxTo: Integer); Override;
   Public
     constructor Create(AOwner: TComponent); Override;
     Destructor Destroy; Override;
@@ -317,7 +317,7 @@ procedure Register;
 implementation
 
 uses
-  System.Diagnostics, SpectraLibrary, FMX.PlatForm, CnDebug;
+  System.Diagnostics, SpectraLibrary, FMX.PlatForm{$IFDEF MSWINDOWS}, CnDebug {$ENDIF} ;
 
 { TSpectrumChart }
 
@@ -1313,7 +1313,8 @@ begin
 //      Exit;
 
     if (nCount > 0) and InRange(ViewIdxTo, 0, nCount - 1) then
-      Internal_DrawViewData(ViewIdxFrom, ViewIdxTo);
+//      Internal_DrawViewData(FData, ViewIdxFrom, ViewIdxTo);
+      Internal_DrawViewData(FFallOff, ViewIdxFrom, ViewIdxTo);
   end;
 
   if FMouseInRect then
@@ -1394,7 +1395,7 @@ begin
   end;
 end;
 
-procedure TSpectrumDrawer.Internal_DrawViewData(ViewIdxFrom, ViewIdxTo: Integer);
+procedure TSpectrumDrawer.Internal_DrawViewData(const AData:TArray<Single>; ViewIdxFrom, ViewIdxTo: Integer);
   function GetHint: String;
   var
     ptPosInGrid: TPointF;
@@ -1415,7 +1416,7 @@ procedure TSpectrumDrawer.Internal_DrawViewData(ViewIdxFrom, ViewIdxTo: Integer)
         // DataIndex:= Ceil(FGraphicGridR.Width * RatioX) * (FMaxValue - FMinValue + 1);
         // DataIndex:= Ceil((FMaxValue - FMinValue + 1+0.5) * RatioX) ;
         // DataIndex:= Ceil(Length(FData) * Min((RatioX + 0.005), 1));
-        DataIndex := Round(Length(FData) * System.Math.Min(RatioX, 1));
+        DataIndex := Round(Length(AData) * System.Math.Min(RatioX, 1));
 
       end;
 
@@ -1424,10 +1425,11 @@ procedure TSpectrumDrawer.Internal_DrawViewData(ViewIdxFrom, ViewIdxTo: Integer)
         'Cross Percent: (%.2f%%, %.2f%%)'#$D#$A,
         [FGraphicGridR.Left, FGraphicGridR.Top, FCrossX, FCrossY, ptPosInGrid.X,
         ptPosInGrid.Y, RatioX * 100, RatioY * 100]);
-      if Length(FData) > 0 then
+
+      if Length(AData) > 0 then
       begin
         Result := Result + Format('Data[%d] = %.2f'#$D#$A,
-          [DataIndex, FPeaks[DataIndex]]);
+          [DataIndex, AData[DataIndex]]);
         With FAxisesData.Bottom do
           LabelX := Format('%.2f' + FUnitStr,
             [FViewMin + (FViewMax - FViewMin + 1) * RatioX]);
@@ -1471,7 +1473,8 @@ begin
     for i := 0 to nViewCount - 1 do
     begin
       FalloffR := TRectF.Create(0, FGraphicGridR.Height *
-        (1 - FFallOff[i + ViewIdxFrom]), HStep, FGraphicGridR.Height - 0);
+        (1 - AData[i + ViewIdxFrom]), HStep, FGraphicGridR.Height - 0);
+
 
       FalloffR.offset((i - 0.5) * HStep, 0);
       FalloffR.offset(FGraphicGridR.TopLeft);
@@ -1618,7 +1621,7 @@ begin
 
   FGraphicGridR := FGraphicRect;
   FGraphicGridR.Top := FGraphicGridR.Top + FLeftTextR.Height * 0.5;
-  FGraphicGridR.Left := FGraphicGridR.Left + FLeftTextR.Width;
+  FGraphicGridR.Left := FGraphicGridR.Left + FLeftTextR.Width *1.2;
   FGraphicGridR.Bottom := FGraphicGridR.Bottom - FLeftTextR.Height * 0.5 -
     FBottomTextR.Height;
   FGraphicGridR.Right := FGraphicGridR.Right - FBottomTextR.Width * 0.5;
@@ -1839,13 +1842,14 @@ begin
   end;
 end;
 
-procedure TWaterFallDrawer.Internal_DrawViewData(ViewIdxFrom,
+procedure TWaterFallDrawer.Internal_DrawViewData(const AData:TArray<Single>; ViewIdxFrom,
   ViewIdxTo: Integer);
 var
   HStep: Single;
   ViewCount: integer;
   PointStart: TPointF;
   PointEnd: TPointF;
+  ViewStart, ViewEnd: TPointF;
   i: Integer;
   ColorIndex: Cardinal;
 var
@@ -1915,7 +1919,7 @@ begin
 
                 PointEnd.X := PointEnd.X + HStep;
 
-                ColorIndex := Trunc(FData[i + ViewIdxFrom] * Length(FRainBowColors));
+                ColorIndex := Trunc(AData[i + ViewIdxFrom] * Length(FRainBowColors));
                 if ColorIndex > Length(FRainBowColors) - 1 then
                   AColor := TAlphaColors.White
                 else
@@ -1923,7 +1927,17 @@ begin
 
                 Stroke.Color := AColor;
 
-                DrawLine(PointStart, PointEnd, 1);
+                ViewStart:= PointStart;
+                ViewEnd:= PointEnd;
+                ViewStart.Offset(-HStep / 2, 0);
+                ViewEnd.Offset(-HStep / 2, 0);
+                if ViewStart.X < 0 then
+                  ViewStart.X:= 0;
+
+
+//                DrawLine(PointStart, PointEnd, 1);
+                DrawLine(ViewStart, ViewEnd, 1);
+
               end;
             finally
               EndScene();

@@ -29,8 +29,7 @@ package dpkRecvGraphic;
 
 requires
   rtl,
-  fmx,
-  vcl;
+  fmx;
 
 contains
   uRadioSpectrumChart in 'uRadioSpectrumChart.pas',

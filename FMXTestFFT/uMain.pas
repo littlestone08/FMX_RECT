@@ -9,7 +9,12 @@ uses
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.Effects,
   FMX.Filter.Effects, FMX.Objects, FMX.Controls.Presentation, FMX.StdCtrls,
   FMX.Layouts, FMX.ExtCtrls, uRadioSpectrumChart, FMXTee.Engine, FMXTee.Series,
-  FMXTee.Procs, FMXTee.Chart, FMX.PlatForm,Bass, FMX.Edit, FMX.EditBox,
+  FMXTee.Procs, FMXTee.Chart,
+  FMX.PlatForm,
+  {$IFDEF MSWINDOWS}
+  Bass,
+  {$ENDIF}
+  FMX.Edit, FMX.EditBox,
   FMX.SpinBox;
 
 type
@@ -60,7 +65,9 @@ type
     Procedure InitSpectralColors2();
     Procedure InitSpectralColors3();
   Private
+    {$IFDEF MSWINDOWS}
     hs: HSTREAM;
+    {$ENDIF}
     FFTData: TArray<Single>;
     FColors: TArray<TAlphaColor>;
     FRainbowColors: TArray<TAlphaColor>;
@@ -79,7 +86,7 @@ implementation
 {$R *.fmx}
 
 uses
-  SpectraLibrary, FMX.Printer, CnDebug;
+  SpectraLibrary, FMX.Printer{$IFDEF MSWINDOWS}, CnDebug{$ENDIF};
 
 function MakeScaleScreenshot(Sender: TControl): TBitmap; Overload;
 var
@@ -205,7 +212,9 @@ end;
 procedure TForm3.Button1Click(Sender: TObject);
 begin
   FStop := True;
+  {$IFDEF MSWINDOWS}
   BASS_Stop();
+  {$ENDIF}
   Timer1.Enabled := False;
 end;
 
@@ -234,6 +243,7 @@ begin
 end;
 
 procedure TForm3.Button3Click(Sender: TObject);
+{$IFDEF MSWINDOWS}
 const
   // SoneFile: AnsiString = 'C:\Users\mei\Desktop\AUDIO\song1.wav';
   SoneFile: AnsiString =
@@ -252,6 +262,11 @@ begin
     Timer1.Enabled := True;
   end;
 end;
+{$ELSE}
+begin
+  Timer1.Enabled := True;
+end;
+{$ENDIF}
 
 procedure TForm3.Button4Click(Sender: TObject);
 var
@@ -308,14 +323,14 @@ begin
   inherited;
 
   SetLength(FFTData, 256);
-
+  {$IFDEF MSWINDOWS}
   if (BASS_GetVersion shr 16) <> BASSVERSION then
     MessageDlg('"Bass.dll" 文件版本不合适! ', TmsgDlgType.mtError,
       [TMsgDlgBtn.mbOK], 0);
 
   if not BASS_Init(-1, 44100, 0, 0, nil) then
     MessageDlg('初始化错误', TmsgDlgType.mtError, [TMsgDlgBtn.mbOK], 0);
-
+  {$ENDIF}
 end;
 
 destructor TForm3.Destroy;
@@ -583,6 +598,10 @@ end;
 var
   Phase: Single;
 procedure TForm3.Timer1Timer(Sender: TObject);
+{$IFDEF ANDROID}
+{$DEFINE _A_}
+{$ENDIF}
+{$IFDEF _A_}
 var
   nCount: Integer;
   i: Integer;
@@ -605,18 +624,20 @@ begin
   SignalChart1.DrawData(FData);
   Caption := 'FPS: ' + IntToStr(SignalChart1.FPS);
 end;
-{
+{$ELSE}
+
 var
   i: Integer;
   di: Integer;
   MYFFT: TArray<Single>;
 begin
+  {$IFDEF MSWINDOWS}
   if BASS_ChannelIsActive(hs) <> BASS_ACTIVE_PLAYING then
     Exit;
 
   BASS_ChannelGetData(hs, FFTData, BASS_DATA_FFT512);
   SetLength(MYFFT, Length(FFTData) div 1);
-
+  {$ENDIF}
   for i := 0 to Length(MYFFT) - 1 do
   begin
     MYFFT[i] := FFTData[i];
@@ -625,7 +646,7 @@ begin
   Caption := 'FPS: ' + IntToStr(SignalChart1.FPS);
 
 end;
-*/
+{$ENDIF}
 // var
 // i: Integer;
 // begin
@@ -646,6 +667,6 @@ end;
 // Application.ProcessMessages;
 //
 // end;
-}
+
 
 end.

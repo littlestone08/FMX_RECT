@@ -5,9 +5,7 @@ uses
   System.SysUtils,
   System.StartUpCopy,
   FMX.Forms,
-  uMain in 'uMain.pas' {Form3},
-  bass in '..\TestFFT\bass.pas',
-  SpectraLibrary in 'SpectraLibrary.pas';
+  uMain in 'uMain.pas' {Form3};
 
 {$R *.res}
 Procedure DoneApplication;

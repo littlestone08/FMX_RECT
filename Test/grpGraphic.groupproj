@@ -7,7 +7,7 @@
             <Dependencies/>
         </Projects>
         <Projects Include="..\dpkRecvGraphic.dproj">
-            <Dependencies>..\FMXTestFFT\PTestAudioFFTGraphic.dproj</Dependencies>
+            <Dependencies/>
         </Projects>
         <Projects Include="..\TestFFT\Project1.dproj">
             <Dependencies/>
@@ -16,9 +16,6 @@
             <Dependencies/>
         </Projects>
         <Projects Include="F:\Download\FlappyFiremonkey\FlappyFiremonkey.dproj">
-            <Dependencies/>
-        </Projects>
-        <Projects Include="..\CaptureWindowsScreen\PCaptureScreen.dproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -38,13 +35,13 @@
     <Target Name="PTestGraphicA:Make">
         <MSBuild Projects="PTestGraphicA.dproj" Targets="Make"/>
     </Target>
-    <Target Name="dpkRecvGraphic" DependsOnTargets="PTestAudioFFTGraphic">
+    <Target Name="dpkRecvGraphic">
         <MSBuild Projects="..\dpkRecvGraphic.dproj"/>
     </Target>
-    <Target Name="dpkRecvGraphic:Clean" DependsOnTargets="PTestAudioFFTGraphic:Clean">
+    <Target Name="dpkRecvGraphic:Clean">
         <MSBuild Projects="..\dpkRecvGraphic.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="dpkRecvGraphic:Make" DependsOnTargets="PTestAudioFFTGraphic:Make">
+    <Target Name="dpkRecvGraphic:Make">
         <MSBuild Projects="..\dpkRecvGraphic.dproj" Targets="Make"/>
     </Target>
     <Target Name="Project1">
@@ -74,23 +71,14 @@
     <Target Name="FlappyFiremonkey:Make">
         <MSBuild Projects="F:\Download\FlappyFiremonkey\FlappyFiremonkey.dproj" Targets="Make"/>
     </Target>
-    <Target Name="PCaptureScreen">
-        <MSBuild Projects="..\CaptureWindowsScreen\PCaptureScreen.dproj"/>
-    </Target>
-    <Target Name="PCaptureScreen:Clean">
-        <MSBuild Projects="..\CaptureWindowsScreen\PCaptureScreen.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="PCaptureScreen:Make">
-        <MSBuild Projects="..\CaptureWindowsScreen\PCaptureScreen.dproj" Targets="Make"/>
-    </Target>
     <Target Name="Build">
-        <CallTarget Targets="PTestGraphicA;dpkRecvGraphic;Project1;PTestAudioFFTGraphic;FlappyFiremonkey;PCaptureScreen"/>
+        <CallTarget Targets="PTestGraphicA;dpkRecvGraphic;Project1;PTestAudioFFTGraphic;FlappyFiremonkey"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="PTestGraphicA:Clean;dpkRecvGraphic:Clean;Project1:Clean;PTestAudioFFTGraphic:Clean;FlappyFiremonkey:Clean;PCaptureScreen:Clean"/>
+        <CallTarget Targets="PTestGraphicA:Clean;dpkRecvGraphic:Clean;Project1:Clean;PTestAudioFFTGraphic:Clean;FlappyFiremonkey:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="PTestGraphicA:Make;dpkRecvGraphic:Make;Project1:Make;PTestAudioFFTGraphic:Make;FlappyFiremonkey:Make;PCaptureScreen:Make"/>
+        <CallTarget Targets="PTestGraphicA:Make;dpkRecvGraphic:Make;Project1:Make;PTestAudioFFTGraphic:Make;FlappyFiremonkey:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
