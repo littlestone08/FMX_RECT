@@ -567,7 +567,32 @@ end;
 
 
 
+var
+  Phase: Single;
 procedure TForm3.Timer1Timer(Sender: TObject);
+var
+  nCount: Integer;
+  i: Integer;
+begin
+  with Self.SplitedDrawer1 do
+  begin
+    nCount := AxisesData.Bottom.Max - AxisesData.Bottom.Min + 1;
+    if nCount > 100 then
+      nCount := 100;
+    if nCount < 0 then
+      nCount := 10;
+
+    SetLength(FData, nCount);
+    for i := 0 to nCount - 1 do
+    begin
+      FData[i] := (cos(2 * pi * i / (nCount - 1) + Phase) + 1) / 2
+    end;
+    Phase:= Phase + 2 * pi / 360;
+  end;
+  SignalChart1.DrawData(FData);
+  Caption := 'FPS: ' + IntToStr(SignalChart1.FPS);
+end;
+{
 var
   i: Integer;
   di: Integer;
@@ -587,6 +612,7 @@ begin
   Caption := 'FPS: ' + IntToStr(SignalChart1.FPS);
 
 end;
+*/
 // var
 // i: Integer;
 // begin
@@ -607,5 +633,6 @@ end;
 // Application.ProcessMessages;
 //
 // end;
+}
 
 end.

@@ -182,9 +182,9 @@ object Form3: TForm3
     AxisesData.Left.LineColor = claDarkslategray
     AxisesData.Left.UnitStr = 'dB'
     AxisesData.Bottom.Min = 0
-    AxisesData.Bottom.Max = 22050
+    AxisesData.Bottom.Max = 99
     AxisesData.Bottom.ViewMin = 0
-    AxisesData.Bottom.ViewMax = 22050
+    AxisesData.Bottom.ViewMax = 99
     AxisesData.Bottom.Thinkness = 1.000000000000000000
     AxisesData.Bottom.LineColor = claDarkslategray
     AxisesData.Bottom.UnitStr = 'Hz'

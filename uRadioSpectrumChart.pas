@@ -1551,7 +1551,7 @@ begin
 
   FGraphicGridR := FGraphicRect;
   FGraphicGridR.Top := FGraphicGridR.Top + FLeftTextR.Height * 0.5;
-  FGraphicGridR.Left := FGraphicGridR.Left + FBottomTextR.Width;
+  FGraphicGridR.Left := FGraphicGridR.Left + FLeftTextR.Width;
   FGraphicGridR.Bottom := FGraphicGridR.Bottom - FLeftTextR.Height * 0.5 -
     FBottomTextR.Height;
   FGraphicGridR.Right := FGraphicGridR.Right - FBottomTextR.Width * 0.5;
