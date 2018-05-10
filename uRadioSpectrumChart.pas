@@ -1334,6 +1334,8 @@ begin
       FalloffR.offset(FGraphicGridR.TopLeft);
       FalloffR.Left := EnsureRange(FalloffR.Left, FGraphicGridR.Left,
         FGraphicGridR.Right);
+      FalloffR.Right := EnsureRange(FalloffR.Right, FGraphicGridR.Left,
+        FGraphicGridR.Right);
 
       PeakR := FalloffR;
       if FalloffVisible then
