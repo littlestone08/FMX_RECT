@@ -19,7 +19,7 @@ type
   private
     { Private declarations }
     FBmp: TBitmap;
-    FAngle: Single;
+    FHOffset: Single;
   public
     { Public declarations }
   end;
@@ -108,7 +108,7 @@ end;
 
 procedure TForm1.Button1Click(Sender: TObject);
 begin
-  FAngle:= FAngle + 1;
+  FHOffset:= FHOffset + 1;
   self.Invalidate();
 end;
 
@@ -134,27 +134,26 @@ procedure TForm1.FormPaint(Sender: TObject; Canvas: TCanvas;
 var
   OldMatrix: TMatrix;
 //  PointA, PointB: TPointF;
-  W, H: Single;
-  RotationMatrix: TMatrix;
-  M2: TMatrix;
+//  W, H: Single;
+//  RotationMatrix: TMatrix;
+  ShiftM: TMatrix;
   dest: TRectF;
 begin
   OldMatrix := Canvas.Matrix; // Original, to restore
 
 //  W := PointB.X - PointA.X;
 //  H := PointA.Y - PointB.Y;
-  RotationMatrix := TMatrix.CreateRotation(FAngle);
-  RotationMatrix := TMatrix.CreateRotation(0);
+//  RotationMatrix := TMatrix.CreateRotation(FAngle);
+//  RotationMatrix := TMatrix.CreateRotation(0);
 
 
-  M2:= TMatrix.Identity;
+  ShiftM:= TMatrix.Identity;
 //  M2.m31 := width / 2;
-  M2.m32 := FAngle;
-  RotationMatrix :=RotationMatrix * M2;
-  Canvas.SetMatrix(OldMatrix * RotationMatrix);
+  ShiftM.m32 := FHOffset;
+//  RotationMatrix :=RotationMatrix * M2;
+  Canvas.SetMatrix(OldMatrix * ShiftM);
 
 //  Canvas.DrawBitmap(FBmp, TRectF.Create(Height/ 2, Width / 2, Width, Height), FBmp.Bounds, 1);
-  Dest:= FBmp.BoundsF;
   Dest:= FBmp.BoundsF;
   Dest.Offset(Width / 2 , 0);
   Canvas.DrawBitmap(FBmp, FBmp.Bounds, Dest,1);
