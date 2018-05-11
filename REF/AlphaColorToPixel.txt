@@ -1,0 +1,43 @@
+procedure TForm1.TestAlphaColorToPixel(ABitmap: TBitmap; Color: TAlphaColor;
+  Distance: integer);
+var
+  bitdata1: TBitmapData;
+  I: integer;
+  J: integer;
+begin
+  if (ABitmap.Map(TMapAccess.maReadWrite, bitdata1)) then
+    try
+      for I := 0 to Round(ABitmap.Width / Distance) - 1 do
+        for J := 0 to ABitmap.Height - 1 do
+        begin
+          begin
+            AlphaColorToPixel(Color, @PAlphaColorArray(bitdata1.Data)
+              [J * (bitdata1.Pitch div GetPixelFormatBytes(ABitmap.PixelFormat))
+              + Distance * I], ABitmap.PixelFormat);
+          end;
+        end;
+    finally
+      ABitmap.Unmap(bitdata1);
+    end;
+end;
+
+function TForm1.TestAlphaColorToScanline(ABitmap: TBitmap;
+  start, count: integer): TBitmap;
+var
+  bitdata1, bitdata2: TBitmapData;
+begin
+  Result := TBitmap.Create(Round(ABitmap.Width), Round(count));
+  if (ABitmap.Map(TMapAccess.maRead, bitdata1) and
+    Result.Map(TMapAccess.maWrite, bitdata2)) then
+  begin
+    try
+      AlphaColorToScanline(@PAlphaColorArray(bitdata1.Data)
+        [start * (bitdata1.Pitch div GetPixelFormatBytes(ABitmap.PixelFormat))],
+        bitdata2.Data, Round(Result.Height * Result.Width),
+        ABitmap.PixelFormat);
+    finally
+      ABitmap.Unmap(bitdata1);
+      Result.Unmap(bitdata2);
+    end;
+  end;
+end;
