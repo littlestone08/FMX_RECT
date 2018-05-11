@@ -9,37 +9,112 @@ object Form3: TForm3
   FormFactor.Devices = [Desktop]
   OnCreate = FormCreate
   OnPaint = FormPaint
-  DesignerMasterStyle = 3
+  DesignerMasterStyle = 0
+  object Button1: TButton
+    Anchors = [akBottom]
+    Position.X = 508.000000000000000000
+    Position.Y = 532.000000000000000000
+    TabOrder = 5
+    Text = 'Stop'
+    OnClick = Button1Click
+  end
   object Button2: TButton
     Anchors = [akBottom]
-    Position.X = 840.645263671874900000
-    Position.Y = 538.000000000000000000
-    TabOrder = 9
+    Position.X = 841.000000000000000000
+    Position.Y = 532.000000000000000000
+    TabOrder = 6
     Text = 'Button2'
     OnClick = Button2Click
   end
   object Button3: TButton
     Anchors = [akBottom]
-    Position.X = 137.173934936523400000
-    Position.Y = 538.000000000000000000
-    TabOrder = 3
+    Position.X = 137.000000000000000000
+    Position.Y = 532.000000000000000000
+    TabOrder = 7
     Text = 'Start'
     OnClick = Button3Click
   end
-  object Timer1: TTimer
-    Enabled = False
-    Interval = 3
-    OnTimer = Timer1Timer
-    Left = 56
-    Top = 40
+  object Button4: TButton
+    Position.X = 8.000000000000000000
+    Position.Y = 144.000000000000000000
+    Size.Width = 105.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 8
+    Text = 'SnapShot'
+    OnClick = Button4Click
   end
-  object Button1: TButton
-    Anchors = [akBottom]
-    Position.X = 507.628295898437500000
-    Position.Y = 538.000000000000000000
-    TabOrder = 6
-    Text = 'Stop'
-    OnClick = Button1Click
+  object Button5: TButton
+    Position.X = 8.000000000000000000
+    Position.Y = 176.000000000000000000
+    Size.Width = 105.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 9
+    Text = 'WaterFall Visible'
+    OnClick = Button5Click
+  end
+  object Button6: TButton
+    Position.X = 8.000000000000000000
+    Position.Y = 312.000000000000000000
+    Size.Width = 105.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 10
+    Text = 'Set View Half'
+    OnClick = Button6Click
+  end
+  object Button7: TButton
+    Position.X = 8.000000000000000000
+    Position.Y = 344.000000000000000000
+    Size.Width = 105.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 11
+    Text = 'Set View Full'
+    OnClick = Button7Click
+  end
+  object Button8: TButton
+    Position.X = 8.000000000000000000
+    Position.Y = 280.000000000000000000
+    Size.Width = 105.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 12
+    Text = 'Set View'
+    OnClick = Button8Click
+  end
+  object Panel1: TPanel
+    Align = Scale
+    Position.X = 264.300964355468800000
+    Size.Width = 449.519775390625000000
+    Size.Height = 17.421550750732420000
+    Size.PlatformDefault = False
+    TabOrder = 13
+    OnMouseDown = Panel1MouseDown
+    OnPaint = Panel1Paint
+  end
+  object sbMax: TSpinBox
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 14
+    Cursor = crIBeam
+    Max = 65535.000000000000000000
+    Position.X = 8.000000000000000000
+    Position.Y = 248.000000000000000000
+    Size.Width = 108.000000000000000000
+    Size.Height = 32.000000000000000000
+    Size.PlatformDefault = False
+  end
+  object sbMin: TSpinBox
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 15
+    Cursor = crIBeam
+    Max = 0.000000000000000000
+    Position.X = 8.000000000000000000
+    Position.Y = 216.000000000000000000
+    Size.Width = 108.000000000000000000
+    Size.Height = 32.000000000000000000
+    Size.PlatformDefault = False
   end
   object SignalChart1: TSignalChart
     Anchors = [akLeft, akTop, akRight, akBottom]
@@ -55,92 +130,12 @@ object Form3: TForm3
     OnResized = SignalChart1Resized
     Drawer = SplitedDrawer1
   end
-  object Panel1: TPanel
-    Align = Scale
-    Position.X = 254.000000000000000000
-    Size.Width = 432.000000000000000000
-    Size.Height = 16.000000000000000000
-    Size.PlatformDefault = False
-    TabOrder = 13
-    OnMouseDown = Panel1MouseDown
-    OnPaint = Panel1Paint
-  end
-  object Button4: TButton
-    Position.X = 8.000000000000000000
-    Position.Y = 144.000000000000000000
-    Size.Width = 105.000000000000000000
-    Size.Height = 22.000000000000000000
-    Size.PlatformDefault = False
-    TabOrder = 19
-    Text = 'SnapShot'
-    OnClick = Button4Click
-  end
-  object Button5: TButton
-    Position.X = 8.000000000000000000
-    Position.Y = 176.000000000000000000
-    Size.Width = 105.000000000000000000
-    Size.Height = 22.000000000000000000
-    Size.PlatformDefault = False
-    TabOrder = 25
-    Text = 'WaterFall Visible'
-    OnClick = Button5Click
-  end
-  object Button6: TButton
-    Position.X = 8.000000000000000000
-    Position.Y = 312.000000000000000000
-    Size.Width = 105.000000000000000000
-    Size.Height = 22.000000000000000000
-    Size.PlatformDefault = False
-    TabOrder = 32
-    Text = 'Set View Half'
-    OnClick = Button6Click
-  end
-  object sbMin: TSpinBox
-    Touch.InteractiveGestures = [LongTap, DoubleTap]
-    TabOrder = 34
-    Cursor = crIBeam
-    Max = 0.000000000000000000
-    Position.X = 8.000000000000000000
-    Position.Y = 216.000000000000000000
-    Size.Width = 108.000000000000000000
-    Size.Height = 32.000000000000000000
-    Size.PlatformDefault = False
-  end
-  object sbMax: TSpinBox
-    Touch.InteractiveGestures = [LongTap, DoubleTap]
-    TabOrder = 33
-    Cursor = crIBeam
-    Max = 65535.000000000000000000
-    Position.X = 8.000000000000000000
-    Position.Y = 248.000000000000000000
-    Size.Width = 108.000000000000000000
-    Size.Height = 32.000000000000000000
-    Size.PlatformDefault = False
-  end
-  object Button7: TButton
-    Position.X = 8.000000000000000000
-    Position.Y = 344.000000000000000000
-    Size.Width = 105.000000000000000000
-    Size.Height = 22.000000000000000000
-    Size.PlatformDefault = False
-    TabOrder = 31
-    Text = 'Set View Full'
-    OnClick = Button7Click
-  end
-  object Button8: TButton
-    Position.X = 8.000000000000000000
-    Position.Y = 280.000000000000000000
-    Size.Width = 105.000000000000000000
-    Size.Height = 22.000000000000000000
-    Size.PlatformDefault = False
-    TabOrder = 40
-    Text = 'Set View'
-    OnClick = Button8Click
-  end
-  object Test1: TTest
-    Left = 80
-    Top = 416
-    save = '{1D8C3D07-29A9-4779-A099-32A8691EEA69}'
+  object Timer1: TTimer
+    Enabled = False
+    Interval = 3
+    OnTimer = Timer1Timer
+    Left = 56
+    Top = 40
   end
   object SignalRectangeDrawer1: TSpectrumDrawer
     PeakDecrement = 0.100000001490116100
@@ -193,5 +188,10 @@ object Form3: TForm3
     ShowWaterfall = True
     Left = 88
     Top = 504
+  end
+  object Test1: TTest
+    Left = 80
+    Top = 416
+    save = '{1D8C3D07-29A9-4779-A099-32A8691EEA69}'
   end
 end

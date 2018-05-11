@@ -1870,6 +1870,7 @@ begin
       end;
 
       // -----------------
+
       with FWaterFallBmp do
       begin
         if Map(TMapAccess.ReadWrite, BmpData) then
@@ -1887,6 +1888,7 @@ begin
             Unmap(BmpData);
           end;
       end;
+
 
       if FWaterFallBmp.HandleAllocated then
         With FWaterFallBmp.Canvas do

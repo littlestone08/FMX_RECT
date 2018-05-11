@@ -6,7 +6,7 @@
         <FrameworkType>None</FrameworkType>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
-        <Platform Condition="'$(Platform)'==''">Android</Platform>
+        <Platform Condition="'$(Platform)'==''">Win32</Platform>
         <TargetedPlatforms>19</TargetedPlatforms>
         <AppType>Package</AppType>
     </PropertyGroup>
@@ -117,6 +117,7 @@
         </DelphiCompile>
         <DCCReference Include="rtl.dcp"/>
         <DCCReference Include="fmx.dcp"/>
+        <DCCReference Include="vcl.dcp"/>
         <DCCReference Include="uRadioSpectrumChart.pas"/>
         <DCCReference Include="SpectraLibrary.pas"/>
         <BuildConfiguration Include="Release">

@@ -18,6 +18,9 @@
         <Projects Include="F:\Download\FlappyFiremonkey\FlappyFiremonkey.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="..\SetMatrix\2\OffsetPIC.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -71,14 +74,23 @@
     <Target Name="FlappyFiremonkey:Make">
         <MSBuild Projects="F:\Download\FlappyFiremonkey\FlappyFiremonkey.dproj" Targets="Make"/>
     </Target>
+    <Target Name="OffsetPIC">
+        <MSBuild Projects="..\SetMatrix\2\OffsetPIC.dproj"/>
+    </Target>
+    <Target Name="OffsetPIC:Clean">
+        <MSBuild Projects="..\SetMatrix\2\OffsetPIC.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="OffsetPIC:Make">
+        <MSBuild Projects="..\SetMatrix\2\OffsetPIC.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="PTestGraphicA;dpkRecvGraphic;Project1;PTestAudioFFTGraphic;FlappyFiremonkey"/>
+        <CallTarget Targets="PTestGraphicA;dpkRecvGraphic;Project1;PTestAudioFFTGraphic;FlappyFiremonkey;OffsetPIC"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="PTestGraphicA:Clean;dpkRecvGraphic:Clean;Project1:Clean;PTestAudioFFTGraphic:Clean;FlappyFiremonkey:Clean"/>
+        <CallTarget Targets="PTestGraphicA:Clean;dpkRecvGraphic:Clean;Project1:Clean;PTestAudioFFTGraphic:Clean;FlappyFiremonkey:Clean;OffsetPIC:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="PTestGraphicA:Make;dpkRecvGraphic:Make;Project1:Make;PTestAudioFFTGraphic:Make;FlappyFiremonkey:Make"/>
+        <CallTarget Targets="PTestGraphicA:Make;dpkRecvGraphic:Make;Project1:Make;PTestAudioFFTGraphic:Make;FlappyFiremonkey:Make;OffsetPIC:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

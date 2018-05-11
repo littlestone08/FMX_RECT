@@ -20,22 +20,22 @@ uses
 type
 
   TForm3 = class(TForm)
-    Button3: TButton;
-    Timer1: TTimer;
     Button1: TButton;
     Button2: TButton;
-    SignalChart1: TSignalChart;
-    Test1: TTest;
-    Panel1: TPanel;
-    SignalRectangeDrawer1: TSpectrumDrawer;
-    SplitedDrawer1: TWaterFallDrawer;
+    Button3: TButton;
     Button4: TButton;
     Button5: TButton;
     Button6: TButton;
-    sbMin: TSpinBox;
-    sbMax: TSpinBox;
     Button7: TButton;
     Button8: TButton;
+    Panel1: TPanel;
+    sbMax: TSpinBox;
+    sbMin: TSpinBox;
+    SignalChart1: TSignalChart;
+    SignalRectangeDrawer1: TSpectrumDrawer;
+    SplitedDrawer1: TWaterFallDrawer;
+    Test1: TTest;
+    Timer1: TTimer;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -340,7 +340,10 @@ begin
 end;
 
 procedure TForm3.FormCreate(Sender: TObject);
+var
+  bmp: TBitmap;
 begin
+
   InitRainbow();
   InitSpectralColors3();
 //  self.Fill.Color := TAlphaColors.Yellowgreen;
@@ -361,10 +364,10 @@ procedure TForm3.FormPaint(Sender: TObject; Canvas: TCanvas;
   begin
     // ARect:= TRectF.Create(0, 0, 10, Canvas.TextHeight(' '));
     ARect := TRectF.Create(0, 0, 200, 200);
-    Canvas.MeasureText(ARect, '测试的文字', False, [], TTextAlign.Leading,
+    Canvas.MeasureText(ARect, Caption, False, [], TTextAlign.Leading,
       TTextAlign.Leading);
     // Canvas.FillRect(ARect, 0, 0, [], 1);
-    Canvas.FillText(ARect, '测试的文字', False, 1, [], TTextAlign.Center,
+    Canvas.FillText(ARect, Caption, False, 1, [], TTextAlign.Center,
       TTextAlign.Center);
     Canvas.Stroke.Kind := TBrushKind.Solid;
     Canvas.DrawRect(ARect, 0, 0, [], 1);
