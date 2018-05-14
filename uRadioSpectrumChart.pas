@@ -2,7 +2,7 @@ unit uRadioSpectrumChart;
 
 interface
 
-{.$DEFINE LARGE_BUF_BMP}
+{$DEFINE LARGE_BUF_BMP}
 
 uses
   System.Classes, System.SysUtils, System.Types, System.UITypes,
@@ -1735,12 +1735,14 @@ begin
   inherited;
   InitColors();
 
-{$IFDEF LARGE_BUF_BMP}
-  FWaterFallBmp := TBitmap.Create(1, TCanvas.MaxAllowedBitmapSize);
+  {$IFDEF LARGE_BUF_BMP}
+  FWaterFallBmp := TBitmap.Create(1, 1);
+  FWaterFallBmp.Height:= FWaterFallBmp.Canvas.GetAttribute(TCanvasAttribute.MaxBitmapSize);
   FWaterFallBmpStart := FWaterFallBmp.Height - 1;
-{$ELSE}
+  {$ELSE}
   FWaterFallBmp := TBitmap.Create();
-{$ENDIF}
+  {$ENDIF}
+
   FColorBar := TImage.Create(Self);
   tmp := TBitmap.Create(1, 1);
   try
@@ -1927,12 +1929,15 @@ var
   MovedH: Integer;
   Offset: Integer;
 begin
+//  if Not FWaterFallBmp.HandleAllocated then Exit;
   // GPU方式和Direct2D方式，两种情况下面BITMAP的TOP座标似乎是不同的，
   // GPU方式顶坐标从1开始
   if GlobalUseGPUCanvas then
     BMP_TOP_INDEX := 1
   else
     BMP_TOP_INDEX := 0;
+
+
 
   if FShowWaterfall then
     With Chart do
@@ -1941,6 +1946,7 @@ begin
       begin
         FWaterFallBmp.Width := Ceil(FWaterFallGridR.Width);
 {$IFDEF LARGE_BUF_BMP}
+
 {$ELSE}
         FWaterFallBmp.Height := Ceil(FWaterFallGridR.Height);
 {$ENDIF}
