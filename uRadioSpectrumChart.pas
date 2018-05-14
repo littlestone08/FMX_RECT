@@ -303,6 +303,7 @@ type
     procedure SetShowWaterfall(const Value: Boolean);
     procedure DockColorBar();
   Protected
+    Procedure DrawHint; Override;
     Procedure DrawCross(X, Y: Single); Override;
     Procedure AfterChangeSize(); Override;
     procedure SetChart(const Value: TSignalChart); Override;
@@ -1823,6 +1824,14 @@ begin
   end;
 end;
 
+procedure TWaterFallDrawer.DrawHint;
+begin
+{$IFDEF LARGE_BUF_BMP}
+  Chart.FHint:= Chart.FHint + Format(#$D#$A'Bitmap Buf Start: %d', [FWaterFallBmpStart]);
+{$ENDIF}
+  inherited;
+end;
+
 procedure TWaterFallDrawer.Internal_DrawGraphicBound(ACanvas: TCanvas);
 const
   CONST_FRAME_COLOR: TAlphaColor = TAlphaColors.Red;
@@ -1965,12 +1974,15 @@ begin
             Offset:= Ceil(FWaterFallBmp.Height) - Ceil(FWaterFallGridR.Height) + 1;
             // 移动图像向下一像素 ,要每行移动，不要多行同时移动，否则会出错，
             // 而且对速度性能益处有限
-            for i := (Ceil(FWaterFallGridR.Height) - 2) Downto 0 do
+            for i := (Ceil(FWaterFallGridR.Height) - 2) Downto 0  do
             begin //移动Height-1行到底部,舍掉最下一行
               System.Move(BmpData.GetPixelAddr(0, BMP_TOP_INDEX + i)^,
                 BmpData.GetPixelAddr(0, i + offset)^, MoveBytes);
             end;
-            FWaterFallBmpStart := Offset - 1;
+//            FWaterFallBmpStart := Offset - 1;
+//            FWaterFallBmpStart := Offset - 1 + BMP_TOP_INDEX;
+            FWaterFallBmpStart := Offset;
+
             FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
             FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
           finally

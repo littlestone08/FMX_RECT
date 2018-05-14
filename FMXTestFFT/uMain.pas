@@ -1,5 +1,5 @@
 unit uMain;
-
+{$DEFINE ANDROID}
 interface
 
 uses
