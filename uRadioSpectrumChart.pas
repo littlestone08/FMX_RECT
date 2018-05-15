@@ -2,7 +2,6 @@ unit uRadioSpectrumChart;
 
 interface
 
-{$DEFINE LARGE_BUF_BMP}
 
 uses
   System.Classes, System.SysUtils, System.Types, System.UITypes,
@@ -294,14 +293,17 @@ type
     FWaterFallRectUpdated: Boolean;
 
     FRainBowColors: TArray<TAlphaColor>;
-    FWaterFallBmp: TBitmap;
-{$IFDEF LARGE_BUF_BMP}
+    FWaterFallBuf: TBitmap;
+    FWaterFallBufChanging: Boolean;
+
     FWaterFallBmpStart: Integer;
-{$ENDIF}
+
     FColorBar: TImage;
     FShowWaterfall: Boolean;
+    FLargeBuf: Boolean;
     procedure SetShowWaterfall(const Value: Boolean);
     procedure DockColorBar();
+    procedure SetLargeBuf(const Value: Boolean);
   Protected
     Procedure DrawHint; Override;
     Procedure DrawCross(X, Y: Single); Override;
@@ -318,6 +320,7 @@ type
     Destructor Destroy; Override;
   Published
     Property ShowWaterfall: Boolean read FShowWaterfall write SetShowWaterfall;
+    Property LargeBuf: Boolean read FLargeBuf write SetLargeBuf;
   End;
 
 procedure Register;
@@ -326,7 +329,7 @@ implementation
 
 uses
   System.Diagnostics, SpectraLibrary, FMX.PlatForm{$IFDEF MSWINDOWS}, CnDebug
-  {$ENDIF};
+{$ENDIF};
 
 { TSpectrumChart }
 
@@ -1730,33 +1733,17 @@ constructor TWaterFallDrawer.Create(AOwner: TComponent);
     end;
   end;
 
-var
-  tmp: TBitmap;
 begin
   inherited;
   InitColors();
-
-  {$IFDEF LARGE_BUF_BMP}
-  FWaterFallBmp := TBitmap.Create(1, 1);
-  FWaterFallBmp.Height:= FWaterFallBmp.Canvas.GetAttribute(TCanvasAttribute.MaxBitmapSize);
-  FWaterFallBmpStart := FWaterFallBmp.Height - 1;
-  {$ELSE}
-  FWaterFallBmp := TBitmap.Create();
-  {$ENDIF}
-
+  FWaterFallBuf := TBitmap.Create(1, 1);
   FColorBar := TImage.Create(Self);
-  tmp := TBitmap.Create(1, 1);
-  try
-    FColorBar.Bitmap := tmp;
-  finally
-    tmp.Free;
-  end;
+  FColorBar.Bitmap.SetSize(1, 1);
 end;
 
 destructor TWaterFallDrawer.Destroy;
 begin
-  // FreeAndNil(FColorImage);
-  FreeAndNil(FWaterFallBmp);
+  FreeAndNil(FWaterFallBuf);
   inherited;
 end;
 
@@ -1826,9 +1813,8 @@ end;
 
 procedure TWaterFallDrawer.DrawHint;
 begin
-{$IFDEF LARGE_BUF_BMP}
-  Chart.FHint:= Chart.FHint + Format(#$D#$A'Bitmap Buf Start: %d', [FWaterFallBmpStart]);
-{$ENDIF}
+  Chart.FHint := Chart.FHint + Format(#$D#$A'Bitmap Buf Start: %d',
+    [FWaterFallBmpStart]);
   inherited;
 end;
 
@@ -1879,11 +1865,11 @@ ViewIdxFrom, ViewIdxTo: Integer);
     ColorIndex: Cardinal;
     Clip: TClipRects;
   begin
-    if FWaterFallBmp.HandleAllocated then
-      With FWaterFallBmp.Canvas do
+    if FWaterFallBuf.HandleAllocated then
+      With FWaterFallBuf.Canvas do
       begin
-        FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
-        FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
+        FWaterFallBuf.Canvas.Stroke.Kind := TBrushKind.Solid;
+        FWaterFallBuf.Canvas.Fill.Kind := TBrushKind.Solid;
 
         PointStart := TPointF.Create(0, YPos);
 
@@ -1936,9 +1922,9 @@ var
   MoveBytes: Integer;
   BMP_TOP_INDEX: Integer;
   MovedH: Integer;
-  Offset: Integer;
+  offset: Integer;
 begin
-//  if Not FWaterFallBmp.HandleAllocated then Exit;
+  // if Not FWaterFallBmp.HandleAllocated then Exit;
   // GPU方式和Direct2D方式，两种情况下面BITMAP的TOP座标似乎是不同的，
   // GPU方式顶坐标从1开始
   if GlobalUseGPUCanvas then
@@ -1946,95 +1932,95 @@ begin
   else
     BMP_TOP_INDEX := 0;
 
-
-
   if FShowWaterfall then
     With Chart do
     begin
       if FWaterFallRectUpdated then
       begin
-        FWaterFallBmp.Width := Ceil(FWaterFallGridR.Width);
-{$IFDEF LARGE_BUF_BMP}
-
-{$ELSE}
-        FWaterFallBmp.Height := Ceil(FWaterFallGridR.Height);
-{$ENDIF}
+        FWaterFallBuf.Width := Ceil(FWaterFallGridR.Width);
+        if Not FLargeBuf then
+        begin
+          FWaterFallBuf.Height := Ceil(FWaterFallGridR.Height);
+        end;
         FWaterFallRectUpdated := False;
       end;
 
       // -----------------
-{$IFDEF LARGE_BUF_BMP}
-      if FWaterFallBmpStart < BMP_TOP_INDEX then with FWaterFallBmp do
+      if FLargeBuf then
       begin
-        MovedH := Ceil(FWaterFallGridR.Height);
-        if Map(TMapAccess.ReadWrite, BmpData) then
-        begin
-          try
-            MoveBytes := Width * BmpData.BytesPerPixel;
-            Offset:= Ceil(FWaterFallBmp.Height) - Ceil(FWaterFallGridR.Height) + 1;
-            // 移动图像向下一像素 ,要每行移动，不要多行同时移动，否则会出错，
-            // 而且对速度性能益处有限
-            for i := (Ceil(FWaterFallGridR.Height) - 2) Downto 0  do
-            begin //移动Height-1行到底部,舍掉最下一行
-              System.Move(BmpData.GetPixelAddr(0, BMP_TOP_INDEX + i)^,
-                BmpData.GetPixelAddr(0, i + offset)^, MoveBytes);
-            end;
-//            FWaterFallBmpStart := Offset - 1;
-//            FWaterFallBmpStart := Offset - 1 + BMP_TOP_INDEX;
-            FWaterFallBmpStart := Offset;
+        if FWaterFallBmpStart < BMP_TOP_INDEX then
+          with FWaterFallBuf do
+          begin
+            MovedH := Ceil(FWaterFallGridR.Height);
+            if Map(TMapAccess.ReadWrite, BmpData) then
+            begin
+              try
+                MoveBytes := Width * BmpData.BytesPerPixel;
+                offset := Ceil(FWaterFallBuf.Height) -
+                  Ceil(FWaterFallGridR.Height) + 1;
+                // 移动图像向下一像素 ,要每行移动，不要多行同时移动，否则会出错，
+                // 而且对速度性能益处有限
+                for i := (Ceil(FWaterFallGridR.Height) - 2) Downto 0 do
+                begin // 移动Height-1行到底部,舍掉最下一行
+                  System.Move(BmpData.GetPixelAddr(0, BMP_TOP_INDEX + i)^,
+                    BmpData.GetPixelAddr(0, i + offset)^, MoveBytes);
+                end;
+                // FWaterFallBmpStart := Offset - 1;
+                // FWaterFallBmpStart := Offset - 1 + BMP_TOP_INDEX;
+                FWaterFallBmpStart := offset;
 
-            FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
-            FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
-          finally
-            Unmap(BmpData);
+                FWaterFallBuf.Canvas.Stroke.Kind := TBrushKind.Solid;
+                FWaterFallBuf.Canvas.Fill.Kind := TBrushKind.Solid;
+              finally
+                Unmap(BmpData);
+              end;
+            end;
+          end;
+
+        if FWaterFallBuf.HandleAllocated then
+        begin
+          With FWaterFallBuf.Canvas do
+          begin
+            if BeginScene(Nil) then
+              try
+                DrawCurrLine(FWaterFallBmpStart);
+                Dec(FWaterFallBmpStart);
+              finally
+                EndScene();
+              end;
           end;
         end;
-      end;
 
-
-      if FWaterFallBmp.HandleAllocated then
+        Canvas.DrawBitmap(FWaterFallBuf, TRectF.Create(0, FWaterFallBmpStart,
+          FWaterFallGridR.Width, FWaterFallGridR.Height + FWaterFallBmpStart),
+          FWaterFallGridR, 1, False);
+//        FWaterFallBuf.SaveToFile('d:\1.png');
+      end
+      else
       begin
-        With FWaterFallBmp.Canvas do
+        with FWaterFallBuf do
         begin
-          if BeginScene(Nil) then
+          if Map(TMapAccess.ReadWrite, BmpData) then
+          begin
             try
-              DrawCurrLine(FWaterFallBmpStart);
-              Dec(FWaterFallBmpStart);
+              // 移动图像向下一像素 ,要每行移动，不要多行同时移动，
+              //否则有改变大小时会出错，而且对速度性能益处有限
+              MoveBytes := Width * BmpData.BytesPerPixel;
+              for i := Height - 2 Downto 0 do
+                System.Move(BmpData.GetPixelAddr(0, 0 + i)^,
+                  BmpData.GetPixelAddr(0, 1 + i)^, MoveBytes);
+
+              Canvas.Stroke.Kind := TBrushKind.Solid;
+              Canvas.Fill.Kind := TBrushKind.Solid;
             finally
-              EndScene();
+              Unmap(BmpData);
             end;
-        end;
-      end;
-
-      Canvas.DrawBitmap(FWaterFallBmp,
-                        TRectF.Create(0, FWaterFallBmpStart,
-                                  FWaterFallGridR.Width,
-                                  FWaterFallGridR.Height+FWaterFallBmpStart),
-                        FWaterFallGridR, 1, True);
-{$ELSE}
-      with FWaterFallBmp do
-      begin
-        if Map(TMapAccess.ReadWrite, BmpData) then
-        begin
-          try
-            // 移动图像向下一像素 ,要每行移动，不要多行同时移动，否则会出错，
-            // 而且对速度性能益处有限
-            MoveBytes := Width * BmpData.BytesPerPixel;
-            for i := Height - 2 Downto 0 do
-              System.Move(BmpData.GetPixelAddr(0, 0 + i)^,
-                BmpData.GetPixelAddr(0, 1 + i)^, MoveBytes);
-
-            FWaterFallBmp.Canvas.Stroke.Kind := TBrushKind.Solid;
-            FWaterFallBmp.Canvas.Fill.Kind := TBrushKind.Solid;
-          finally
-            Unmap(BmpData);
           end;
         end;
+        DrawCurrLine(BMP_TOP_INDEX);
+        Canvas.DrawBitmap(FWaterFallBuf, FWaterFallBuf.Bounds,
+          FWaterFallGridR, 1, True);
       end;
-      DrawCurrLine(BMP_TOP_INDEX);
-      Canvas.DrawBitmap(FWaterFallBmp, FWaterFallBmp.Bounds,
-        FWaterFallGridR, 1, True);
-{$ENDIF}
     end;
   inherited;
 end;
@@ -2047,6 +2033,31 @@ begin
     if FColorBar <> Nil then
       FColorBar.Parent := Value;
   end;
+end;
+
+procedure TWaterFallDrawer.SetLargeBuf(const Value: Boolean);
+begin
+  if FLargeBuf <> Value then
+  begin
+    FWaterFallBufChanging := True;
+    try
+      FLargeBuf := Value;
+      if FLargeBuf then
+      begin
+        FWaterFallBuf.Height := FWaterFallBuf.Canvas.GetAttribute
+          (TCanvasAttribute.MaxBitmapSize);
+        FWaterFallBmpStart := FWaterFallBuf.Height - 1;
+      end
+      else
+      begin
+        FWaterFallBuf.Height := Ceil(FWaterFallGridR.Height);
+        FWaterFallBmpStart:= 0;
+      end;
+    finally
+      FWaterFallBufChanging := False;
+    end;
+  end;
+
 end;
 
 procedure TWaterFallDrawer.SetShowWaterfall(const Value: Boolean);

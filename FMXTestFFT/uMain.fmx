@@ -137,6 +137,16 @@ object Form3: TForm3
     Left = 56
     Top = 40
   end
+  object Switch1: TSwitch
+    IsChecked = False
+    Position.X = 8.000000000000000000
+    Position.Y = 376.000000000000000000
+    Size.Width = 105.000000000000000000
+    Size.Height = 27.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 20
+    OnSwitch = Switch1Switch
+  end
   object SignalRectangeDrawer1: TSpectrumDrawer
     PeakDecrement = 0.100000001490116100
     FalloffDecrement = 0.500000000000000000
@@ -186,6 +196,7 @@ object Form3: TForm3
     BKColor = claNull
     GridBoundColor = claDarkslategray
     ShowWaterfall = True
+    LargeBuf = False
     Left = 88
     Top = 504
   end

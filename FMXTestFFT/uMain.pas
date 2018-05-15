@@ -36,6 +36,7 @@ type
     SplitedDrawer1: TWaterFallDrawer;
     Test1: TTest;
     Timer1: TTimer;
+    Switch1: TSwitch;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -56,6 +57,7 @@ type
     procedure Button6Click(Sender: TObject);
     procedure Button7Click(Sender: TObject);
     procedure Button8Click(Sender: TObject);
+    procedure Switch1Switch(Sender: TObject);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -466,6 +468,11 @@ procedure TForm3.SignalChart1Resized(Sender: TObject);
 begin
   // CnDebugger.LogMsg('Resized');
   self.Fill.Color
+end;
+
+procedure TForm3.Switch1Switch(Sender: TObject);
+begin
+  self.SplitedDrawer1.LargeBuf:= self.Switch1.IsChecked;
 end;
 
 procedure TForm3.InitRainbow;
