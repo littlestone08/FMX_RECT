@@ -315,8 +315,9 @@ end;
 
 procedure TForm3.Button8Click(Sender: TObject);
 begin
-  SplitedDrawer1.AxisesData.Bottom.ViewMin:= Trunc(sbMin.Value);
   SplitedDrawer1.AxisesData.Bottom.ViewMax:= Trunc(sbMax.Value);
+  SplitedDrawer1.AxisesData.Bottom.ViewMin:= Trunc(sbMin.Value);
+
   SplitedDrawer1.Chart.InvalidBackGround;
 end;
 

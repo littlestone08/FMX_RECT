@@ -36,8 +36,8 @@ type
     FViewMax: Integer;
     FViewRatioFrom: Single;
     FViewRatioTo: Single;
-    FViewIdxFrom: Integer;
-    FViewIdxTo: Integer;
+    FViewDataIdxFrom: Integer;
+    FViewDataIdxTo: Integer;
     Procedure UpdateViewRatio;
   Private
     [weak]
@@ -80,8 +80,8 @@ type
       StdTextR: TRectF);
     Property ViewRatioFrom: Single Read FViewRatioFrom;
     Property ViewRatioTo: Single Read FViewRatioTo;
-    Property ViewIdxFrom: Integer Read FViewIdxFrom;
-    Property ViewIdxTo: Integer Read FViewIdxTo;
+    Property ViewDataIdxFrom: Integer Read FViewDataIdxFrom;
+    Property ViewDataIdxTo: Integer Read FViewDataIdxTo;
   Published
     Property Min: Integer read FMin write SetMin;
     Property Max: Integer read FMax write SetMax;
@@ -145,7 +145,7 @@ type
   TSignalChart = Class(TPaintBox)
   Private
     FBKGraphic: TBitmap;
-    FHint: String;
+    FHint, FHint2: String;
     FNeedUpdateBG: Boolean;
   Private
     FFrameCounter: TFrameCount;
@@ -844,7 +844,7 @@ procedure TCustomAxis.UpdateViewRatio;
 var
   Total: Single;
 begin
-  Total := FMax - FMin;
+  Total := FMax - FMin; //网络数，而不是线条数
   FViewRatioFrom := (FViewMin - FMin) / Total;
   FViewRatioTo := (FViewMax - FMin) / Total;
 
@@ -1243,7 +1243,9 @@ procedure TSpectrumDrawer.DoDraw;
         // DataIndex:= Ceil(FGraphicGridR.Width * RatioX) * (FMaxValue - FMinValue + 1);
         // DataIndex:= Ceil((FMaxValue - FMinValue + 1+0.5) * RatioX) ;
         // DataIndex:= Ceil(Length(FData) * Min((RatioX + 0.005), 1));
-        DataIndex := Round(Length(FData) * System.Math.Min(RatioX, 1));
+//        DataIndex := Round(Length(FData) * System.Math.Min(RatioX, 1));
+
+        DataIndex := Round((ViewDataIdxTo - ViewDataIdxFrom) * System.Math.Min(RatioX, 1)) + ViewDataIdxFrom;
 
       end;
 
@@ -1325,9 +1327,9 @@ begin
     // if (nCount = 0) or (ViewIdxTo >= nCount) or (ViewIdxTo < 0) then
     // Exit;
 
-    if (nCount > 0) and InRange(ViewIdxTo, 0, nCount - 1) then
+    if (nCount > 0) and InRange(ViewDataIdxTo, 0, nCount - 1) then
       // Internal_DrawViewData(FData, ViewIdxFrom, ViewIdxTo);
-      Internal_DrawViewData(FFallOff, ViewIdxFrom, ViewIdxTo);
+      Internal_DrawViewData(FFallOff, ViewDataIdxFrom, ViewDataIdxTo);
   end;
 
   if FMouseInRect then
@@ -1372,7 +1374,18 @@ procedure TSpectrumDrawer.DrawHint;
 var
   TextRect: TRectF;
 begin
-  inherited;
+//    Property ViewRatioFrom: Single Read FViewRatioFrom;
+//    Property ViewRatioTo: Single Read FViewRatioTo;
+//    Property ViewIdxFrom: Integer Read FViewIdxFrom;
+//    Property ViewIdxTo: Integer Read FViewIdxTo;
+
+  With FAxisesData.Bottom do
+  begin
+    FChart.FHint2:= Format('Ratio:[%.2f, %.2f], Idx: [%d, %d], Zoom: %.2f%%',
+      [ViewRatioFrom, ViewRatioTo, Min, Max, (ViewRatioTo - ViewRatioFrom) * 100]);
+    FChart.FHint2:= FChart.FHint2 + #$D#$A;
+    FChart.FHint2:= FChart.FHint2 + Format('Data Count: %d, Data Idx: [%d, %d]', [Length(FData), ViewDataIdxFrom, ViewDataIdxTo]);
+  end;
   With FChart do
   begin
     Canvas.Stroke.Color := TAlphaColors.Red;
@@ -1380,8 +1393,12 @@ begin
     Canvas.Stroke.Kind := TBrushKind.Solid;
     Canvas.Fill.Kind := TBrushKind.Solid;
     TextRect := FGraphicGridR;
+    TextRect.Right:= FGraphicGridR.Width / 3 + FGraphicGridR.Left;
     TextRect.offset(10, 10);
     Canvas.FillText(TextRect, FHint, True, 1, [], TTextAlign.Leading,
+      TTextAlign.Leading);
+    TextRect.Offset(TextRect.Width, 0);
+    Canvas.FillText(TextRect, FHint2, True, 1, [], TTextAlign.Leading,
       TTextAlign.Leading);
   end;
 end;
@@ -1645,8 +1662,9 @@ var
   nCount: Integer;
 begin
   nCount := Length(FData);
-  Axis.FViewRatioFrom := Trunc(nCount * Axis.ViewRatioFrom);
-  Axis.FViewIdxTo := Round((nCount - 1) * Axis.ViewRatioTo);
+//  nCount := Axis.FViewMax - Axis.FViewMin + 1;
+  Axis.FViewDataIdxFrom := Trunc(nCount * Axis.ViewRatioFrom);
+  Axis.FViewDataIdxTo := Round((nCount - 1) * Axis.ViewRatioTo);
 end;
 
 { TSignalDrawer }
@@ -2066,6 +2084,10 @@ begin
   begin
     FShowWaterfall := Value;
 
+    if Not FShowWaterfall then
+    begin
+      FWaterFallBuf.SetSize(1, 1);   //节省内存开销
+    end;
     if Chart <> Nil then
     begin
       UpdateGraphicRect();

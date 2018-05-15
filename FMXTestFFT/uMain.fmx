@@ -86,7 +86,7 @@ object Form3: TForm3
   end
   object Panel1: TPanel
     Align = Scale
-    Position.X = 264.300964355468700000
+    Position.X = 264.300964355468800000
     Size.Width = 449.519775390625000000
     Size.Height = 17.421550750732420000
     Size.PlatformDefault = False
@@ -109,7 +109,7 @@ object Form3: TForm3
     Touch.InteractiveGestures = [LongTap, DoubleTap]
     TabOrder = 15
     Cursor = crIBeam
-    Max = 0.000000000000000000
+    Max = 65535.000000000000000000
     Position.X = 8.000000000000000000
     Position.Y = 216.000000000000000000
     Size.Width = 108.000000000000000000
