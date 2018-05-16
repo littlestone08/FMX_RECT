@@ -78,6 +78,7 @@ type
     Procedure DrawGrid(Coordinate: TBitmap; MaxLableCount: Integer);
     Procedure DrawLables(const GridLocation: TPointF; ACanvas: TCanvas;
       StdTextR: TRectF);
+    Procedure Zoom(Ratio: Single; ViewCenter: Single);
     Property ViewRatioFrom: Single Read FViewRatioFrom;
     Property ViewRatioTo: Single Read FViewRatioTo;
     Property ViewDataIdxFrom: Integer Read FViewDataIdxFrom;
@@ -216,7 +217,7 @@ type
     FCrossOpacity: Single;
     FCrossX: Single;
     FCrossY: Single;
-    FMouseInRect: Boolean;
+    FCursorInGraphicGrid: Boolean;
     FShowCross: Boolean;
     //
     FDataCount: Integer;
@@ -266,6 +267,11 @@ type
     Procedure ChartSinkDrawData(const AData: TArray<Single>); Override;
     Procedure ChartSinkUpdateBitmap(BK: TBitmap); Override;
     Procedure ChartSinkCheckSize(); Override;
+    function RatioXByCursor: Single;
+    function RatioYByCursor: Single;
+    function ViewIndexByCursor: Single;
+    Property CursorInGraphicGrid: Boolean Read FCursorInGraphicGrid;
+
   Public
     Constructor Create(AOwner: TComponent); Override;
     Destructor Destroy; Override;
@@ -855,6 +861,44 @@ begin
 
 end;
 
+procedure TCustomAxis.Zoom(Ratio, ViewCenter: Single);
+var
+  BoundL, BoundH: Single;
+  BoundH_Int, BoundL_Int: Integer;
+  L0, H0: Single;
+  DeltaCount: Integer;
+begin
+
+  With TSpectrumDrawer(FDrawer).AxisesData do
+  begin
+    H0:= Bottom.ViewMax;
+    L0:= Bottom.ViewMin;
+    if InRange(ViewCenter, L0, H0) then
+    begin
+      H0:= Bottom.ViewMax;
+      L0:= Bottom.ViewMin;
+
+      if H0 <> L0 then
+      begin
+        BoundL:= (H0 - ViewCenter) * ViewCenter - (ViewCenter - L0) * ((H0 - L0) * Ratio - ViewCenter);
+        BoundL:= BoundL / (H0 - L0);
+        BoundH:=  (H0 - L0) * Ratio + BoundL;
+
+        BoundH_Int:= EnsureRange(Ceil(BoundH), Bottom.Min, Bottom.Max);
+        BoundL_Int:= EnsureRange(Floor(BoundL), Bottom.Min, Bottom.Max);
+        if BoundH > BoundL then
+        begin
+          ViewMax:= BoundH_Int;
+          ViewMin:= BoundL_Int;
+        end;
+      end;
+    end;
+  end;
+
+  if FDrawer.Chart <> Nil then
+    FDrawer.Chart.InvalidBackGround;
+end;
+
 { TLine }
 
 constructor TLine.Create(const A, B: TPointF);
@@ -1077,7 +1121,7 @@ begin
   inherited;
   FCrossX := X;
   FCrossY := Y;
-  FMouseInRect := PtInRect(FGraphicGridR, TPointF.Create(X, Y));
+  FCursorInGraphicGrid := PtInRect(FGraphicGridR, TPointF.Create(X, Y));
 
   // Exit;
   // if MilliSecondSpan(Now, FLastUpdateTime) > 30 then
@@ -1214,6 +1258,7 @@ begin
     FillDesigningTestData();
 end;
 
+
 destructor TSpectrumDrawer.Destroy;
 begin
   // FreeAndNil(FAxisesView);
@@ -1232,6 +1277,8 @@ procedure TSpectrumDrawer.DoDraw;
     PeakY: String;
   begin
     Result := '';
+
+
     With Chart do
     begin
       ptPosInGrid := TPointF.Create(FCrossX - FGraphicGridR.Left,
@@ -1332,7 +1379,7 @@ begin
       Internal_DrawViewData(FFallOff, ViewDataIdxFrom, ViewDataIdxTo);
   end;
 
-  if FMouseInRect then
+  if FCursorInGraphicGrid then
   begin
     Chart.FHint := GetHint();
     if FShowCross then
@@ -1378,14 +1425,18 @@ begin
 //    Property ViewRatioTo: Single Read FViewRatioTo;
 //    Property ViewIdxFrom: Integer Read FViewIdxFrom;
 //    Property ViewIdxTo: Integer Read FViewIdxTo;
-
   With FAxisesData.Bottom do
   begin
     FChart.FHint2:= Format('Ratio:[%.2f, %.2f], Idx: [%d, %d], Zoom: %.2f%%',
       [ViewRatioFrom, ViewRatioTo, Min, Max, (ViewRatioTo - ViewRatioFrom) * 100]);
     FChart.FHint2:= FChart.FHint2 + #$D#$A;
     FChart.FHint2:= FChart.FHint2 + Format('Data Count: %d, Data Idx: [%d, %d]', [Length(FData), ViewDataIdxFrom, ViewDataIdxTo]);
+
+    FChart.FHint2:= FChart.FHint2 + #$D#$A;
+    FChart.FHint2:= FChart.FHint2 + Format('CURSOR==RatioX = %.2f, RatioY = %.2f, ViewIndex = %.2f',
+      [self.RatioXByCursor, self.RatioYByCursor, ViewIndexByCursor]);
   end;
+
   With FChart do
   begin
     Canvas.Stroke.Color := TAlphaColors.Red;
@@ -1492,6 +1543,7 @@ begin
   begin
     nViewCount := ViewIdxTo - ViewIdxFrom + 1;
 
+
     HStep := FGraphicGridR.Width / (nViewCount - 1);
 
     ACanvas := Canvas;
@@ -1533,6 +1585,24 @@ begin
     end;
   end;
 
+end;
+
+function TSpectrumDrawer.RatioXByCursor: Single;
+var
+  ptPosInGrid: TPointF;
+begin
+  ptPosInGrid := TPointF.Create(FCrossX - FGraphicGridR.Left,
+    FCrossY - FGraphicGridR.Top);
+  Result:= ptPosInGrid.X / FGraphicGridR.Width;
+end;
+
+function TSpectrumDrawer.RatioYByCursor: Single;
+var
+  ptPosInGrid: TPointF;
+begin
+  ptPosInGrid := TPointF.Create(FCrossX - FGraphicGridR.Left,
+    FCrossY - FGraphicGridR.Top);
+  Result:= ptPosInGrid.Y / FGraphicGridR.Height;
 end;
 
 procedure TSpectrumDrawer.Internal_DrawGraphicBound(ACanvas: TCanvas);
@@ -1665,6 +1735,14 @@ begin
 //  nCount := Axis.FViewMax - Axis.FViewMin + 1;
   Axis.FViewDataIdxFrom := Trunc(nCount * Axis.ViewRatioFrom);
   Axis.FViewDataIdxTo := Round((nCount - 1) * Axis.ViewRatioTo);
+end;
+
+function TSpectrumDrawer.ViewIndexByCursor: Single;
+begin
+  With FAxisesData.Bottom do
+  begin
+    Result:= Round((FViewMax - FViewmin) * EnsureRange(RatioXByCursor , 0, 1)) + FViewmin;
+  end;
 end;
 
 { TSignalDrawer }
@@ -1974,8 +2052,8 @@ begin
             begin
               try
                 MoveBytes := Width * BmpData.BytesPerPixel;
-                offset := Ceil(FWaterFallBuf.Height) -
-                  Ceil(FWaterFallGridR.Height) + 1;
+                offset := Ceil(FWaterFallBuf.Height -
+                  FWaterFallGridR.Height + 1);
                 // 移动图像向下一像素 ,要每行移动，不要多行同时移动，否则会出错，
                 // 而且对速度性能益处有限
                 for i := (Ceil(FWaterFallGridR.Height) - 2) Downto 0 do

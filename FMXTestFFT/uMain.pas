@@ -37,6 +37,9 @@ type
     Test1: TTest;
     Timer1: TTimer;
     Switch1: TSwitch;
+    btnZoomOut: TButton;
+    rbZoomIn: TRadioButton;
+    rbZoomOut: TRadioButton;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -58,6 +61,7 @@ type
     procedure Button7Click(Sender: TObject);
     procedure Button8Click(Sender: TObject);
     procedure Switch1Switch(Sender: TObject);
+    procedure btnZoomOutClick(Sender: TObject);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -209,6 +213,19 @@ begin
     t := (L - 475.0) / (560.0 - 475.0);
     b := 0.7 - (t) + (0.30 * t * t);
   end
+end;
+
+procedure TForm3.btnZoomOutClick(Sender: TObject);
+begin
+  if rbZoomIn.IsChecked then
+  begin
+    self.SplitedDrawer1.AxisesData.Bottom.Zoom(0.9, 60);
+  end
+  else if rbZoomOut.IsChecked then
+  begin
+    self.SplitedDrawer1.AxisesData.Bottom.Zoom(1.1, 60);
+  end;
+
 end;
 
 procedure TForm3.Button1Click(Sender: TObject);
@@ -629,6 +646,7 @@ begin
     for i := 0 to nCount - 1 do
     begin
       FData[i] := (cos(2 * pi * i / (nCount - 1) + Phase) + 1) / 2
+//      FData[i] := i / 100;
     end;
     Phase:= Phase + 2 * pi / 360;
   end;

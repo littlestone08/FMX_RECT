@@ -36,7 +36,7 @@ object Form3: TForm3
   end
   object Button4: TButton
     Position.X = 8.000000000000000000
-    Position.Y = 144.000000000000000000
+    Position.Y = 24.000000000000000000
     Size.Width = 105.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
@@ -46,7 +46,7 @@ object Form3: TForm3
   end
   object Button5: TButton
     Position.X = 8.000000000000000000
-    Position.Y = 176.000000000000000000
+    Position.Y = 56.000000000000000000
     Size.Width = 105.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
@@ -56,7 +56,7 @@ object Form3: TForm3
   end
   object Button6: TButton
     Position.X = 8.000000000000000000
-    Position.Y = 312.000000000000000000
+    Position.Y = 192.000000000000000000
     Size.Width = 105.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
@@ -66,7 +66,7 @@ object Form3: TForm3
   end
   object Button7: TButton
     Position.X = 8.000000000000000000
-    Position.Y = 344.000000000000000000
+    Position.Y = 224.000000000000000000
     Size.Width = 105.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
@@ -76,7 +76,7 @@ object Form3: TForm3
   end
   object Button8: TButton
     Position.X = 8.000000000000000000
-    Position.Y = 280.000000000000000000
+    Position.Y = 160.000000000000000000
     Size.Width = 105.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
@@ -100,7 +100,7 @@ object Form3: TForm3
     Cursor = crIBeam
     Max = 65535.000000000000000000
     Position.X = 8.000000000000000000
-    Position.Y = 248.000000000000000000
+    Position.Y = 128.000000000000000000
     Size.Width = 108.000000000000000000
     Size.Height = 32.000000000000000000
     Size.PlatformDefault = False
@@ -111,7 +111,7 @@ object Form3: TForm3
     Cursor = crIBeam
     Max = 65535.000000000000000000
     Position.X = 8.000000000000000000
-    Position.Y = 216.000000000000000000
+    Position.Y = 96.000000000000000000
     Size.Width = 108.000000000000000000
     Size.Height = 32.000000000000000000
     Size.PlatformDefault = False
@@ -140,12 +140,41 @@ object Form3: TForm3
   object Switch1: TSwitch
     IsChecked = False
     Position.X = 8.000000000000000000
-    Position.Y = 376.000000000000000000
+    Position.Y = 256.000000000000000000
     Size.Width = 105.000000000000000000
     Size.Height = 27.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 20
     OnSwitch = Switch1Switch
+  end
+  object btnZoomOut: TButton
+    Position.X = 8.000000000000000000
+    Position.Y = 352.000000000000000000
+    Size.Width = 105.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 26
+    Text = 'ZoomOut'
+    OnClick = btnZoomOutClick
+  end
+  object rbZoomIn: TRadioButton
+    IsChecked = True
+    Position.X = 8.000000000000000000
+    Position.Y = 296.000000000000000000
+    Size.Width = 97.000000000000000000
+    Size.Height = 19.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 33
+    Text = '90%'
+  end
+  object rbZoomOut: TRadioButton
+    Position.X = 8.000000000000000000
+    Position.Y = 320.000000000000000000
+    Size.Width = 97.000000000000000000
+    Size.Height = 19.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 32
+    Text = '110%'
   end
   object SignalRectangeDrawer1: TSpectrumDrawer
     PeakDecrement = 0.100000001490116100
@@ -201,8 +230,8 @@ object Form3: TForm3
     Top = 504
   end
   object Test1: TTest
-    Left = 80
-    Top = 416
+    Left = 24
+    Top = 528
     save = '{1D8C3D07-29A9-4779-A099-32A8691EEA69}'
   end
 end
