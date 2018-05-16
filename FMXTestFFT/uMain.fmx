@@ -125,6 +125,7 @@ object Form3: TForm3
     Size.Height = 486.000000000000000000
     Size.PlatformDefault = False
     OnMouseMove = SignalChart1MouseMove
+    OnMouseWheel = SignalChart1MouseWheel
     OnMouseEnter = SignalChart1MouseEnter
     OnMouseLeave = SignalChart1MouseLeave
     OnResized = SignalChart1Resized
@@ -141,8 +142,8 @@ object Form3: TForm3
     IsChecked = False
     Position.X = 8.000000000000000000
     Position.Y = 256.000000000000000000
-    Size.Width = 105.000000000000000000
-    Size.Height = 27.000000000000000000
+    Size.Width = 44.000000000000000000
+    Size.Height = 26.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 20
     OnSwitch = Switch1Switch
@@ -216,9 +217,9 @@ object Form3: TForm3
     AxisesData.Left.LineColor = claDarkslategray
     AxisesData.Left.UnitStr = 'dB'
     AxisesData.Bottom.Min = 0
-    AxisesData.Bottom.Max = 99
+    AxisesData.Bottom.Max = 999
     AxisesData.Bottom.ViewMin = 0
-    AxisesData.Bottom.ViewMax = 99
+    AxisesData.Bottom.ViewMax = 999
     AxisesData.Bottom.Thinkness = 1.000000000000000000
     AxisesData.Bottom.LineColor = claDarkslategray
     AxisesData.Bottom.UnitStr = 'Hz'

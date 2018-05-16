@@ -62,6 +62,8 @@ type
     procedure Button8Click(Sender: TObject);
     procedure Switch1Switch(Sender: TObject);
     procedure btnZoomOutClick(Sender: TObject);
+    procedure SignalChart1MouseWheel(Sender: TObject; Shift: TShiftState;
+      WheelDelta: Integer; var Handled: Boolean);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -480,6 +482,18 @@ procedure TForm3.SignalChart1MouseMove(Sender: TObject; Shift: TShiftState;
 begin
 //  Exit;
 //  CnDebugger.LogMsg('MouseMove' + Format('X: %.2f, Y: %.2f', [X, Y]));
+end;
+
+procedure TForm3.SignalChart1MouseWheel(Sender: TObject; Shift: TShiftState;
+  WheelDelta: Integer; var Handled: Boolean);
+begin
+  if SplitedDrawer1.CursorInGraphicGrid then
+  begin
+    if WheelDelta < 0 then
+      SplitedDrawer1.AxisesData.Bottom.Zoom(abs(WheelDelta) / 100, SplitedDrawer1.ViewIndexByCursor)
+    else  if WheelDelta > 0 then
+      SplitedDrawer1.AxisesData.Bottom.Zoom(100 / abs(WheelDelta), SplitedDrawer1.ViewIndexByCursor);
+  end;
 end;
 
 procedure TForm3.SignalChart1Resized(Sender: TObject);
