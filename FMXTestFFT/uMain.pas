@@ -1,5 +1,5 @@
 unit uMain;
-{.$DEFINE ANDROID}
+{$DEFINE ANDROID}
 interface
 
 uses
@@ -505,7 +505,6 @@ end;
 procedure TForm3.SignalChart1MouseWheel(Sender: TObject; Shift: TShiftState;
   WheelDelta: Integer; var Handled: Boolean);
 begin
-  Exit;
   if SplitedDrawer1.CursorInGraphicGrid then
   begin
     if WheelDelta < 0 then
@@ -518,7 +517,7 @@ end;
 procedure TForm3.SignalChart1Resized(Sender: TObject);
 begin
   // CnDebugger.LogMsg('Resized');
-//  self.Fill.Color
+  self.Fill.Color
 end;
 
 procedure TForm3.Switch1Switch(Sender: TObject);
@@ -678,8 +677,8 @@ begin
     SetLength(FData, nCount);
     for i := 0 to nCount - 1 do
     begin
-//      FData[i] := (cos(2 * pi * i / (nCount - 1) + Phase) + 1) / 2
-      FData[i] := i / 100;
+      FData[i] := (cos(2 * pi * i / (nCount - 1) + Phase) + 1) / 2
+//      FData[i] := i / 100;
     end;
     Phase:= Phase + 2 * pi / 360;
   end;
