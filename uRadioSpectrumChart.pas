@@ -258,7 +258,6 @@ type
     Procedure UpdateGridRAndStdTextR(); Override;
     Procedure UpdateGraphicRect; Override;
     Procedure UpdateViewRangeIndex(Axis: TCustomAxis); Override;
-
   Protected
     Procedure Internal_DrawGraphicBound(ACanvas: TCanvas); Virtual;
     Procedure Internal_DrawGraphicFrame(ACanvas: TCanvas); Virtual;
@@ -306,14 +305,12 @@ type
     FWaterFallRect: TRectF;
     FWaterFallGridR: TRectF;
     FWaterFallRectUpdated: Boolean;
-
-    FRainBowColors: TArray<TAlphaColor>;
     FWaterFallBuf: TBitmap;
     FWaterFallBufChanging: Boolean;
 
     FWaterFallBmpStart: Integer;
 
-    FColorBar: TImage;
+    FColorBar: TSpectraColorBar;
     FShowWaterfall: Boolean;
     FLargeBuf: Boolean;
     procedure SetShowWaterfall(const Value: Boolean);
@@ -333,6 +330,7 @@ type
   Public
     constructor Create(AOwner: TComponent); Override;
     Destructor Destroy; Override;
+    Property ColorBar: TSpectraColorBar Read FColorBar;
   Published
     Property ShowWaterfall: Boolean read FShowWaterfall write SetShowWaterfall;
     Property LargeBuf: Boolean read FLargeBuf write SetLargeBuf;
@@ -1858,16 +1856,57 @@ constructor TWaterFallDrawer.Create(AOwner: TComponent);
         A := $FF;
         WavelengthToRGB(wavelen, R, G, B);
       end;
-      Insert(AColor, FRainBowColors, Length(FRainBowColors));
+      Insert(AColor, FColorBar.FRainBowColors, Length(FColorBar.FRainBowColors));
+    end;
+  end;
+
+  Procedure AddGradientPoint(Aoffset, AR, AG, AB: Single);
+  var
+    pt: TGradientPoint;
+  begin
+    With FColorBar.Fill do
+    begin
+      pt:= TGradientPoint(Gradient.Points.Add);
+      pt.Offset:= Aoffset;
+      pt.Color:= TAlphaColorF.Create(AR, AG, AB).ToAlphaColor;
     end;
   end;
 
 begin
   inherited;
-  InitColors();
+
   FWaterFallBuf := TBitmap.Create(1, 1);
-  FColorBar := TImage.Create(Self);
-  FColorBar.Bitmap.SetSize(1, 1);
+  FColorBar := TSpectraColorBar.Create(Self);
+  FColorBar.Fill.Kind:= TBrushKind.Gradient;
+  With FColorBar.Fill do
+  begin
+//
+//			                  R	  G	  B
+//380	  0	  0	            1	  0	  1
+//440	  60	0.226415094	  0	  0	  1
+//490	  110	0.41509434	  0	  1	  1
+//510	  130	0.490566038	  0	  1	  0
+//580	  200	0.754716981	  1	  1	  0
+//645	  265	1	            1	  0	  0
+
+    Gradient.Points.BeginUpdate;
+    Gradient.Points.Clear;
+
+    AddGradientPoint(0      , 0,    0,    0);
+    AddGradientPoint(0.05   , 1,    0,    1);
+    AddGradientPoint(0.226  , 0,    0,    1);
+    AddGradientPoint(0.415  , 0,    1,    1);
+    AddGradientPoint(0.491  , 0,    1,    0);
+    AddGradientPoint(0.755  , 1,    1,    0);
+    AddGradientPoint(0.800  , 1,    0,    0);
+    AddGradientPoint(1.000  , 1,    1,    1);
+
+    Gradient.Points.EndUpdate();
+    Gradient.Change;
+  end;
+
+  InitColors();
+//  FColorBar.Bitmap.SetSize(1, 1);
 end;
 
 destructor TWaterFallDrawer.Destroy;
@@ -1891,33 +1930,33 @@ begin
     FColorBar.Width := 20;
     FColorBar.Height := FWaterFallGridR.Height;
 
-    FColorBar.Bitmap.Width := Ceil(FColorBar.Width);
-    FColorBar.Bitmap.Height := Ceil(FColorBar.Height);
+    FColorBar.Width := Ceil(FColorBar.Width);
+    FColorBar.Height := Ceil(FColorBar.Height);
 
     FColorBar.Position.X := FWaterFallGridR.TopLeft.X - 30;
     FColorBar.Position.Y := FWaterFallGridR.TopLeft.Y;
 
-    if FColorBar.Bitmap.HandleAllocated then
-      With FColorBar.Bitmap.Canvas do
-      begin
-        Step := FColorBar.Bitmap.Height / Length(FRainBowColors);
-        With FColorBar.Bitmap.Canvas do
-        begin
-          Fill.Kind := TBrushKind.Solid;
-          if BeginScene(Nil, 0) then
-            try
-              ColorRect := TRectF.Create(0, 0, FColorBar.Bitmap.Width, Step);
-              for i := Length(FRainBowColors) - 1 Downto 0 do
-              begin
-                Fill.Color := FRainBowColors[i];
-                FillRect(ColorRect, 0, 0, [], 1);
-                ColorRect.offset(0, Step);
-              end;
-            finally
-              EndScene();
-            end;
-        end;
-      end;
+//    if FColorBar.Bitmap.HandleAllocated then
+//      With FColorBar.Bitmap.Canvas do
+//      begin
+//        Step := FColorBar.Bitmap.Height / Length(FRainBowColors);
+//        With FColorBar.Bitmap.Canvas do
+//        begin
+//          Fill.Kind := TBrushKind.Solid;
+//          if BeginScene(Nil, 0) then
+//            try
+//              ColorRect := TRectF.Create(0, 0, FColorBar.Bitmap.Width, Step);
+//              for i := Length(FRainBowColors) - 1 Downto 0 do
+//              begin
+//                Fill.Color := FRainBowColors[i];
+//                FillRect(ColorRect, 0, 0, [], 1);
+//                ColorRect.offset(0, Step);
+//              end;
+//            finally
+//              EndScene();
+//            end;
+//        end;
+//      end;
   end
 end;
 
@@ -2020,11 +2059,11 @@ ViewIdxFrom, ViewIdxTo: Integer);
               PointEnd.X := PointEnd.X + HStep;
 
               ColorIndex :=
-                Trunc(AData[i + ViewIdxFrom] * Length(FRainBowColors));
-              if ColorIndex > Length(FRainBowColors) - 1 then
+                Trunc(AData[i + ViewIdxFrom] * Length(FColorBar.FRainBowColors));
+              if ColorIndex > Length(FColorBar.FRainBowColors) - 1 then
                 AColor := TAlphaColors.White
               else
-                AColor := FRainBowColors[ColorIndex];
+                AColor := FColorBar.FRainBowColors[ColorIndex];
 
               Stroke.Color := AColor;
 
@@ -2263,6 +2302,5 @@ end;
 initialization
 
 GlobalUseGPUCanvas := True;
-
-// GlobalUseDX10Software:= True;
+//GlobalUseDX10Software:= True;
 end.

@@ -25,10 +25,12 @@ type
     sbLoad: TSpeedButton;
     Brush1: TBrushObject;
     Brush2: TBrushObject;
+    Button1: TButton;
     procedure SpeedButton1Click(Sender: TObject);
     procedure SpeedButton2Click(Sender: TObject);
     procedure SpeedButton3Click(Sender: TObject);
     procedure sbLoadClick(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -43,6 +45,22 @@ uses
   FMX.Design.Brush;
 
 {$R *.fmx}
+
+procedure TForm1.Button1Click(Sender: TObject);
+var
+  iPoint: TGradientPoint;
+  i: integer;
+begin
+  for i := 0 to self.GradientEdit1.Gradient.Points.Count - 1 do
+  begin
+    iPoint:= self.GradientEdit1.Gradient.Points[i];
+    case i mod 3 of
+      0: iPoint.Color:= TAlphaColorRec.Red;
+      1: iPoint.Color:= TAlphaColorRec.Green;
+      2: iPoint.Color:= TAlphaColorRec.Blue;
+    end;
+  end;
+end;
 
 procedure TForm1.sbLoadClick(Sender: TObject);
 var

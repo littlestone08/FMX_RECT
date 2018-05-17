@@ -4,6 +4,52 @@ object Form1: TForm1
   Caption = 'Form1'
   ClientHeight = 480
   ClientWidth = 640
+  Fill.Kind = Gradient
+  Fill.Gradient.Points = <
+    item
+      Color = claBlack
+      Offset = 0.000000000000000000
+    end
+    item
+      Color = xFFFD0D0D
+      Offset = 0.083850935101509090
+    end
+    item
+      Color = xFFFDF628
+      Offset = 0.189440995454788200
+    end
+    item
+      Color = xFF3DFD3D
+      Offset = 0.270186334848403900
+    end
+    item
+      Color = xFF1AFCD5
+      Offset = 0.354037255048751800
+    end
+    item
+      Color = xFF3B7EFC
+      Offset = 0.447204977273941000
+    end
+    item
+      Color = xFFCA5CFC
+      Offset = 0.540372669696807900
+    end
+    item
+      Color = xFFFC7BD4
+      Offset = 0.630434811115264900
+    end
+    item
+      Color = xFFF3035E
+      Offset = 0.723602473735809300
+    end
+    item
+      Color = claWhite
+      Offset = 1.000000000000000000
+    end>
+  Fill.Gradient.StartPosition.X = 0.500000000000000000
+  Fill.Gradient.StartPosition.Y = 1.000000000000000000
+  Fill.Gradient.StopPosition.X = 0.499999970197677600
+  Fill.Gradient.StopPosition.Y = 0.000000000000000000
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
@@ -21,7 +67,32 @@ object Form1: TForm1
   object Timer1: TTimer
     Interval = 100
     OnTimer = Timer1Timer
-    Left = 272
-    Top = 248
+    Left = 216
+    Top = 208
+  end
+  object Button2: TButton
+    Position.X = 456.000000000000000000
+    Position.Y = 440.000000000000000000
+    TabOrder = 3
+    Text = 'Button2'
+    OnClick = Button2Click
+  end
+  object Rectangle1: TRectangle
+    Fill.Kind = Gradient
+    Fill.Gradient.Points = <
+      item
+        Color = claBlack
+        Offset = 0.000000000000000000
+      end
+      item
+        Color = claWhite
+        Offset = 1.000000000000000000
+      end>
+    Position.X = 296.000000000000000000
+    Position.Y = 128.000000000000000000
+    Size.Width = 50.000000000000000000
+    Size.Height = 241.000000000000000000
+    Size.PlatformDefault = False
+    OnPaint = Rectangle1Paint
   end
 end

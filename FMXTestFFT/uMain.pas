@@ -40,6 +40,7 @@ type
     btnZoomOut: TButton;
     rbZoomIn: TRadioButton;
     rbZoomOut: TRadioButton;
+    Button9: TButton;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -64,6 +65,7 @@ type
     procedure btnZoomOutClick(Sender: TObject);
     procedure SignalChart1MouseWheel(Sender: TObject; Shift: TShiftState;
       WheelDelta: Integer; var Handled: Boolean);
+    procedure Button9Click(Sender: TObject);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -94,7 +96,7 @@ implementation
 {$R *.fmx}
 
 uses
-  SpectraLibrary, FMX.Printer{$IFDEF MSWINDOWS}, CnDebug{$ENDIF};
+  SpectraLibrary, FMX.Printer{$IFDEF MSWINDOWS}, CnDebug, FMX.Design.Brush{$ENDIF};
 
 function MakeScaleScreenshot(Sender: TControl): TBitmap; Overload;
 var
@@ -338,6 +340,22 @@ begin
   SplitedDrawer1.AxisesData.Bottom.ViewMin:= Trunc(sbMin.Value);
 
   SplitedDrawer1.Chart.InvalidBackGround;
+end;
+
+procedure TForm3.Button9Click(Sender: TObject);
+begin
+//  ShowGradientDialog(self.SplitedDrawer1.ColorBar.Fill.Gradient);
+//  ShowBrushDialog(self.SplitedDrawer1.ColorBar.Fill,
+//    [TBrushKind.Gradient,
+//    TBrushKind.Solid,
+//    TBrushKind.Bitmap]);
+//  ShowGradientDialog(self.Fill.Gradient);
+
+//  ShowBrushDialog(self.Rectangle1.Fill,
+//    [TBrushKind.Gradient,
+//    TBrushKind.Solid,
+//    TBrushKind.Bitmap]);
+//  ShowBrushDialog(self.Fill, [TBrushKind.Solid, TBrushKind.Gradient, TBrushKind.Resource]);
 end;
 
 constructor TForm3.Create(AOwner: TComponent);

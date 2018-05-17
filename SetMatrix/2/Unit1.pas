@@ -5,17 +5,22 @@ interface
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
-  FMX.Controls.Presentation, FMX.StdCtrls;
+  FMX.Controls.Presentation, FMX.StdCtrls, FMX.Objects;
 
 type
   TForm1 = class(TForm)
     Button1: TButton;
     Timer1: TTimer;
+    Button2: TButton;
+    Rectangle1: TRectangle;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormPaint(Sender: TObject; Canvas: TCanvas; const ARect: TRectF);
     procedure Button1Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
+    procedure Rectangle1Paint(Sender: TObject; Canvas: TCanvas;
+      const ARect: TRectF);
   private
     { Private declarations }
     FBmp: TBitmap;
@@ -29,7 +34,7 @@ var
 
 implementation
 uses
-  System.Math, System.Math.Vectors;
+  System.Math, System.Math.Vectors, fmx.Design.brush;
 
 {$R *.fmx}
 
@@ -112,16 +117,60 @@ begin
   self.Invalidate();
 end;
 
+procedure TForm1.Button2Click(Sender: TObject);
+begin
+//  ShowBrushDialog(self.Fill, [TBrushKind.Solid, TBrushKind.Gradient, TBrushKind.Resource]);
+  ShowBrushDialog(self.Rectangle1.Fill, [TBrushKind.Solid, TBrushKind.Gradient, TBrushKind.Resource]);
+end;
+
 procedure TForm1.FormCreate(Sender: TObject);
 var
   da: TDateTime;
+  pt: TGradientPoint;
 begin
   Da:= EncodeDate(2018, 3, 18);
   da:= da + 99;
   caption:= FormatDateTime('MM-DD', da);
-  FBmp:= TBitmap.Create;
-  FBmp.LoadFromFile('C:\Users\Public\Pictures\Sample Pictures\th.jpg');
+//  FBmp:= TBitmap.Create;
+//  FBmp.LoadFromFile('C:\Users\Public\Pictures\Sample Pictures\th.jpg');
 //  FBmp.Rotate();
+  with Rectangle1.Fill do
+  begin
+    Gradient.Points.Clear;
+
+    pt:= TGradientPoint(Gradient.Points.Add);
+    pt.Offset:= 0;
+    pt.Color:= TAlphaColorF.Create(0, 0, 0).ToAlphaColor;
+
+    pt:= TGradientPoint(Gradient.Points.Add);
+    pt.Offset:= 0.1;
+    pt.Color:= TAlphaColorF.Create(1, 0, 1).ToAlphaColor;
+//
+    pt:= TGradientPoint(Gradient.Points.Add);
+    pt.Offset:= 0.226;
+    pt.Color:= TAlphaColorF.Create(0, 0, 1).ToAlphaColor;
+
+    pt:= TGradientPoint(Gradient.Points.Add);
+    pt.Offset:= 0.415;
+    pt.Color:= TAlphaColorF.Create(0, 1, 1).ToAlphaColor;
+
+    pt:= TGradientPoint(Gradient.Points.Add);
+    pt.Offset:= 0.491;
+    pt.Color:= TAlphaColorF.Create(0, 1, 0).ToAlphaColor;
+
+    pt:= TGradientPoint(Gradient.Points.Add);
+    pt.Offset:= 0.755;
+    pt.Color:= TAlphaColorF.Create(1, 1, 0).ToAlphaColor;
+
+    pt:= TGradientPoint(Gradient.Points.Add);
+    pt.Offset:= 0.8;
+    pt.Color:= TAlphaColorF.Create(1, 0, 0).ToAlphaColor;
+
+
+    pt:= TGradientPoint(Gradient.Points.Add);
+    pt.Offset:= 0.9;
+    pt.Color:= TAlphaColorF.Create(1, 1, 1).ToAlphaColor;
+  end;
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
@@ -139,6 +188,7 @@ var
   ShiftM: TMatrix;
   dest: TRectF;
 begin
+  exit;
   OldMatrix := Canvas.Matrix; // Original, to restore
 
 //  W := PointB.X - PointA.X;
@@ -159,6 +209,12 @@ begin
   Canvas.DrawBitmap(FBmp, FBmp.Bounds, Dest,1);
 
   Canvas.SetMatrix(OldMatrix);
+end;
+
+procedure TForm1.Rectangle1Paint(Sender: TObject; Canvas: TCanvas;
+  const ARect: TRectF);
+begin
+ //
 end;
 
 procedure TForm1.Timer1Timer(Sender: TObject);
