@@ -1854,10 +1854,64 @@ constructor TWaterFallDrawer.Create(AOwner: TComponent);
       Insert(AColor, FRainBowColors, Length(FRainBowColors));
     end;
   end;
+  Procedure InitColors2;
+  var
+    AGradient: TGradient;
+    Procedure AddGradientPoint(Aoffset, AR, AG, AB: Single);
+    var
+      pt: TGradientPoint;
+    begin
+      With AGradient do
+      begin
+        pt:= TGradientPoint(Points.Add);
+        pt.Offset:= Aoffset;
+        pt.Color:= TAlphaColorF.Create(AR, AG, AB).ToAlphaColor;
+      end;
+    end;
+//    AColor: TAlphaColor;
+//    wavelen: Integer;
+  var
+    i: Integer;
+    AColor: TAlphaColor;
+  begin
+    AGradient:= TGradient.Create;
+//    AGradient.InterpolateColor()
+    try
 
+    //
+    //			                  R	  G	  B
+    //380	  0	  0	            1	  0	  1
+    //440	  60	0.226415094	  0	  0	  1
+    //490	  110	0.41509434	  0	  1	  1
+    //510	  130	0.490566038	  0	  1	  0
+    //580	  200	0.754716981	  1	  1	  0
+    //645	  265	1	            1	  0	  0
+
+        AGradient.Points.BeginUpdate;
+        AGradient.Points.Clear;
+
+        AddGradientPoint(0      , 0,    0,    0);
+        AddGradientPoint(0.05   , 1,    0,    1);
+        AddGradientPoint(0.226  , 0,    0,    1);
+        AddGradientPoint(0.415  , 0,    1,    1);
+        AddGradientPoint(0.491  , 0,    1,    0);
+        AddGradientPoint(0.755  , 1,    1,    0);
+        AddGradientPoint(0.800  , 1,    0,    0);
+        AddGradientPoint(0.950  , 1,    1,    1);
+        AGradient.Points.EndUpdate();
+        AGradient.Change;
+        for i := 0 to 1000 do
+        begin
+          AColor:= AGradient.InterpolateColor(i / 1000);
+          Insert(AColor, FRainBowColors, Length(FRainBowColors));
+        end;
+    finally
+      FreeAndNil(AGradient);
+    end;
+  end;
 begin
   inherited;
-  InitColors();
+  InitColors2();
   FWaterFallBuf := TBitmap.Create(1, 1);
   FColorBar := TImage.Create(Self);
   FColorBar.Bitmap.SetSize(1, 1);

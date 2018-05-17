@@ -223,5 +223,5 @@ begin
 end;
 
 initialization
-//GlobalUseGPUCanvas := True;
+//  GlobalUseGPUCanvas := True;
 end.
