@@ -162,6 +162,7 @@ type
     Procedure DoPaint; Override;
     Procedure Loaded; Override;
     Procedure DoResized; Override;
+    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean); Override;
   Protected
     Procedure MouseMove(Shift: TShiftState; X, Y: Single); Override;
   Public
@@ -201,6 +202,8 @@ type
   Public
     Procedure ChartSinkMouseMove(Chart: TSignalChart; Shift: TShiftState;
       X, Y: Single); Virtual; Abstract;
+    Procedure ChartSinkMouseWheel(Shift: TShiftState; WheelDelta: Integer;
+        var Handled: Boolean); Virtual; Abstract;
     Procedure ChartSinkCheckSize(); Virtual; Abstract;
     Procedure ChartSinkDrawData(const AData: TArray<Single>); Virtual; Abstract;
     Procedure ChartSinkUpdateBitmap(BK: TBitmap); Virtual; Abstract;
@@ -267,16 +270,16 @@ type
     Procedure ChartSinkDrawData(const AData: TArray<Single>); Override;
     Procedure ChartSinkUpdateBitmap(BK: TBitmap); Override;
     Procedure ChartSinkCheckSize(); Override;
-    function RatioXByCursor: Single;
-    function RatioYByCursor: Single;
-    function ViewIndexByCursor: Single;
-    Property CursorInGraphicGrid: Boolean Read FCursorInGraphicGrid;
-
+    Procedure ChartSinkMouseWheel(Shift: TShiftState; WheelDelta: Integer;
+        var Handled: Boolean); Override;
   Public
     Constructor Create(AOwner: TComponent); Override;
     Destructor Destroy; Override;
     Procedure DoDraw; Override;
-
+    function RatioXByCursor: Single;
+    function RatioYByCursor: Single;
+    function ViewIndexByCursor: Single;
+    Property CursorInGraphicGrid: Boolean Read FCursorInGraphicGrid;
   Published
     Property PeakDecrement: Single read FPeakDecrement write SetPeakeDecrement;
     Property FalloffDecrement: Single read FFalloffDecrement
@@ -420,6 +423,17 @@ begin
       InvalidateRect(LocalRect);
     end;
   end;
+end;
+
+procedure TSignalChart.MouseWheel(Shift: TShiftState; WheelDelta: Integer;
+  var Handled: Boolean);
+begin
+  if self.FDrawer <> Nil then
+  begin
+    FDrawer.ChartSinkMouseWheel(Shift, WheelDelta, Handled);
+  end;
+  if Not Handled then
+    inherited;
 end;
 
 procedure TSignalChart.DoCheckSize;
@@ -1168,6 +1182,18 @@ begin
   /// /       CnDebugger.LogMsg('²»ÔÚ·¶Î§ÄÚ');
   // end;
   // end;
+end;
+
+procedure TSpectrumDrawer.ChartSinkMouseWheel(Shift: TShiftState;
+  WheelDelta: Integer; var Handled: Boolean);
+begin
+  if CursorInGraphicGrid then
+  begin
+    if WheelDelta < 0 then
+      AxisesData.Bottom.Zoom(abs(WheelDelta) / 100, ViewIndexByCursor)
+    else  if WheelDelta > 0 then
+      AxisesData.Bottom.Zoom(100 / abs(WheelDelta), ViewIndexByCursor);
+  end;
 end;
 
 procedure TSpectrumDrawer.ChartSinkUpdateBitmap(BK: TBitmap);

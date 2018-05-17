@@ -1,0 +1,168 @@
+object Form1: TForm1
+  Left = 0
+  Top = 0
+  Caption = 'Form1'
+  ClientHeight = 480
+  ClientWidth = 640
+  Fill.Kind = Solid
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  DesignerMasterStyle = 0
+  object SpeedButton1: TSpeedButton
+    Position.X = 32.000000000000000000
+    Position.Y = 56.000000000000000000
+    Size.Width = 145.000000000000000000
+    Size.Height = 33.000000000000000000
+    Size.PlatformDefault = False
+    Text = 'ShowGradientDialog'
+    OnClick = SpeedButton1Click
+  end
+  object GradientEdit1: TGradientEdit
+    ColorPicker = ColorPicker1
+    Position.X = 256.000000000000000000
+    Position.Y = 232.000000000000000000
+    Size.Width = 265.000000000000000000
+    Size.Height = 73.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+  end
+  object ColorQuad1: TColorQuad
+    Alpha = 1.000000000000000000
+    Lum = 0.403100788593292200
+    Position.X = 88.000000000000000000
+    Position.Y = 328.000000000000000000
+    Sat = 0.264864861965179400
+    Size.Width = 185.000000000000000000
+    Size.Height = 129.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+  end
+  object ColorComboBox1: TColorComboBox
+    DropDownKind = Custom
+    Color = claNull
+    DisableFocusEffect = False
+    ItemIndex = 147
+    Position.X = 56.000000000000000000
+    Position.Y = 184.000000000000000000
+    TabOrder = 4
+  end
+  object ComboColorBox1: TComboColorBox
+    Color = claWhite
+    Position.X = 56.000000000000000000
+    Position.Y = 232.000000000000000000
+    Size.Width = 97.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 5
+  end
+  object ColorPicker1: TColorPicker
+    ColorQuad = ColorQuad1
+    Position.X = 312.000000000000000000
+    Position.Y = 336.000000000000000000
+    Size.Width = 185.000000000000000000
+    Size.Height = 113.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 6
+  end
+  object Ellipse1: TEllipse
+    Fill.Kind = Gradient
+    Fill.Gradient.Points = <
+      item
+        Color = claBlack
+        Offset = 0.000000000000000000
+      end
+      item
+        Color = xFFF9F91C
+        Offset = 0.195652171969413800
+      end
+      item
+        Color = xFF17FC06
+        Offset = 0.282608687877655000
+      end>
+    Fill.Gradient.StartPosition.X = 0.500000000000000000
+    Fill.Gradient.StartPosition.Y = 1.000000000000000000
+    Fill.Gradient.StopPosition.X = 0.499999970197677600
+    Fill.Gradient.StopPosition.Y = 0.000000000000000000
+    Position.X = 208.000000000000000000
+    Position.Y = 40.000000000000000000
+    Size.Width = 265.000000000000000000
+    Size.Height = 177.000000000000000000
+    Size.PlatformDefault = False
+  end
+  object SpeedButton2: TSpeedButton
+    Position.X = 48.000000000000000000
+    Position.Y = 88.000000000000000000
+    Size.Width = 113.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    Text = 'ShowColorDialog'
+    OnClick = SpeedButton2Click
+  end
+  object SpeedButton3: TSpeedButton
+    Position.X = 48.000000000000000000
+    Position.Y = 120.000000000000000000
+    Size.Width = 113.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    Text = 'ShowBrushDialog'
+    OnClick = SpeedButton3Click
+  end
+  object Rectangle1: TRectangle
+    Fill.Kind = Gradient
+    Fill.Gradient.Points = <
+      item
+        Color = xFFBC0000
+        Offset = 0.257763981819152800
+      end
+      item
+        Color = xFF467400
+        Offset = 0.540372669696807900
+      end>
+    Fill.Gradient.StartPosition.X = 0.500000000000000000
+    Fill.Gradient.StartPosition.Y = 1.000000000000000000
+    Fill.Gradient.StopPosition.X = 0.499999970197677600
+    Fill.Gradient.StopPosition.Y = 0.000000000000000000
+    Position.X = 584.000000000000000000
+    Size.Width = 57.000000000000000000
+    Size.Height = 217.000000000000000000
+    Size.PlatformDefault = False
+  end
+  object GradientAnimation1: TGradientAnimation
+    Duration = 0.200000002980232200
+    StartValue.Points = <
+      item
+        Color = claBlack
+        Offset = 0.000000000000000000
+      end
+      item
+        Color = claWhite
+        Offset = 1.000000000000000000
+      end>
+    StopValue.Points = <
+      item
+        Color = claBlack
+        Offset = 0.000000000000000000
+      end
+      item
+        Color = claWhite
+        Offset = 1.000000000000000000
+      end>
+  end
+  object sbSave: TSpeedButton
+    Position.X = 40.000000000000000000
+    Position.Y = 280.000000000000000000
+    Size.Width = 49.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    Text = 'Save'
+  end
+  object sbLoad: TSpeedButton
+    Position.X = 96.000000000000000000
+    Position.Y = 280.000000000000000000
+    Size.Width = 49.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    Text = 'Load'
+  end
+end
