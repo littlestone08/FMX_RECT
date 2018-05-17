@@ -68,6 +68,7 @@ type
     gradKind: TPopupBox;
     gradAngleLabel: TLabel;
     LabelBitmapKind: TLabel;
+    SpeedButton1: TSpeedButton;
     procedure solidQuadChange(Sender: TObject);
     procedure gradEditorChange(Sender: TObject);
     procedure gradQuadChange(Sender: TObject);
@@ -85,6 +86,7 @@ type
     procedure gradKindChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure textGradAChange(Sender: TObject);
+    procedure SpeedButton1Click(Sender: TObject);
   protected
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
     Procedure Modify; Virtual;
@@ -135,6 +137,7 @@ type
 
 procedure ShowBrushDialog(const Brush: TBrush; const ShowStyles: TBrushKinds; const ShowBrushList: boolean = true);
 procedure ShowGradientDialog(const Gradient: TGradient);
+
 function ShowColorDialog(const Color: TAlphaColor): TAlphaColor;
 
 resourcestring
@@ -325,6 +328,35 @@ begin
   finally
     FChanged := False;
   end;
+end;
+
+procedure TBrushDesigner.SpeedButton1Click(Sender: TObject);
+var
+  S: string;
+  B: TBrushObject;
+  binstm: TMemoryStream;
+  Txtstm: TMemoryStream;
+begin
+  { make res }
+//  if not Assigned(Designer) then Exit;
+  S := 'brush123';
+  binstm:= TMemoryStream.Create;
+  Txtstm:= TMemoryStream.Create;
+//  if TDialogServiceSync.InputQuery(sMakeResCaption, [sMakeResText], S) then
+  begin
+    B := TBrushObject.Create(FOwner);
+    B.Parent := FOwner;
+    B.StyleName := S;
+    B.Name := S;
+    B.Brush.Assign(FCurrentBrush);
+    RebuilResourceList;
+    binstm.WriteComponent(B);
+    binstm.Position:= 0;
+    ObjectBinaryToText(binstm, Txtstm);
+    binstm.SaveToFile('d:\Brush123');
+  end;
+  TxtStm.Free;
+  binstm.Free;
 end;
 
 procedure TBrushDesigner.textSolidHexChange(Sender: TObject);
@@ -710,7 +742,7 @@ var
   B: TBrushObject;
 begin
   { make res }
-  if not Assigned(Designer) then Exit;
+//  if not Assigned(Designer) then Exit;
 
   S := Designer.UniqueName('Brush');
   if TDialogServiceSync.InputQuery(sMakeResCaption, [sMakeResText], S) then
@@ -767,6 +799,8 @@ begin
     Dlg.Free;
   end;
 end;
+
+
 
 function ShowColorDialog(const Color: TAlphaColor): TAlphaColor;
 var

@@ -7,7 +7,7 @@
             <Dependencies/>
         </Projects>
         <Projects Include="..\dpkRecvGraphic.dproj">
-            <Dependencies>..\FMXTestFFT\PTestAudioFFTGraphic.dproj</Dependencies>
+            <Dependencies/>
         </Projects>
         <Projects Include="..\TestFFT\Project1.dproj">
             <Dependencies/>
@@ -38,13 +38,13 @@
     <Target Name="PTestGraphicA:Make">
         <MSBuild Projects="PTestGraphicA.dproj" Targets="Make"/>
     </Target>
-    <Target Name="dpkRecvGraphic" DependsOnTargets="PTestAudioFFTGraphic">
+    <Target Name="dpkRecvGraphic">
         <MSBuild Projects="..\dpkRecvGraphic.dproj"/>
     </Target>
-    <Target Name="dpkRecvGraphic:Clean" DependsOnTargets="PTestAudioFFTGraphic:Clean">
+    <Target Name="dpkRecvGraphic:Clean">
         <MSBuild Projects="..\dpkRecvGraphic.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="dpkRecvGraphic:Make" DependsOnTargets="PTestAudioFFTGraphic:Make">
+    <Target Name="dpkRecvGraphic:Make">
         <MSBuild Projects="..\dpkRecvGraphic.dproj" Targets="Make"/>
     </Target>
     <Target Name="Project1">

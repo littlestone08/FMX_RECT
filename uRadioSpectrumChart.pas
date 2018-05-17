@@ -295,6 +295,12 @@ type
       write SetGridBoundColor;
   End;
 
+
+  TSpectraColorBar = Class(TRectangle)
+  Private
+    FRainBowColors: TArray<TAlphaColor>;
+  End;
+
   TWaterFallDrawer = Class(TSpectrumDrawer)
   Private
     FWaterFallRect: TRectF;
@@ -331,6 +337,7 @@ type
     Property ShowWaterfall: Boolean read FShowWaterfall write SetShowWaterfall;
     Property LargeBuf: Boolean read FLargeBuf write SetLargeBuf;
   End;
+
 
 procedure Register;
 

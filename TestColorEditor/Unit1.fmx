@@ -4,7 +4,28 @@ object Form1: TForm1
   Caption = 'Form1'
   ClientHeight = 480
   ClientWidth = 640
-  Fill.Kind = Solid
+  Fill.Kind = Gradient
+  Fill.Gradient.Points = <
+    item
+      Color = claBlack
+      Offset = 0.000000000000000000
+    end
+    item
+      Color = xFF545454
+      Offset = 0.332298129796981800
+    end
+    item
+      Color = xFF0808EC
+      Offset = 0.531055927276611300
+    end
+    item
+      Color = claWhite
+      Offset = 1.000000000000000000
+    end>
+  Fill.Gradient.StartPosition.X = 0.500000000000000000
+  Fill.Gradient.StartPosition.Y = 1.000000000000000000
+  Fill.Gradient.StopPosition.X = 0.499999970197677600
+  Fill.Gradient.StopPosition.Y = 0.000000000000000000
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
@@ -32,7 +53,7 @@ object Form1: TForm1
     Lum = 0.403100788593292200
     Position.X = 88.000000000000000000
     Position.Y = 328.000000000000000000
-    Sat = 0.264864861965179400
+    Sat = 0.264864861965179500
     Size.Width = 185.000000000000000000
     Size.Height = 129.000000000000000000
     Size.PlatformDefault = False
@@ -77,8 +98,8 @@ object Form1: TForm1
         Offset = 0.195652171969413800
       end
       item
-        Color = xFF17FC06
-        Offset = 0.282608687877655000
+        Color = xFF06F4FC
+        Offset = 0.468944102525711000
       end>
     Fill.Gradient.StartPosition.X = 0.500000000000000000
     Fill.Gradient.StartPosition.Y = 1.000000000000000000
@@ -164,5 +185,36 @@ object Form1: TForm1
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
     Text = 'Load'
+    OnClick = sbLoadClick
+  end
+  object Brush1: TBrushObject
+    StyleName = 'Brush1'
+    Brush.Kind = Gradient
+    Brush.Gradient.Points = <
+      item
+        Color = claBlack
+        Offset = 0.000000000000000000
+      end
+      item
+        Color = xFFF9F91C
+        Offset = 0.195652171969413800
+      end
+      item
+        Color = xFF17FC06
+        Offset = 0.282608687877655000
+      end>
+    Brush.Gradient.StartPosition.X = 0.500000000000000000
+    Brush.Gradient.StartPosition.Y = 1.000000000000000000
+    Brush.Gradient.StopPosition.X = 0.499999970197677600
+    Brush.Gradient.StopPosition.Y = 0.000000000000000000
+    Left = 64
+    Top = 24
+  end
+  object Brush2: TBrushObject
+    StyleName = 'Brush2'
+    Brush.Kind = Resource
+    Brush.Resource.StyleLookup = 'Brush2'
+    Left = 24
+    Top = 72
   end
 end

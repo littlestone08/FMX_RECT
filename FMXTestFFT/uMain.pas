@@ -364,8 +364,8 @@ end;
 procedure TForm3.FormCreate(Sender: TObject);
 var
   bmp: TBitmap;
+  bs: TGradient;
 begin
-
   InitRainbow();
   InitSpectralColors3();
 //  self.Fill.Color := TAlphaColors.Yellowgreen;
