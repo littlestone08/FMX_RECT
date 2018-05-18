@@ -234,12 +234,12 @@ object Form3: TForm3
     GridBoundColor = claDarkslategray
     ShowWaterfall = True
     LargeBuf = False
-    Left = 88
-    Top = 504
+    Left = 80
+    Top = 520
   end
   object Test1: TTest
-    Left = 24
-    Top = 528
+    Left = 16
+    Top = 520
     save = '{1D8C3D07-29A9-4779-A099-32A8691EEA69}'
   end
 end
