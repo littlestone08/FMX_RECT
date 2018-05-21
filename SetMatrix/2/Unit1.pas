@@ -13,6 +13,7 @@ type
     Timer1: TTimer;
     Button2: TButton;
     Rectangle1: TRectangle;
+    Selection1: TSelection;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormPaint(Sender: TObject; Canvas: TCanvas; const ARect: TRectF);
@@ -127,7 +128,9 @@ procedure TForm1.FormCreate(Sender: TObject);
 var
   da: TDateTime;
   pt: TGradientPoint;
+  p: PAlphaColorRec;
 begin
+  Caption:= IntToStr(SizeOf(p));
   Da:= EncodeDate(2018, 3, 18);
   da:= da + 99;
   caption:= FormatDateTime('MM-DD', da);
@@ -223,5 +226,5 @@ begin
 end;
 
 initialization
-//  GlobalUseGPUCanvas := True;
+  GlobalUseGPUCanvas := True;
 end.

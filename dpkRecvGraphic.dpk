@@ -34,6 +34,7 @@ requires
 
 contains
   uRadioSpectrumChart in 'uRadioSpectrumChart.pas',
-  SpectraLibrary in 'SpectraLibrary.pas';
+  SpectraLibrary in 'SpectraLibrary.pas',
+  uSpectrumSelection in 'uSpectrumSelection.pas';
 
 end.

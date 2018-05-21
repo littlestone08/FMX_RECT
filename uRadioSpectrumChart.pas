@@ -2,11 +2,11 @@ unit uRadioSpectrumChart;
 
 interface
 
-
 uses
   System.Classes, System.SysUtils, System.Types, System.UITypes,
   System.Math, System.DateUtils, System.IOUtils,
-  FMX.Objects, FMX.Graphics, FMX.Types, FMX.Controls, FMX.STdCtrls;
+  FMX.Objects, FMX.Graphics, FMX.Types, FMX.Controls, FMX.STdCtrls,
+  uSpectrumSelection;
 
 type
 
@@ -162,7 +162,8 @@ type
     Procedure DoPaint; Override;
     Procedure Loaded; Override;
     Procedure DoResized; Override;
-    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean); Override;
+    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer;
+      var Handled: Boolean); Override;
   Protected
     Procedure MouseMove(Shift: TShiftState; X, Y: Single); Override;
   Public
@@ -203,7 +204,7 @@ type
     Procedure ChartSinkMouseMove(Chart: TSignalChart; Shift: TShiftState;
       X, Y: Single); Virtual; Abstract;
     Procedure ChartSinkMouseWheel(Shift: TShiftState; WheelDelta: Integer;
-        var Handled: Boolean); Virtual; Abstract;
+      var Handled: Boolean); Virtual; Abstract;
     Procedure ChartSinkCheckSize(); Virtual; Abstract;
     Procedure ChartSinkDrawData(const AData: TArray<Single>); Virtual; Abstract;
     Procedure ChartSinkUpdateBitmap(BK: TBitmap); Virtual; Abstract;
@@ -271,7 +272,7 @@ type
     Procedure ChartSinkUpdateBitmap(BK: TBitmap); Override;
     Procedure ChartSinkCheckSize(); Override;
     Procedure ChartSinkMouseWheel(Shift: TShiftState; WheelDelta: Integer;
-        var Handled: Boolean); Override;
+      var Handled: Boolean); Override;
   Public
     Constructor Create(AOwner: TComponent); Override;
     Destructor Destroy; Override;
@@ -296,7 +297,7 @@ type
   End;
 
   TWaterFallDrawer = Class(TSpectrumDrawer)
-  Private  Type
+  Private Type
     TColorBar = Class(TImage)
     Strict Private
       FColorsLen: Integer;
@@ -305,20 +306,20 @@ type
     Public
       Constructor Create(AOwner: TComponent); Override;
       Procedure InitColors(Gradient: TGradient);
-      function InterpolateColor(Offset: Single): TAlphaColor;
+      function InterpolateColor(offset: Single): TAlphaColor;
+      Procedure UpdateBitmap;
     End;
   Private
     FWaterFallRect: TRectF;
     FWaterFallGridR: TRectF;
     FWaterFallRectUpdated: Boolean;
 
-    FRainBowColors: TArray<TAlphaColor>;
     FWaterFallBuf: TBitmap;
     FWaterFallBufChanging: Boolean;
 
     FWaterFallBmpStart: Integer;
 
-    FColorBar: TImage;
+    FColorBar: TColorBar;
     FShowWaterfall: Boolean;
     FLargeBuf: Boolean;
     procedure SetShowWaterfall(const Value: Boolean);
@@ -356,7 +357,7 @@ uses
 procedure Register;
 begin
   RegisterComponents('RadioReceiver', [TSignalChart, TSpectrumDrawer, TTest,
-    TWaterFallDrawer]);
+    TWaterFallDrawer, TSpectrumSelection]);
 end;
 
 procedure TSignalChart.DoPaint;
@@ -437,9 +438,9 @@ begin
 end;
 
 procedure TSignalChart.MouseWheel(Shift: TShiftState; WheelDelta: Integer;
-  var Handled: Boolean);
+var Handled: Boolean);
 begin
-  if self.FDrawer <> Nil then
+  if Self.FDrawer <> Nil then
   begin
     FDrawer.ChartSinkMouseWheel(Shift, WheelDelta, Handled);
   end;
@@ -875,7 +876,7 @@ procedure TCustomAxis.UpdateViewRatio;
 var
   Total: Single;
 begin
-  Total := FMax - FMin; //网络数，而不是线条数
+  Total := FMax - FMin; // 网络数，而不是线条数
   FViewRatioFrom := (FViewMin - FMin) / Total;
   FViewRatioTo := (FViewMax - FMin) / Total;
 
@@ -896,25 +897,26 @@ begin
 
   With TSpectrumDrawer(FDrawer).AxisesData do
   begin
-    H0:= Bottom.ViewMax;
-    L0:= Bottom.ViewMin;
+    H0 := Bottom.ViewMax;
+    L0 := Bottom.ViewMin;
     if InRange(ViewCenter, L0, H0) then
     begin
-      H0:= Bottom.ViewMax;
-      L0:= Bottom.ViewMin;
+      H0 := Bottom.ViewMax;
+      L0 := Bottom.ViewMin;
 
       if H0 <> L0 then
       begin
-        BoundL:= (H0 - ViewCenter) * ViewCenter - (ViewCenter - L0) * ((H0 - L0) * Ratio - ViewCenter);
-        BoundL:= BoundL / (H0 - L0);
-        BoundH:=  (H0 - L0) * Ratio + BoundL;
+        BoundL := (H0 - ViewCenter) * ViewCenter - (ViewCenter - L0) *
+          ((H0 - L0) * Ratio - ViewCenter);
+        BoundL := BoundL / (H0 - L0);
+        BoundH := (H0 - L0) * Ratio + BoundL;
 
-        BoundH_Int:= EnsureRange(Ceil(BoundH), Bottom.Min, Bottom.Max);
-        BoundL_Int:= EnsureRange(Floor(BoundL), Bottom.Min, Bottom.Max);
+        BoundH_Int := EnsureRange(Ceil(BoundH), Bottom.Min, Bottom.Max);
+        BoundL_Int := EnsureRange(Floor(BoundL), Bottom.Min, Bottom.Max);
         if BoundH > BoundL then
         begin
-          ViewMax:= BoundH_Int;
-          ViewMin:= BoundL_Int;
+          ViewMax := BoundH_Int;
+          ViewMin := BoundL_Int;
         end;
       end;
     end;
@@ -1196,14 +1198,14 @@ begin
 end;
 
 procedure TSpectrumDrawer.ChartSinkMouseWheel(Shift: TShiftState;
-  WheelDelta: Integer; var Handled: Boolean);
+WheelDelta: Integer; var Handled: Boolean);
 begin
   if CursorInGraphicGrid then
   begin
     if WheelDelta < 0 then
-      AxisesData.Bottom.Zoom(abs(WheelDelta) / 100, ViewIndexByCursor)
-    else  if WheelDelta > 0 then
-      AxisesData.Bottom.Zoom(100 / abs(WheelDelta), ViewIndexByCursor);
+      AxisesData.Bottom.Zoom(abs(WheelDelta) / 120, ViewIndexByCursor)
+    else if WheelDelta > 0 then
+      AxisesData.Bottom.Zoom(120 / abs(WheelDelta), ViewIndexByCursor);
   end;
 end;
 
@@ -1295,7 +1297,6 @@ begin
     FillDesigningTestData();
 end;
 
-
 destructor TSpectrumDrawer.Destroy;
 begin
   // FreeAndNil(FAxisesView);
@@ -1315,7 +1316,6 @@ procedure TSpectrumDrawer.DoDraw;
   begin
     Result := '';
 
-
     With Chart do
     begin
       ptPosInGrid := TPointF.Create(FCrossX - FGraphicGridR.Left,
@@ -1327,9 +1327,10 @@ procedure TSpectrumDrawer.DoDraw;
         // DataIndex:= Ceil(FGraphicGridR.Width * RatioX) * (FMaxValue - FMinValue + 1);
         // DataIndex:= Ceil((FMaxValue - FMinValue + 1+0.5) * RatioX) ;
         // DataIndex:= Ceil(Length(FData) * Min((RatioX + 0.005), 1));
-//        DataIndex := Round(Length(FData) * System.Math.Min(RatioX, 1));
+        // DataIndex := Round(Length(FData) * System.Math.Min(RatioX, 1));
 
-        DataIndex := Round((ViewDataIdxTo - ViewDataIdxFrom) * System.Math.Min(RatioX, 1)) + ViewDataIdxFrom;
+        DataIndex := Round((ViewDataIdxTo - ViewDataIdxFrom) *
+          System.Math.Min(RatioX, 1)) + ViewDataIdxFrom;
 
       end;
 
@@ -1458,20 +1459,24 @@ procedure TSpectrumDrawer.DrawHint;
 var
   TextRect: TRectF;
 begin
-//    Property ViewRatioFrom: Single Read FViewRatioFrom;
-//    Property ViewRatioTo: Single Read FViewRatioTo;
-//    Property ViewIdxFrom: Integer Read FViewIdxFrom;
-//    Property ViewIdxTo: Integer Read FViewIdxTo;
+  // Property ViewRatioFrom: Single Read FViewRatioFrom;
+  // Property ViewRatioTo: Single Read FViewRatioTo;
+  // Property ViewIdxFrom: Integer Read FViewIdxFrom;
+  // Property ViewIdxTo: Integer Read FViewIdxTo;
   With FAxisesData.Bottom do
   begin
-    FChart.FHint2:= Format('Ratio:[%.2f, %.2f], Idx: [%d, %d], Zoom: %.2f%%',
-      [ViewRatioFrom, ViewRatioTo, Min, Max, (ViewRatioTo - ViewRatioFrom) * 100]);
-    FChart.FHint2:= FChart.FHint2 + #$D#$A;
-    FChart.FHint2:= FChart.FHint2 + Format('Data Count: %d, Data Idx: [%d, %d]', [Length(FData), ViewDataIdxFrom, ViewDataIdxTo]);
+    FChart.FHint2 := Format('Ratio:[%.2f, %.2f], Idx: [%d, %d], Zoom: %.2f%%',
+      [ViewRatioFrom, ViewRatioTo, Min, Max,
+      (ViewRatioTo - ViewRatioFrom) * 100]);
+    FChart.FHint2 := FChart.FHint2 + #$D#$A;
+    FChart.FHint2 := FChart.FHint2 +
+      Format('Data Count: %d, Data Idx: [%d, %d]',
+      [Length(FData), ViewDataIdxFrom, ViewDataIdxTo]);
 
-    FChart.FHint2:= FChart.FHint2 + #$D#$A;
-    FChart.FHint2:= FChart.FHint2 + Format('CURSOR==RatioX = %.2f, RatioY = %.2f, ViewIndex = %.2f',
-      [self.RatioXByCursor, self.RatioYByCursor, ViewIndexByCursor]);
+    FChart.FHint2 := FChart.FHint2 + #$D#$A;
+    FChart.FHint2 := FChart.FHint2 +
+      Format('CURSOR==RatioX = %.2f, RatioY = %.2f, ViewIndex = %.2f',
+      [Self.RatioXByCursor, Self.RatioYByCursor, ViewIndexByCursor]);
   end;
 
   With FChart do
@@ -1481,11 +1486,11 @@ begin
     Canvas.Stroke.Kind := TBrushKind.Solid;
     Canvas.Fill.Kind := TBrushKind.Solid;
     TextRect := FGraphicGridR;
-    TextRect.Right:= FGraphicGridR.Width / 3 + FGraphicGridR.Left;
+    TextRect.Right := FGraphicGridR.Width / 3 + FGraphicGridR.Left;
     TextRect.offset(10, 10);
     Canvas.FillText(TextRect, FHint, True, 1, [], TTextAlign.Leading,
       TTextAlign.Leading);
-    TextRect.Offset(TextRect.Width, 0);
+    TextRect.offset(TextRect.Width, 0);
     Canvas.FillText(TextRect, FHint2, True, 1, [], TTextAlign.Leading,
       TTextAlign.Leading);
   end;
@@ -1580,7 +1585,6 @@ begin
   begin
     nViewCount := ViewIdxTo - ViewIdxFrom + 1;
 
-
     HStep := FGraphicGridR.Width / (nViewCount - 1);
 
     ACanvas := Canvas;
@@ -1630,7 +1634,7 @@ var
 begin
   ptPosInGrid := TPointF.Create(FCrossX - FGraphicGridR.Left,
     FCrossY - FGraphicGridR.Top);
-  Result:= ptPosInGrid.X / FGraphicGridR.Width;
+  Result := ptPosInGrid.X / FGraphicGridR.Width;
 end;
 
 function TSpectrumDrawer.RatioYByCursor: Single;
@@ -1639,7 +1643,7 @@ var
 begin
   ptPosInGrid := TPointF.Create(FCrossX - FGraphicGridR.Left,
     FCrossY - FGraphicGridR.Top);
-  Result:= ptPosInGrid.Y / FGraphicGridR.Height;
+  Result := ptPosInGrid.Y / FGraphicGridR.Height;
 end;
 
 procedure TSpectrumDrawer.Internal_DrawGraphicBound(ACanvas: TCanvas);
@@ -1727,7 +1731,7 @@ procedure TSpectrumDrawer.UpdateGridRAndStdTextR;
     Step: Integer;
   begin
     Step := 1;
-    if Abs(ValueTo - ValueFrom) + 1 > 500 then
+    if abs(ValueTo - ValueFrom) + 1 > 500 then
     begin
       Step := Ceil((ValueTo - ValueFrom + 1) / 50)
     end;
@@ -1769,7 +1773,7 @@ var
   nCount: Integer;
 begin
   nCount := Length(FData);
-//  nCount := Axis.FViewMax - Axis.FViewMin + 1;
+  // nCount := Axis.FViewMax - Axis.FViewMin + 1;
   Axis.FViewDataIdxFrom := Trunc(nCount * Axis.ViewRatioFrom);
   Axis.FViewDataIdxTo := Round((nCount - 1) * Axis.ViewRatioTo);
 end;
@@ -1778,7 +1782,8 @@ function TSpectrumDrawer.ViewIndexByCursor: Single;
 begin
   With FAxisesData.Bottom do
   begin
-    Result:= Round((FViewMax - FViewmin) * EnsureRange(RatioXByCursor , 0, 1)) + FViewmin;
+    Result := Round((FViewMax - FViewMin) * EnsureRange(RatioXByCursor, 0, 1))
+      + FViewMin;
   end;
 end;
 
@@ -1850,78 +1855,16 @@ begin
 end;
 
 constructor TWaterFallDrawer.Create(AOwner: TComponent);
-  Procedure InitColors;
-  var
-    AColor: TAlphaColor;
-    wavelen: Integer;
-  begin
-    for wavelen := WavelengthMinimum to WavelengthMaximum do
-    begin
-      With TAlphaColorRec(AColor) do
-      begin
-        A := $FF;
-        WavelengthToRGB(wavelen, R, G, B);
-      end;
-      Insert(AColor, FRainBowColors, Length(FRainBowColors));
-    end;
-  end;
-  Procedure InitColors2;
-  var
-    AGradient: TGradient;
-    Procedure AddGradientPoint(Aoffset, AR, AG, AB: Single);
-    var
-      pt: TGradientPoint;
-    begin
-      With AGradient do
-      begin
-        pt:= TGradientPoint(Points.Add);
-        pt.Offset:= Aoffset;
-        pt.Color:= TAlphaColorF.Create(AR, AG, AB).ToAlphaColor;
-      end;
-    end;
-  var
-    i: Integer;
-    AColor: TAlphaColor;
-  begin
-    AGradient:= TGradient.Create;
-    try
-    //
-    //			                  R	  G	  B
-    //380	  0	  0	            1	  0	  1
-    //440	  60	0.226415094	  0	  0	  1
-    //490	  110	0.41509434	  0	  1	  1
-    //510	  130	0.490566038	  0	  1	  0
-    //580	  200	0.754716981	  1	  1	  0
-    //645	  265	1	            1	  0	  0
 
-      AGradient.Points.BeginUpdate;
-      AGradient.Points.Clear;
+var
+  i: Integer;
+  AColor: TAlphaColor;
 
-      AddGradientPoint(0      , 0,    0,    0);
-      AddGradientPoint(0.05   , 1,    0,    1);
-      AddGradientPoint(0.226  , 0,    0,    1);
-      AddGradientPoint(0.415  , 0,    1,    1);
-      AddGradientPoint(0.491  , 0,    1,    0);
-      AddGradientPoint(0.755  , 1,    1,    0);
-      AddGradientPoint(0.800  , 1,    0,    0);
-      AddGradientPoint(0.950  , 1,    1,    1);
-      AGradient.Points.EndUpdate();
-      AGradient.Change;
-      for i := 0 to 1000 do
-      begin
-        AColor:= AGradient.InterpolateColor(i / 1000);
-        Insert(AColor, FRainBowColors, Length(FRainBowColors));
-      end;
-    finally
-      FreeAndNil(AGradient);
-    end;
-  end;
 begin
   inherited;
-  InitColors2();
   FWaterFallBuf := TBitmap.Create(1, 1);
-  FColorBar := TImage.Create(Self);
-  FColorBar.Bitmap.SetSize(1, 1);
+  FColorBar := TColorBar.Create(Self);
+  FColorBar.SetSize(1, 1);
 end;
 
 destructor TWaterFallDrawer.Destroy;
@@ -1951,27 +1894,7 @@ begin
     FColorBar.Position.X := FWaterFallGridR.TopLeft.X - 30;
     FColorBar.Position.Y := FWaterFallGridR.TopLeft.Y;
 
-    if FColorBar.Bitmap.HandleAllocated then
-      With FColorBar.Bitmap.Canvas do
-      begin
-        Step := FColorBar.Bitmap.Height / Length(FRainBowColors);
-        With FColorBar.Bitmap.Canvas do
-        begin
-          Fill.Kind := TBrushKind.Solid;
-          if BeginScene(Nil, 0) then
-            try
-              ColorRect := TRectF.Create(0, 0, FColorBar.Bitmap.Width, Step);
-              for i := Length(FRainBowColors) - 1 Downto 0 do
-              begin
-                Fill.Color := FRainBowColors[i];
-                FillRect(ColorRect, 0, 0, [], 1);
-                ColorRect.offset(0, Step);
-              end;
-            finally
-              EndScene();
-            end;
-        end;
-      end;
+    FColorBar.UpdateBitmap();
   end
 end;
 
@@ -2073,12 +1996,13 @@ ViewIdxFrom, ViewIdxTo: Integer);
 
               PointEnd.X := PointEnd.X + HStep;
 
-              ColorIndex :=
-                Trunc(AData[i + ViewIdxFrom] * Length(FRainBowColors));
-              if ColorIndex > Length(FRainBowColors) - 1 then
-                AColor := TAlphaColors.White
-              else
-                AColor := FRainBowColors[ColorIndex];
+              // ColorIndex :=
+              // Trunc(AData[i + ViewIdxFrom] * Length(FRainBowColors));
+              // if ColorIndex > Length(FRainBowColors) - 1 then
+              // AColor := TAlphaColors.White
+              // else
+              // AColor := FRainBowColors[ColorIndex];
+              AColor := FColorBar.InterpolateColor(AData[i + ViewIdxFrom]);
 
               Stroke.Color := AColor;
 
@@ -2177,7 +2101,7 @@ begin
         Canvas.DrawBitmap(FWaterFallBuf, TRectF.Create(0, FWaterFallBmpStart,
           FWaterFallGridR.Width, FWaterFallGridR.Height + FWaterFallBmpStart),
           FWaterFallGridR, 1, False);
-//        FWaterFallBuf.SaveToFile('d:\1.png');
+        // FWaterFallBuf.SaveToFile('d:\1.png');
       end
       else
       begin
@@ -2187,7 +2111,7 @@ begin
           begin
             try
               // 移动图像向下一像素 ,要每行移动，不要多行同时移动，
-              //否则有改变大小时会出错，而且对速度性能益处有限
+              // 否则有改变大小时会出错，而且对速度性能益处有限
               MoveBytes := Width * BmpData.BytesPerPixel;
               for i := Height - 2 Downto 0 do
                 System.Move(BmpData.GetPixelAddr(0, 0 + i)^,
@@ -2234,7 +2158,7 @@ begin
       else
       begin
         FWaterFallBuf.Height := Ceil(FWaterFallGridR.Height);
-        FWaterFallBmpStart:= 0;
+        FWaterFallBmpStart := 0;
       end;
     finally
       FWaterFallBufChanging := False;
@@ -2251,7 +2175,7 @@ begin
 
     if Not FShowWaterfall then
     begin
-      FWaterFallBuf.SetSize(1, 1);   //节省内存开销
+      FWaterFallBuf.SetSize(1, 1); // 节省内存开销
     end;
     if Chart <> Nil then
     begin
@@ -2321,9 +2245,9 @@ var
   AGradient: TGradient;
 begin
   inherited;
-  FColorsLen:= 1000 + 1;
+  FColorsLen := 1000 + 1;
 
-  AGradient:= DefaultGradient;
+  AGradient := DefaultGradient;
   try
     InitColors(AGradient);
   finally
@@ -2338,34 +2262,35 @@ function TWaterFallDrawer.TColorBar.DefaultGradient: TGradient;
   begin
     With AGradient do
     begin
-      pt:= TGradientPoint(Points.Add);
-      pt.Offset:= Aoffset;
-      pt.Color:= TAlphaColorF.Create(AR, AG, AB).ToAlphaColor;
+      pt := TGradientPoint(Points.Add);
+      pt.offset := Aoffset;
+      pt.Color := TAlphaColorF.Create(AR, AG, AB).ToAlphaColor;
     end;
   end;
+
 begin
-  Result:= TGradient.Create;
+  Result := TGradient.Create;
   With Result do
   begin
-    //wavelen			                  R	  G	  B
-    //380	    0	      0	            1	  0	  1
-    //440	    60	    0.226415094	  0	  0	  1
-    //490	    110	    0.41509434	  0	  1	  1
-    //510	    130	    0.490566038	  0	  1	  0
-    //580	    200	    0.754716981	  1	  1	  0
-    //645	    265	    1	            1	  0	  0
+    // wavelen			                  R	  G	  B
+    // 380	    0	      0	            1	  0	  1
+    // 440	    60	    0.226415094	  0	  0	  1
+    // 490	    110	    0.41509434	  0	  1	  1
+    // 510	    130	    0.490566038	  0	  1	  0
+    // 580	    200	    0.754716981	  1	  1	  0
+    // 645	    265	    1	            1	  0	  0
 
     Points.BeginUpdate;
     try
       Points.Clear;
-      AddGradientPoint(Result, 0      , 0,    0,    0);
-      AddGradientPoint(Result, 0.05   , 1,    0,    1);
-      AddGradientPoint(Result, 0.226  , 0,    0,    1);
-      AddGradientPoint(Result, 0.415  , 0,    1,    1);
-      AddGradientPoint(Result, 0.491  , 0,    1,    0);
-      AddGradientPoint(Result, 0.755  , 1,    1,    0);
-      AddGradientPoint(Result, 0.800  , 1,    0,    0);
-      AddGradientPoint(Result, 0.950  , 1,    1,    1);
+      AddGradientPoint(Result, 0, 0, 0, 0);
+      AddGradientPoint(Result, 0.05, 1, 0, 1);
+      AddGradientPoint(Result, 0.226, 0, 0, 1);
+      AddGradientPoint(Result, 0.415, 0, 1, 1);
+      AddGradientPoint(Result, 0.491, 0, 1, 0);
+      AddGradientPoint(Result, 0.755, 1, 1, 0);
+      AddGradientPoint(Result, 0.800, 1, 0, 0);
+      AddGradientPoint(Result, 0.950, 1, 1, 1);
     finally
       Points.EndUpdate();
     end;
@@ -2378,18 +2303,49 @@ var
   i: Integer;
   AColor: TAlphaColor;
 begin
+  SetLength(FColors, 0);
   for i := 0 to FColorsLen - 1 do
   begin
-    AColor:= Gradient.InterpolateColor(i / (FColorsLen - 1));
+    AColor := Gradient.InterpolateColor(i / (FColorsLen - 1));
     Insert(AColor, FColors, Length(FColors));
   end;
+  UpdateBitmap();
 end;
 
-function TWaterFallDrawer.TColorBar.InterpolateColor(
-  Offset: Single): TAlphaColor;
+function TWaterFallDrawer.TColorBar.InterpolateColor(offset: Single)
+  : TAlphaColor;
 begin
-  Offset:= EnsureRange(Offset, 0, 1);
-  Result:= FColors[Round(offset * (FColorsLen - 1))];
+  offset := EnsureRange(offset, 0, 1);
+  Result := FColors[Round(offset * (FColorsLen - 1))];
+end;
+
+procedure TWaterFallDrawer.TColorBar.UpdateBitmap;
+var
+  i: Integer;
+  Step: Single;
+  ColorRect: TRectF;
+begin
+  if (FColorsLen > 0) and (Bitmap.HandleAllocated) then
+  begin
+    Step := Bitmap.Height / FColorsLen;
+    With Bitmap.Canvas do
+    begin
+      Fill.Kind := TBrushKind.Solid;
+      if BeginScene(Nil, 0) then
+        try
+          ColorRect := TRectF.Create(0, 0, Bitmap.Width, Step);
+          for i := Length(FColors) - 1 Downto 0 do
+          begin
+            Fill.Color := FColors[i];
+            FillRect(ColorRect, 0, 0, [], 1);
+            ColorRect.offset(0, Step);
+          end;
+        finally
+          EndScene();
+        end;
+    end;
+  end;
+
 end;
 
 initialization

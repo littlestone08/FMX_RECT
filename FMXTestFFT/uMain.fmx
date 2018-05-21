@@ -86,7 +86,7 @@ object Form3: TForm3
   end
   object Panel1: TPanel
     Align = Scale
-    Position.X = 264.300964355468800000
+    Position.X = 264.300964355468700000
     Size.Width = 449.519775390625000000
     Size.Height = 17.421550750732420000
     Size.PlatformDefault = False
@@ -183,6 +183,29 @@ object Form3: TForm3
     TabOrder = 39
     Text = 'Button9'
     OnClick = Button9Click
+  end
+  object Selection1: TSelection
+    GripSize = 3.000000000000000000
+    HideSelection = False
+    Proportional = True
+    Position.X = 600.000000000000000000
+    Position.Y = 384.000000000000000000
+    Size.Width = 122.000000000000000000
+    Size.Height = 97.000000000000000000
+    Size.PlatformDefault = False
+    ShowHandles = True
+  end
+  object SpectrumSelection1: TSpectrumSelection
+    GripSize = 3.000000000000000000
+    HideSelection = False
+    Proportional = False
+    Position.X = 248.000000000000000000
+    Position.Y = 376.000000000000000000
+    Size.Width = 145.000000000000000000
+    Size.Height = 105.000000000000000000
+    Size.PlatformDefault = False
+    ShowHandles = True
+    Handles = [LeftTop, RightTop]
   end
   object SignalRectangeDrawer1: TSpectrumDrawer
     PeakDecrement = 0.100000001490116100

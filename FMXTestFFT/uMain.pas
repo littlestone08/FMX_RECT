@@ -15,7 +15,7 @@ uses
   Bass,
   {$ENDIF}
   FMX.Edit, FMX.EditBox,
-  FMX.SpinBox;
+  FMX.SpinBox, uSpectrumSelection;
 
 type
 
@@ -41,6 +41,8 @@ type
     rbZoomIn: TRadioButton;
     rbZoomOut: TRadioButton;
     Button9: TButton;
+    Selection1: TSelection;
+    SpectrumSelection1: TSpectrumSelection;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -66,6 +68,7 @@ type
     procedure SignalChart1MouseWheel(Sender: TObject; Shift: TShiftState;
       WheelDelta: Integer; var Handled: Boolean);
     procedure Button9Click(Sender: TObject);
+    procedure SpectrumSelection1Track(Sender: TObject);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -96,7 +99,8 @@ implementation
 {$R *.fmx}
 
 uses
-  SpectraLibrary, FMX.Printer{$IFDEF MSWINDOWS}, CnDebug, FMX.Design.Brush{$ENDIF};
+  SpectraLibrary, FMX.Printer{$IFDEF MSWINDOWS}, CnDebug, FMX.Design.Brush{$ENDIF},
+  ufrmMask;
 
 function MakeScaleScreenshot(Sender: TControl): TBitmap; Overload;
 var
@@ -356,6 +360,7 @@ begin
 //    TBrushKind.Solid,
 //    TBrushKind.Bitmap]);
 //  ShowBrushDialog(self.Fill, [TBrushKind.Solid, TBrushKind.Gradient, TBrushKind.Resource]);
+  frmMask.Show;
 end;
 
 constructor TForm3.Create(AOwner: TComponent);
@@ -383,7 +388,7 @@ procedure TForm3.FormCreate(Sender: TObject);
 var
   bmp: TBitmap;
   bs: TGradient;
-begin
+BEGIN
   InitRainbow();
   InitSpectralColors3();
 //  self.Fill.Color := TAlphaColors.Yellowgreen;
@@ -518,6 +523,11 @@ procedure TForm3.SignalChart1Resized(Sender: TObject);
 begin
   // CnDebugger.LogMsg('Resized');
   self.Fill.Color
+end;
+
+procedure TForm3.SpectrumSelection1Track(Sender: TObject);
+begin
+//
 end;
 
 procedure TForm3.Switch1Switch(Sender: TObject);

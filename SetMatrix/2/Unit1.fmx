@@ -28,7 +28,7 @@ object Form1: TForm1
     end
     item
       Color = xFF3B7EFC
-      Offset = 0.447204977273941000
+      Offset = 0.447204977273941100
     end
     item
       Color = xFFCA5CFC
@@ -98,5 +98,16 @@ object Form1: TForm1
     Size.Height = 241.000000000000000000
     Size.PlatformDefault = False
     OnPaint = Rectangle1Paint
+  end
+  object Selection1: TSelection
+    GripSize = 3.000000000000000000
+    HideSelection = False
+    Proportional = False
+    Position.X = 424.000000000000000000
+    Position.Y = 168.000000000000000000
+    Size.Width = 97.000000000000000000
+    Size.Height = 169.000000000000000000
+    Size.PlatformDefault = False
+    ShowHandles = True
   end
 end

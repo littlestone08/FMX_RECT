@@ -5,7 +5,8 @@ uses
   System.SysUtils,
   System.StartUpCopy,
   FMX.Forms,
-  uMain in 'uMain.pas' {Form3};
+  uMain in 'uMain.pas' {Form3},
+  ufrmMask in 'ufrmMask.pas' {frmMask};
 
 {$R *.res}
 Procedure DoneApplication;
@@ -18,5 +19,6 @@ begin
   AddExitProc(DoneApplication);
   Application.Initialize;
   Application.CreateForm(TForm3, Form3);
+  Application.CreateForm(TfrmMask, frmMask);
   Application.Run;
 end.
