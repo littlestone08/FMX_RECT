@@ -302,7 +302,6 @@ type
     Strict Private
       FColorsLen: Integer;
       FColors: TArray<TAlphaColor>;
-      Function DefaultGradient: TGradient;
     Public
       Constructor Create(AOwner: TComponent); Override;
       Procedure InitColors(Gradient: TGradient);
@@ -322,9 +321,15 @@ type
     FColorBar: TColorBar;
     FShowWaterfall: Boolean;
     FLargeBuf: Boolean;
+    FOnColorBarClick: TNotifyEvent;
+    FColorBarGradient: TGradient;
     procedure SetShowWaterfall(const Value: Boolean);
     procedure DockColorBar();
     procedure SetLargeBuf(const Value: Boolean);
+    procedure SetOnColorBarClick(const Value: TNotifyEvent);
+    Procedure HandleColorBarClickProc(Sender: TObject);
+    procedure SetColorBarGradient(const Value: TGradient);
+    Procedure InitGradientRainBow(const AGradient: TGradient);
   Protected
     Procedure DrawHint; Override;
     Procedure DrawCross(X, Y: Single); Override;
@@ -342,6 +347,8 @@ type
   Published
     Property ShowWaterfall: Boolean read FShowWaterfall write SetShowWaterfall;
     Property LargeBuf: Boolean read FLargeBuf write SetLargeBuf;
+    Property OnColorBarClick: TNotifyEvent read FOnColorBarClick write SetOnColorBarClick;
+    Property ColorBarGradient: TGradient read FColorBarGradient write SetColorBarGradient;
   End;
 
 procedure Register;
@@ -1862,14 +1869,20 @@ var
 
 begin
   inherited;
+  FColorBarGradient:= TGradient.Create;
   FWaterFallBuf := TBitmap.Create(1, 1);
   FColorBar := TColorBar.Create(Self);
   FColorBar.SetSize(1, 1);
+  FColorBar.OnClick:= HandleColorBarClickProc;
+
+  InitGradientRainBow(FColorBarGradient);
+  FColorBar.InitColors(FColorBarGradient);
 end;
 
 destructor TWaterFallDrawer.Destroy;
 begin
   FreeAndNil(FWaterFallBuf);
+  FreeAndNil(FColorBarGradient);
   inherited;
 end;
 
@@ -1896,6 +1909,12 @@ begin
 
     FColorBar.UpdateBitmap();
   end
+end;
+
+procedure TWaterFallDrawer.HandleColorBarClickProc(Sender: TObject);
+begin
+  if Assigned(self.FOnColorBarClick) then
+    FOnColorBarClick(Sender);
 end;
 
 procedure TWaterFallDrawer.AfterChangeSize;
@@ -2132,6 +2151,47 @@ begin
   inherited;
 end;
 
+procedure TWaterFallDrawer.InitGradientRainBow(const AGradient: TGradient);
+  Procedure AddGradientPoint(AGradient: TGradient; Aoffset, AR, AG, AB: Single);
+  var
+    pt: TGradientPoint;
+  begin
+    With AGradient do
+    begin
+      pt := TGradientPoint(Points.Add);
+      pt.offset := Aoffset;
+      pt.Color := TAlphaColorF.Create(AR, AG, AB).ToAlphaColor;
+    end;
+  end;
+
+begin
+  With AGradient do
+  begin
+    // wavelen			                  R	  G	  B
+    // 380	    0	      0	            1	  0	  1
+    // 440	    60	    0.226415094	  0	  0	  1
+    // 490	    110	    0.41509434	  0	  1	  1
+    // 510	    130	    0.490566038	  0	  1	  0
+    // 580	    200	    0.754716981	  1	  1	  0
+    // 645	    265	    1	            1	  0	  0
+    Points.BeginUpdate;
+    try
+      Points.Clear;
+      AddGradientPoint(AGradient, 0, 0, 0, 0);
+      AddGradientPoint(AGradient, 0.05, 1, 0, 1);
+      AddGradientPoint(AGradient, 0.226, 0, 0, 1);
+      AddGradientPoint(AGradient, 0.415, 0, 1, 1);
+      AddGradientPoint(AGradient, 0.491, 0, 1, 0);
+      AddGradientPoint(AGradient, 0.755, 1, 1, 0);
+      AddGradientPoint(AGradient, 0.800, 1, 0, 0);
+      AddGradientPoint(AGradient, 0.950, 1, 1, 1);
+    finally
+      Points.EndUpdate();
+    end;
+    Change;
+  end;
+end;
+
 procedure TWaterFallDrawer.SetChart(const Value: TSignalChart);
 begin
   inherited;
@@ -2140,6 +2200,12 @@ begin
     if FColorBar <> Nil then
       FColorBar.Parent := Value;
   end;
+end;
+
+procedure TWaterFallDrawer.SetColorBarGradient(const Value: TGradient);
+begin
+  FColorBarGradient.Assign(Value);
+
 end;
 
 procedure TWaterFallDrawer.SetLargeBuf(const Value: Boolean);
@@ -2165,6 +2231,11 @@ begin
     end;
   end;
 
+end;
+
+procedure TWaterFallDrawer.SetOnColorBarClick(const Value: TNotifyEvent);
+begin
+  FOnColorBarClick := Value;
 end;
 
 procedure TWaterFallDrawer.SetShowWaterfall(const Value: Boolean);
@@ -2241,62 +2312,12 @@ end;
 { TWaterFallDrawer.TColorBar }
 
 constructor TWaterFallDrawer.TColorBar.Create(AOwner: TComponent);
-var
-  AGradient: TGradient;
 begin
   inherited;
   FColorsLen := 1000 + 1;
-
-  AGradient := DefaultGradient;
-  try
-    InitColors(AGradient);
-  finally
-    FreeAndNil(AGradient);
-  end;
 end;
 
-function TWaterFallDrawer.TColorBar.DefaultGradient: TGradient;
-  Procedure AddGradientPoint(AGradient: TGradient; Aoffset, AR, AG, AB: Single);
-  var
-    pt: TGradientPoint;
-  begin
-    With AGradient do
-    begin
-      pt := TGradientPoint(Points.Add);
-      pt.offset := Aoffset;
-      pt.Color := TAlphaColorF.Create(AR, AG, AB).ToAlphaColor;
-    end;
-  end;
 
-begin
-  Result := TGradient.Create;
-  With Result do
-  begin
-    // wavelen			                  R	  G	  B
-    // 380	    0	      0	            1	  0	  1
-    // 440	    60	    0.226415094	  0	  0	  1
-    // 490	    110	    0.41509434	  0	  1	  1
-    // 510	    130	    0.490566038	  0	  1	  0
-    // 580	    200	    0.754716981	  1	  1	  0
-    // 645	    265	    1	            1	  0	  0
-
-    Points.BeginUpdate;
-    try
-      Points.Clear;
-      AddGradientPoint(Result, 0, 0, 0, 0);
-      AddGradientPoint(Result, 0.05, 1, 0, 1);
-      AddGradientPoint(Result, 0.226, 0, 0, 1);
-      AddGradientPoint(Result, 0.415, 0, 1, 1);
-      AddGradientPoint(Result, 0.491, 0, 1, 0);
-      AddGradientPoint(Result, 0.755, 1, 1, 0);
-      AddGradientPoint(Result, 0.800, 1, 0, 0);
-      AddGradientPoint(Result, 0.950, 1, 1, 1);
-    finally
-      Points.EndUpdate();
-    end;
-    Change;
-  end;
-end;
 
 procedure TWaterFallDrawer.TColorBar.InitColors(Gradient: TGradient);
 var

@@ -69,6 +69,7 @@ type
       WheelDelta: Integer; var Handled: Boolean);
     procedure Button9Click(Sender: TObject);
     procedure SpectrumSelection1Track(Sender: TObject);
+    procedure SplitedDrawer1ColorBarClick(Sender: TObject);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -493,6 +494,7 @@ end;
 procedure TForm3.SignalChart1MouseEnter(Sender: TObject);
 begin
 //  CnDebugger.LogMsg('MouseEnter');
+
 end;
 
 procedure TForm3.SignalChart1MouseLeave(Sender: TObject);
@@ -530,9 +532,14 @@ begin
 //
 end;
 
+procedure TForm3.SplitedDrawer1ColorBarClick(Sender: TObject);
+begin
+  ShowGradientDialog(SplitedDrawer1.ColorBarGradient);
+end;
+
 procedure TForm3.Switch1Switch(Sender: TObject);
 begin
-  self.SplitedDrawer1.LargeBuf:= self.Switch1.IsChecked;
+  SplitedDrawer1.LargeBuf:= self.Switch1.IsChecked;
 end;
 
 procedure TForm3.InitRainbow;

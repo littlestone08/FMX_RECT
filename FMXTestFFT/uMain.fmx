@@ -86,7 +86,7 @@ object Form3: TForm3
   end
   object Panel1: TPanel
     Align = Scale
-    Position.X = 264.300964355468800000
+    Position.X = 264.300964355468700000
     Size.Width = 449.519775390625000000
     Size.Height = 17.421550750732420000
     Size.PlatformDefault = False
@@ -229,7 +229,7 @@ object Form3: TForm3
     BKColor = claNull
     GridBoundColor = claDarkslategray
     Left = 16
-    Top = 472
+    Top = 464
   end
   object SplitedDrawer1: TWaterFallDrawer
     Chart = SignalChart1
@@ -256,6 +256,40 @@ object Form3: TForm3
     GridBoundColor = claDarkslategray
     ShowWaterfall = True
     LargeBuf = False
+    OnColorBarClick = SplitedDrawer1ColorBarClick
+    ColorBarGradient.Points = <
+      item
+        Color = claBlack
+        Offset = 0.000000000000000000
+      end
+      item
+        Color = claFuchsia
+        Offset = 0.050000000745058060
+      end
+      item
+        Color = claBlue
+        Offset = 0.225999996066093400
+      end
+      item
+        Color = claAqua
+        Offset = 0.414999991655349800
+      end
+      item
+        Color = claLime
+        Offset = 0.490999996662139900
+      end
+      item
+        Color = claYellow
+        Offset = 0.754999995231628400
+      end
+      item
+        Color = claRed
+        Offset = 0.800000011920928900
+      end
+      item
+        Color = claWhite
+        Offset = 0.949999988079071100
+      end>
     Left = 80
     Top = 520
   end
