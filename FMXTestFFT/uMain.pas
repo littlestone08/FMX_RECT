@@ -533,8 +533,18 @@ begin
 end;
 
 procedure TForm3.SplitedDrawer1ColorBarClick(Sender: TObject);
+var
+  AGradient: TGradient;
 begin
-  ShowGradientDialog(SplitedDrawer1.ColorBarGradient);
+  AGradient:= TGradient.Create;
+  try
+    AGradient.Assign(SplitedDrawer1.ColorBarGradient);
+    ShowGradientDialog(AGradient);
+    SplitedDrawer1.ColorBarGradient:= AGradient;
+  finally
+    AGradient.Free;
+  end;
+
 end;
 
 procedure TForm3.Switch1Switch(Sender: TObject);

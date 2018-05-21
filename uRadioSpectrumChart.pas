@@ -2205,7 +2205,7 @@ end;
 procedure TWaterFallDrawer.SetColorBarGradient(const Value: TGradient);
 begin
   FColorBarGradient.Assign(Value);
-
+  FColorBar.InitColors(FColorBarGradient);
 end;
 
 procedure TWaterFallDrawer.SetLargeBuf(const Value: Boolean);
@@ -2366,12 +2366,10 @@ begin
         end;
     end;
   end;
-
 end;
 
 initialization
 
 GlobalUseGPUCanvas := True;
-
 // GlobalUseDX10Software:= True;
 end.
