@@ -364,7 +364,7 @@ uses
 procedure Register;
 begin
   RegisterComponents('RadioReceiver', [TSignalChart, TSpectrumDrawer, TTest,
-    TWaterFallDrawer, TSpectrumSelection]);
+    TWaterFallDrawer, TSelection6P, TSpectrumSelection]);
 end;
 
 procedure TSignalChart.DoPaint;
@@ -2050,6 +2050,8 @@ var
   MovedH: Integer;
   offset: Integer;
 begin
+//  self.FWaterFallBuf.ApplyMask();
+  FWaterFallBuf.CreateMask
   // if Not FWaterFallBmp.HandleAllocated then Exit;
   // GPU方式和Direct2D方式，两种情况下面BITMAP的TOP座标似乎是不同的，
   // GPU方式顶坐标从1开始

@@ -198,13 +198,33 @@ object Form3: TForm3
   object SpectrumSelection1: TSpectrumSelection
     GripSize = 3.000000000000000000
     Proportional = False
-    Position.X = 280.000000000000000000
-    Position.Y = 344.000000000000000000
-    Size.Width = 145.000000000000000000
-    Size.Height = 105.000000000000000000
+    Position.X = 424.000000000000000000
+    Position.Y = 48.000000000000000000
+    Size.Width = 73.000000000000000000
+    Size.Height = 209.000000000000000000
     Size.PlatformDefault = False
     ShowHandles = True
-    Handles = [LeftCenter, RightCenter]
+    Handles = [LeftTop, RightTop, LeftBottom, RightBottom, LeftCenter, RightCenter]
+  end
+  object Rectangle1: TRectangle
+    Fill.Color = xFF070707
+    Opacity = 0.400000005960464400
+    Position.X = 168.000000000000000000
+    Position.Y = 48.000000000000000000
+    Size.Width = 257.000000000000000000
+    Size.Height = 209.000000000000000000
+    Size.PlatformDefault = False
+    Stroke.Color = xFF040202
+  end
+  object Rectangle2: TRectangle
+    Fill.Color = xFF070707
+    Opacity = 0.400000005960464400
+    Position.X = 496.000000000000000000
+    Position.Y = 48.000000000000000000
+    Size.Width = 425.000000000000000000
+    Size.Height = 209.000000000000000000
+    Size.PlatformDefault = False
+    Stroke.Color = xFF040202
   end
   object SignalRectangeDrawer1: TSpectrumDrawer
     PeakDecrement = 0.100000001490116100

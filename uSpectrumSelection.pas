@@ -3,12 +3,12 @@ unit uSpectrumSelection;
 interface
 
 uses
-  System.Classes, System.Types, System.UITypes,
+  System.Classes, System.Types, System.UITypes, System.SysUtils,
   FMX.Types, FMX.Controls, FMX.Graphics;
 
 type
 
-  TSpectrumSelection = class(TControl)
+  TSelection6P = class(TControl)
   public const
     DefaultColor = $FF1072C5;
   public type
@@ -128,9 +128,20 @@ type
     property OnResized;
     property OnTrack: TNotifyEvent read FOnTrack write FOnTrack;
     Property Handles: TGrabHandles read FHandles write SetHandles;
-
   end;
 
+  TSpectrumSelection = Class(TSelection6P)
+  private
+    FCenterLinePen: TStrokeBrush;
+    procedure SetCenterLinePen(const Value: TStrokeBrush);
+  Protected
+    procedure Paint; override;
+  Public
+    Constructor Create(AOwner: TComponent); Override;
+    Destructor Destroy; Override;
+  Published
+    Property CenterLinePen: TStrokeBrush read FCenterLinePen write SetCenterLinePen;
+  End;
 implementation
 
 uses
@@ -138,7 +149,7 @@ uses
 
 { TSpectrumSelection }
 
-constructor TSpectrumSelection.Create(AOwner: TComponent);
+constructor TSelection6P.Create(AOwner: TComponent);
 begin
   inherited;
 
@@ -149,7 +160,6 @@ begin
               TGrabHandle.LeftCenter,
               TGrabHandle.RightCenter];
   FCanMove:= True;
-  FCanMove:= False;
   AutoCapture := True;
   ParentBounds := True;
   FColor := DefaultColor;
@@ -159,12 +169,12 @@ begin
   SetAcceptsControls(False);
 end;
 
-destructor TSpectrumSelection.Destroy;
+destructor TSelection6P.Destroy;
 begin
   inherited;
 end;
 
-function TSpectrumSelection.GetProportionalSize(const ASize: TPointF): TPointF;
+function TSelection6P.GetProportionalSize(const ASize: TPointF): TPointF;
 begin
   Result := ASize;
   if FRatio * Result.Y > Result.X then
@@ -191,7 +201,7 @@ begin
   end;
 end;
 
-function TSpectrumSelection.GetHandleForPoint(const P: TPointF): TGrabHandle;
+function TSelection6P.GetHandleForPoint(const P: TPointF): TGrabHandle;
 var
   Local, R: TRectF;
 begin
@@ -226,7 +236,7 @@ begin
   Result := TGrabHandle.None;
 end;
 
-procedure TSpectrumSelection.MouseDown(Button: TMouseButton; Shift: TShiftState;
+procedure TSelection6P.MouseDown(Button: TMouseButton; Shift: TShiftState;
   X, Y: Single);
 begin
   // this line may be necessary because TSpectrumSelection is not a styled control;
@@ -247,7 +257,7 @@ begin
   end;
 end;
 
-procedure TSpectrumSelection.MouseMove(Shift: TShiftState; X, Y: Single);
+procedure TSelection6P.MouseMove(Shift: TShiftState; X, Y: Single);
 const
   CONST_CURSORS: Array[Low(TGrabHandle)..High(TGrabHandle)] of TCursor = (
     crDefault, crSizeNWSE, crSizeNESW, crSizeNESW, crSizeNWSE, crSizeWE, crSizeWE
@@ -345,13 +355,13 @@ begin
     Cursor:= CONST_CURSORS[TGrabHandle.None];
 end;
 
-function TSpectrumSelection.PointInObjectLocal(X, Y: Single): Boolean;
+function TSelection6P.PointInObjectLocal(X, Y: Single): Boolean;
 begin
   Result := inherited or (GetHandleForPoint(TPointF.Create(X, Y)) <>
     TGrabHandle.None);
 end;
 
-procedure TSpectrumSelection.MouseUp(Button: TMouseButton; Shift: TShiftState;
+procedure TSelection6P.MouseUp(Button: TMouseButton; Shift: TShiftState;
   X, Y: Single);
 begin
   // this line may be necessary because TSpectrumSelection is not a styled control;
@@ -366,13 +376,13 @@ begin
   FActiveHandle := TGrabHandle.None;
 end;
 
-procedure TSpectrumSelection.DrawFrame(const Canvas: TCanvas;
+procedure TSelection6P.DrawFrame(const Canvas: TCanvas;
   const Rect: TRectF);
 begin
   Canvas.DrawDashRect(Rect, 0, 0, AllCorners, AbsoluteOpacity, FColor);
 end;
 
-procedure TSpectrumSelection.DrawHandle(const Canvas: TCanvas;
+procedure TSelection6P.DrawHandle(const Canvas: TCanvas;
   const Handle: TGrabHandle; const Rect: TRectF);
 var
   Fill: TBrush;
@@ -397,7 +407,7 @@ begin
   end;
 end;
 
-procedure TSpectrumSelection.Paint;
+procedure TSelection6P.Paint;
 var
   R: TRectF;
 begin
@@ -438,13 +448,13 @@ begin
   end;
 end;
 
-function TSpectrumSelection.DoGetUpdateRect: TRectF;
+function TSelection6P.DoGetUpdateRect: TRectF;
 begin
   Result := inherited;
   Result.Inflate((FGripSize + 1) * Scale.X, (FGripSize + 1) * Scale.Y);
 end;
 
-procedure TSpectrumSelection.ResetInSpace(const ARotationPoint: TPointF;
+procedure TSelection6P.ResetInSpace(const ARotationPoint: TPointF;
   ASize: TPointF);
 var
   LLocalPos: TPointF;
@@ -482,7 +492,7 @@ begin
   SetBounds(LLocalPos.X, LLocalPos.Y, ASize.X, ASize.Y);
 end;
 
-procedure TSpectrumSelection.GetTransformLeftTop(AX, AY: Single;
+procedure TSelection6P.GetTransformLeftTop(AX, AY: Single;
   var NewSize: TPointF; var Pivot: TPointF);
 var
   LCorrect: TPointF;
@@ -511,7 +521,7 @@ begin
     (1 - RotationCenter.Y));
 end;
 
-procedure TSpectrumSelection.GetTransformLeftBottom(AX, AY: Single;
+procedure TSelection6P.GetTransformLeftBottom(AX, AY: Single;
   var NewSize: TPointF; var Pivot: TPointF);
 var
   LCorrect: TPointF;
@@ -540,7 +550,7 @@ begin
     RotationCenter.Y);
 end;
 
-procedure TSpectrumSelection.GetTransformLeftCenter(AX, AY: Single; var NewSize,
+procedure TSelection6P.GetTransformLeftCenter(AX, AY: Single; var NewSize,
   Pivot: TPointF);
 var
   LCorrect: TPointF;
@@ -565,7 +575,7 @@ begin
     Height * RotationCenter.Y);
 end;
 
-procedure TSpectrumSelection.GetTransformRightTop(AX, AY: Single;
+procedure TSelection6P.GetTransformRightTop(AX, AY: Single;
   var NewSize: TPointF; var Pivot: TPointF);
 var
   LCorrect: TPointF;
@@ -593,7 +603,7 @@ begin
     RotationCenter.X, Height * RotationCenter.Y + AY * (1 - RotationCenter.Y));
 end;
 
-procedure TSpectrumSelection.GetTransformRightBottom(AX, AY: Single;
+procedure TSelection6P.GetTransformRightBottom(AX, AY: Single;
   var NewSize: TPointF; var Pivot: TPointF);
 var
   LCorrect: TPointF;
@@ -622,7 +632,7 @@ begin
     RotationCenter.Y);
 end;
 
-procedure TSpectrumSelection.GetTransformRightCenter(AX, AY: Single;
+procedure TSelection6P.GetTransformRightCenter(AX, AY: Single;
   var NewSize, Pivot: TPointF);
 var
   LCorrect: TPointF;
@@ -646,22 +656,22 @@ begin
     Height * RotationCenter.Y);
 end;
 
-procedure TSpectrumSelection.MoveHandle(AX, AY: Single);
+procedure TSelection6P.MoveHandle(AX, AY: Single);
 var
   NewSize, Pivot: TPointF;
 begin
   case FActiveHandle of
-    TSpectrumSelection.TGrabHandle.LeftTop:
+    TSelection6P.TGrabHandle.LeftTop:
       GetTransformLeftTop(AX, AY, NewSize, Pivot);
-    TSpectrumSelection.TGrabHandle.LeftBottom:
+    TSelection6P.TGrabHandle.LeftBottom:
       GetTransformLeftBottom(AX, AY, NewSize, Pivot);
-    TSpectrumSelection.TGrabHandle.RightTop:
+    TSelection6P.TGrabHandle.RightTop:
       GetTransformRightTop(AX, AY, NewSize, Pivot);
-    TSpectrumSelection.TGrabHandle.RightBottom:
+    TSelection6P.TGrabHandle.RightBottom:
       GetTransformRightBottom(AX, AY, NewSize, Pivot);
-    TSpectrumSelection.TGrabHandle.LeftCenter:
+    TSelection6P.TGrabHandle.LeftCenter:
       GetTransformLeftCenter(AX, AY, NewSize, Pivot);
-    TSpectrumSelection.TGrabHandle.RightCenter:
+    TSelection6P.TGrabHandle.RightCenter:
       GetTransformRightCenter(AX, AY, NewSize, Pivot);
   end;
   ResetInSpace(Pivot, NewSize);
@@ -669,14 +679,14 @@ begin
     FOnTrack(Self);
 end;
 
-procedure TSpectrumSelection.DoMouseLeave;
+procedure TSelection6P.DoMouseLeave;
 begin
   inherited;
   FHotHandle := TGrabHandle.None;
   Repaint;
 end;
 
-procedure TSpectrumSelection.SetHandles(const Value: TGrabHandles);
+procedure TSelection6P.SetHandles(const Value: TGrabHandles);
 begin
   FHandles := Value;
   Repaint;
@@ -684,7 +694,7 @@ end;
 
 
 
-procedure TSpectrumSelection.SetMinSize(const Value: Integer);
+procedure TSelection6P.SetMinSize(const Value: Integer);
 begin
   if FMinSize <> Value then
   begin
@@ -694,7 +704,7 @@ begin
   end;
 end;
 
-procedure TSpectrumSelection.SetShowHandles(const Value: Boolean);
+procedure TSelection6P.SetShowHandles(const Value: Boolean);
 begin
   if FShowHandles <> Value then
   begin
@@ -703,12 +713,12 @@ begin
   end;
 end;
 
-procedure TSpectrumSelection.SetCanMove(const Value: Boolean);
+procedure TSelection6P.SetCanMove(const Value: Boolean);
 begin
   FCanMove := Value;
 end;
 
-procedure TSpectrumSelection.SetColor(const Value: TAlphaColor);
+procedure TSelection6P.SetColor(const Value: TAlphaColor);
 begin
   if FColor <> Value then
   begin
@@ -717,7 +727,7 @@ begin
   end;
 end;
 
-procedure TSpectrumSelection.SetGripSize(const Value: Single);
+procedure TSelection6P.SetGripSize(const Value: Single);
 begin
   if FGripSize <> Value then
   begin
@@ -731,6 +741,39 @@ begin
     HandleSizeChanged;
     Repaint;
   end;
+end;
+
+procedure TSpectrumSelection.SetCenterLinePen(const Value: TStrokeBrush);
+begin
+  FCenterLinePen.Assign(Value);
+end;
+
+{ TSpectrumSelection }
+
+constructor TSpectrumSelection.Create(AOwner: TComponent);
+begin
+  inherited;
+  FCenterLinePen:= TStrokeBrush.Create(TBrushKind.Solid, TAlphaColors.Red);
+end;
+
+destructor TSpectrumSelection.Destroy;
+begin
+  FreeAndNil(FCenterLinePen);
+  inherited;
+end;
+
+procedure TSpectrumSelection.Paint;
+var
+  R : TRectF;
+  A, B: TPointF;
+begin
+  inherited;
+  R:= LocalRect;
+  R.Inflate(-0.5, -0.5);
+
+  A:= TPointF.Create((R.Left + R.Right) / 2, R.Top);
+  B:= TPointF.Create((R.Left + R.Right) / 2, R.Bottom);
+  Canvas.DrawLine(A, B, 1, FCenterLinePen);
 end;
 
 end.
