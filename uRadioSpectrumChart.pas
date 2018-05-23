@@ -227,8 +227,12 @@ type
         function GetMarked(Value: TSelectionEnum): Single;
         procedure SetMarked(Idx: TSelectionEnum; const Value: Single);
         Procedure UpdatePosPercentByCoordinal;
+        Class function GetChartAndDrawer(Sender: TSpectrumDrawer.TLocatedSelection;
+                          var Chart: TSignalChart; var Drawer: TSpectrumDrawer): Boolean; inline;
     Private
         Procedure HandleTrackProc(Sender: TObject);
+    Protected
+        procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
     Public
       Constructor Create(AOwner: TComponent); Override;
       Destructor Destroy; Override;
@@ -1492,7 +1496,7 @@ var
   ALeft: Single;
   ARight: Single;
 begin
-  Result:= TLocatedSelection.Create(Nil);
+  Result:= TLocatedSelection.Create(Self);
   FSelections.Add(Result);
   Result.FLeftPosPercent:= EnsureRange(PosLeft, 0, 1);
   Result.FRightPosPercent:= EnsureRange(PosRight, 0, 1);
@@ -1752,7 +1756,7 @@ procedure TSpectrumDrawer.ResettleSelections;
 var
   iSelection: TLocatedSelection;
 begin
-  for iSelection in self.FSelections do
+  for iSelection in FSelections do
   begin
     ResettleSelectoin(iSelection);
   end;
@@ -1766,15 +1770,15 @@ begin
   With Value do
   begin
     ALeft:= FGraphicGridR.Width * LeftPosPercent;
-    ARight:= FGraphicGridR.Height * RightPosPercent;
+    ARight:= FGraphicGridR.Width * RightPosPercent;
 
     Width:= ARight - ALeft;
     Height:= FGraphicGridR.Height;
 
-    Left:= ALeft + FGraphicGridR.Left;
-    Top:= FGraphicGridR.Top;
+    Parent:= FChart;
 
-    Value.Parent:= FChart;
+    Position.X:= ALeft + FGraphicGridR.Left;
+    Position.Y:= FGraphicGridR.Top;
   end;
 end;
 
@@ -1899,6 +1903,8 @@ begin
   FGraphicGridR.Bottom := FGraphicGridR.Bottom - FLeftTextR.Height * 0.5 -
     FBottomTextR.Height;
   FGraphicGridR.Right := FGraphicGridR.Right - FBottomTextR.Width * 0.5;
+  //===========================================================================
+  ResettleSelections();
 end;
 
 procedure TSpectrumDrawer.UpdateViewRangeIndex(Axis: TCustomAxis);
@@ -2505,6 +2511,7 @@ begin
   inherited;
   MinSize:=1;
   OnTrack:= HandleTrackProc;
+  Handles:= [LeftCenter, RightCenter];
 end;
 
 
@@ -2514,6 +2521,24 @@ begin
   inherited;
 end;
 
+Class Function  TSpectrumDrawer.TLocatedSelection.GetChartAndDrawer(Sender: TSpectrumDrawer.TLocatedSelection;
+  var Chart: TSignalChart; var Drawer: TSpectrumDrawer): Boolean;
+begin
+  Result:= False;
+  Chart:= Nil;
+  Drawer:= Nil;
+  Sender:= TSpectrumDrawer.TLocatedSelection(Sender);
+  if Sender.Parent is TSignalChart then
+  begin
+    Chart:= TSignalChart(Sender.Parent);
+    if TSignalChart(Sender.Parent).Drawer is TSpectrumDrawer then
+    begin
+      Drawer:= TSpectrumDrawer(TSignalChart(Sender.Parent).Drawer);
+      Result:= True;
+    end;
+  end;
+end;
+
 function TSpectrumDrawer.TLocatedSelection.GetMarked(
   Value: TSelectionEnum): Single;
 begin
@@ -2521,11 +2546,43 @@ begin
 end;
 
 procedure TSpectrumDrawer.TLocatedSelection.HandleTrackProc(Sender: TObject);
+var
+  ASection: TSpectrumDrawer.TLocatedSelection;
+  ADrawer: TSpectrumDrawer;
+  AChart: TSignalChart;
 begin
+  if Sender is TSpectrumDrawer.TLocatedSelection then
+  begin
+    ASection:= TSpectrumDrawer.TLocatedSelection(Sender);
+    if GetChartAndDrawer(ASection, AChart, ADrawer)then
+    begin
+      ASection.Position.Y:= ADrawer.FGraphicGridR.Top; //fix the selection position
+    end;
+  end;
+
   UpdatePosPercentByCoordinal();
 end;
 
 
+
+procedure TSpectrumDrawer.TLocatedSelection.MouseMove(Shift: TShiftState; X,
+  Y: Single);
+var
+  AChart: TSignalChart;
+  ADrawer: TSpectrumDrawer;
+  px: TPointF;
+begin
+  inherited;
+  if GetChartAndDrawer(Self, AChart, ADrawer) then
+  begin
+
+    px:= self.LocalToScreen(TPointF.Create(X, Y));
+    px:= AChart.ScreenToLocal(px);
+    AChart.MouseMove(Shift, px.X, px.Y);
+    AChart.Repaint;
+  end;
+fdsa
+end;
 
 procedure TSpectrumDrawer.TLocatedSelection.SetMarked(Idx: TSelectionEnum;
   const Value: Single);
@@ -2542,6 +2599,7 @@ end;
 
 initialization
 
-GlobalUseGPUCanvas := True;
+//GlobalUseGPUCanvas := True;
 // GlobalUseDX10Software:= True;
+GlobalUseDirect2D:= True;
 end.

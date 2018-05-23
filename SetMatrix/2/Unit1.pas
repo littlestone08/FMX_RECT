@@ -16,6 +16,8 @@ type
     Rectangle1: TRectangle;
     Selection1: TSelection;
     Button3: TButton;
+    PaintBox1: TPaintBox;
+    Button4: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormPaint(Sender: TObject; Canvas: TCanvas; const ARect: TRectF);
