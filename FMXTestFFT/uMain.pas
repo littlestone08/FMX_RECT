@@ -70,6 +70,7 @@ type
     procedure Button9Click(Sender: TObject);
     procedure SpectrumSelection1Track(Sender: TObject);
     procedure SplitedDrawer1ColorBarClick(Sender: TObject);
+    procedure SignalChart1Paint(Sender: TObject; Canvas: TCanvas);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -519,6 +520,15 @@ begin
     else  if WheelDelta > 0 then
       SplitedDrawer1.AxisesData.Bottom.Zoom(100 / abs(WheelDelta), SplitedDrawer1.ViewIndexByCursor);
   end;
+end;
+
+procedure TForm3.SignalChart1Paint(Sender: TObject; Canvas: TCanvas);
+begin
+  Exit;
+  Canvas.Fill.Kind:= TBrushKind.Solid;
+  Canvas.Fill.Color:= TAlphaColorRec.Green;
+    Canvas.ExcludeClipRect(TRectF.Create(0, 0, 100, 100));
+  Canvas.FillRect(SignalChart1.LocalRect, 0, 0, [], 1);
 end;
 
 procedure TForm3.SignalChart1Resized(Sender: TObject);

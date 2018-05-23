@@ -1379,6 +1379,7 @@ begin
   if Chart.ComponentState * [csLoading, csReading] <> [] then
     Exit;
 
+
   With FAxisesData.Bottom do
   begin
     nCount := Length(FData);
@@ -1639,15 +1640,17 @@ end;
 procedure TSpectrumDrawer.Internal_UnSelectionMask;
 var
   ABrush: TBrush;
-  AClipRects: TRectF;
+  ARect: TRectF;
 begin
-  AClipRects:=  TRectF.Create(FGraphicGridR.TopLeft, 100, FGraphicGridR.Height);
+  Exit;
+  ARect:=  TRectF.Create(FGraphicGridR.TopLeft, 100, FGraphicGridR.Height);
 
 //  AClipRects.Offset(Chart.Position.X/2, Chart.Position.Y/2);
 
 //  ABrush:= TBrush.Create(TBrushKind.Solid, TAlphaColorRec.Black);
   ABrush:= TBrush.Create(TBrushKind.Solid, TAlphaColorRec.Red);
-  Chart.Canvas.FillRect(AClipRects, 0, 0, [], 1.2, ABrush);
+  Chart.Canvas.ExcludeClipRect(TRectF.Create(0, 0, 100, 100));
+  Chart.Canvas.FillRect(Chart.LocalRect, 0, 0, [], 1, ABrush);
   ABrush.Free;
 end;
 
