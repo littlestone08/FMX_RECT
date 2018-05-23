@@ -234,6 +234,7 @@ type
     //
     FBKColor: TAlphaColor;
     FGridBoundColor: TAlphaColor;
+    FSectionBrush: TBrush;
     Procedure FillDesigningTestData;
   Private
     FPeaks: TArray<Single>;
@@ -1289,6 +1290,7 @@ end;
 constructor TSpectrumDrawer.Create(AOwner: TComponent);
 begin
   inherited;
+  FSectionBrush:= TBrush.Create(TBrushKind.Solid, TAlphaColorRec.Gray);
   FGrid := TBitmap.Create;
   FAxisesData := TAxises.Create(Self);
   // FAxisesView := TAxises.Create(self);
@@ -1310,6 +1312,7 @@ begin
   // FreeAndNil(FAxisesView);
   FreeAndNil(FAxisesData);
   FreeAndNil(FGrid);
+  FreeAndNil(FSectionBrush);
   inherited;
 end;
 
@@ -1379,6 +1382,7 @@ begin
   if Chart.ComponentState * [csLoading, csReading] <> [] then
     Exit;
 
+  Internal_UnSelectionMask();
 
   With FAxisesData.Bottom do
   begin
@@ -1435,7 +1439,7 @@ begin
     end;
     DrawHint();
   end;
-  Internal_UnSelectionMask();
+
 end;
 
 procedure TSpectrumDrawer.AfterChangeSize;
@@ -1639,19 +1643,23 @@ end;
 
 procedure TSpectrumDrawer.Internal_UnSelectionMask;
 var
-  ABrush: TBrush;
   ARect: TRectF;
+  ExcludeRect: TRectF;
+  Save: TCanvasSaveState;
 begin
-  Exit;
   ARect:=  TRectF.Create(FGraphicGridR.TopLeft, 100, FGraphicGridR.Height);
 
-//  AClipRects.Offset(Chart.Position.X/2, Chart.Position.Y/2);
+  ExcludeRect:= TRectF.Create(100, 0, 200, FGraphicGridR.Height);
+  ExcludeRect.Offset(FGraphicGridR.TopLeft);
 
-//  ABrush:= TBrush.Create(TBrushKind.Solid, TAlphaColorRec.Black);
-  ABrush:= TBrush.Create(TBrushKind.Solid, TAlphaColorRec.Red);
-  Chart.Canvas.ExcludeClipRect(TRectF.Create(0, 0, 100, 100));
-  Chart.Canvas.FillRect(Chart.LocalRect, 0, 0, [], 1, ABrush);
-  ABrush.Free;
+  Save:= Chart.Canvas.SaveState;
+  try
+    Chart.Canvas.ExcludeClipRect(ExcludeRect);
+    Chart.Canvas.FillRect(self.FGraphicGridR, 0, 0, [], 0.3, FSectionBrush);
+  finally
+    Chart.Canvas.RestoreState(Save);
+  end;
+
 end;
 
 function TSpectrumDrawer.RatioXByCursor: Single;
@@ -2388,6 +2396,6 @@ end;
 
 initialization
 
-GlobalUseGPUCanvas := True;
+//GlobalUseGPUCanvas := True;
 // GlobalUseDX10Software:= True;
 end.

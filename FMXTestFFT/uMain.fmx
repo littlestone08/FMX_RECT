@@ -86,7 +86,7 @@ object Form3: TForm3
   end
   object Panel1: TPanel
     Align = Scale
-    Position.X = 264.300964355468800000
+    Position.X = 264.300964355468700000
     Size.Width = 449.519775390625000000
     Size.Height = 17.421550750732420000
     Size.PlatformDefault = False
@@ -128,7 +128,6 @@ object Form3: TForm3
     OnMouseWheel = SignalChart1MouseWheel
     OnMouseEnter = SignalChart1MouseEnter
     OnMouseLeave = SignalChart1MouseLeave
-    OnPaint = SignalChart1Paint
     OnResized = SignalChart1Resized
     Drawer = SplitedDrawer1
   end
@@ -184,17 +183,6 @@ object Form3: TForm3
     TabOrder = 39
     Text = 'Button9'
     OnClick = Button9Click
-  end
-  object Selection1: TSelection
-    GripSize = 3.000000000000000000
-    HideSelection = False
-    Proportional = True
-    Position.X = 536.000000000000000000
-    Position.Y = 352.000000000000000000
-    Size.Width = 122.000000000000000000
-    Size.Height = 97.000000000000000000
-    Size.PlatformDefault = False
-    ShowHandles = True
   end
   object SpectrumSelection1: TSpectrumSelection
     GripSize = 3.000000000000000000
@@ -273,7 +261,7 @@ object Form3: TForm3
       end
       item
         Color = claAqua
-        Offset = 0.414999991655349700
+        Offset = 0.414999991655349800
       end
       item
         Color = claLime
@@ -285,11 +273,11 @@ object Form3: TForm3
       end
       item
         Color = claRed
-        Offset = 0.800000011920929000
+        Offset = 0.800000011920928900
       end
       item
         Color = claWhite
-        Offset = 0.949999988079071000
+        Offset = 0.949999988079071100
       end>
     Left = 80
     Top = 520
