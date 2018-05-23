@@ -4,6 +4,7 @@ interface
 
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
+  System.Generics.Collections,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
   FMX.Controls.Presentation, FMX.StdCtrls, FMX.Objects;
 
@@ -14,6 +15,7 @@ type
     Button2: TButton;
     Rectangle1: TRectangle;
     Selection1: TSelection;
+    Button3: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormPaint(Sender: TObject; Canvas: TCanvas; const ARect: TRectF);
@@ -22,10 +24,12 @@ type
     procedure Button2Click(Sender: TObject);
     procedure Rectangle1Paint(Sender: TObject; Canvas: TCanvas;
       const ARect: TRectF);
+    procedure Button3Click(Sender: TObject);
   private
     { Private declarations }
     FBmp: TBitmap;
     FHOffset: Single;
+    AList: TObjectList<TFmxObject>;
   public
     { Public declarations }
   end;
@@ -124,12 +128,22 @@ begin
   ShowBrushDialog(self.Rectangle1.Fill, [TBrushKind.Solid, TBrushKind.Gradient, TBrushKind.Resource]);
 end;
 
+procedure TForm1.Button3Click(Sender: TObject);
+begin
+  Caption:= IntToStr(AList.Count);
+
+//  Selection1.DisposeOf;
+  Caption:= IntToStr(AList.Count);
+end;
+
 procedure TForm1.FormCreate(Sender: TObject);
 var
   da: TDateTime;
   pt: TGradientPoint;
   p: PAlphaColorRec;
 begin
+  AList:= TObjectList<TFmxObject>.Create(True);
+  AList.Add(Selection1);
   Caption:= IntToStr(SizeOf(p));
   Da:= EncodeDate(2018, 3, 18);
   da:= da + 99;
@@ -179,6 +193,7 @@ end;
 procedure TForm1.FormDestroy(Sender: TObject);
 begin
   FBmp.Free;
+  AList.DisposeOf;
 end;
 
 procedure TForm1.FormPaint(Sender: TObject; Canvas: TCanvas;
