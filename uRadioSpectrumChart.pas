@@ -265,6 +265,7 @@ type
     Procedure Internal_DrawGraphicFrame(ACanvas: TCanvas); Virtual;
     Procedure Internal_DrawViewData(const AData: TArray<Single>;
       ViewIdxFrom, ViewIdxTo: Integer); Virtual;
+    Procedure Internal_UnSelectionMask;
   Public
     Procedure ChartSinkMouseMove(Chart: TSignalChart; Shift: TShiftState;
       X, Y: Single); Override;
@@ -1433,7 +1434,7 @@ begin
     end;
     DrawHint();
   end;
-
+  Internal_UnSelectionMask();
 end;
 
 procedure TSpectrumDrawer.AfterChangeSize;
@@ -1633,6 +1634,21 @@ begin
     end;
   end;
 
+end;
+
+procedure TSpectrumDrawer.Internal_UnSelectionMask;
+var
+  ABrush: TBrush;
+  AClipRects: TRectF;
+begin
+  AClipRects:=  TRectF.Create(FGraphicGridR.TopLeft, 100, FGraphicGridR.Height);
+
+//  AClipRects.Offset(Chart.Position.X/2, Chart.Position.Y/2);
+
+//  ABrush:= TBrush.Create(TBrushKind.Solid, TAlphaColorRec.Black);
+  ABrush:= TBrush.Create(TBrushKind.Solid, TAlphaColorRec.Red);
+  Chart.Canvas.FillRect(AClipRects, 0, 0, [], 1.2, ABrush);
+  ABrush.Free;
 end;
 
 function TSpectrumDrawer.RatioXByCursor: Single;
@@ -2050,8 +2066,6 @@ var
   MovedH: Integer;
   offset: Integer;
 begin
-//  self.FWaterFallBuf.ApplyMask();
-  FWaterFallBuf.CreateMask
   // if Not FWaterFallBmp.HandleAllocated then Exit;
   // GPU方式和Direct2D方式，两种情况下面BITMAP的TOP座标似乎是不同的，
   // GPU方式顶坐标从1开始
@@ -2076,34 +2090,33 @@ begin
       // -----------------
       if FLargeBuf then
       begin
-        if FWaterFallBmpStart < BMP_TOP_INDEX then
-          with FWaterFallBuf do
+        if FWaterFallBmpStart < BMP_TOP_INDEX then with FWaterFallBuf do
+        begin
+          MovedH := Ceil(FWaterFallGridR.Height);
+          if Map(TMapAccess.ReadWrite, BmpData) then
           begin
-            MovedH := Ceil(FWaterFallGridR.Height);
-            if Map(TMapAccess.ReadWrite, BmpData) then
-            begin
-              try
-                MoveBytes := Width * BmpData.BytesPerPixel;
-                offset := Ceil(FWaterFallBuf.Height -
-                  FWaterFallGridR.Height + 1);
-                // 移动图像向下一像素 ,要每行移动，不要多行同时移动，否则会出错，
-                // 而且对速度性能益处有限
-                for i := (Ceil(FWaterFallGridR.Height) - 2) Downto 0 do
-                begin // 移动Height-1行到底部,舍掉最下一行
-                  System.Move(BmpData.GetPixelAddr(0, BMP_TOP_INDEX + i)^,
-                    BmpData.GetPixelAddr(0, i + offset)^, MoveBytes);
-                end;
-                // FWaterFallBmpStart := Offset - 1;
-                // FWaterFallBmpStart := Offset - 1 + BMP_TOP_INDEX;
-                FWaterFallBmpStart := offset;
-
-                FWaterFallBuf.Canvas.Stroke.Kind := TBrushKind.Solid;
-                FWaterFallBuf.Canvas.Fill.Kind := TBrushKind.Solid;
-              finally
-                Unmap(BmpData);
+            try
+              MoveBytes := Width * BmpData.BytesPerPixel;
+              offset := Ceil(FWaterFallBuf.Height -
+                FWaterFallGridR.Height + 1);
+              // 移动图像向下一像素 ,要每行移动，不要多行同时移动，否则会出错，
+              // 而且对速度性能益处有限
+              for i := (Ceil(FWaterFallGridR.Height) - 2) Downto 0 do
+              begin // 移动Height-1行到底部,舍掉最下一行
+                System.Move(BmpData.GetPixelAddr(0, BMP_TOP_INDEX + i)^,
+                  BmpData.GetPixelAddr(0, i + offset)^, MoveBytes);
               end;
+              // FWaterFallBmpStart := Offset - 1;
+              // FWaterFallBmpStart := Offset - 1 + BMP_TOP_INDEX;
+              FWaterFallBmpStart := offset;
+
+              FWaterFallBuf.Canvas.Stroke.Kind := TBrushKind.Solid;
+              FWaterFallBuf.Canvas.Fill.Kind := TBrushKind.Solid;
+            finally
+              Unmap(BmpData);
             end;
           end;
+        end;
 
         if FWaterFallBuf.HandleAllocated then
         begin

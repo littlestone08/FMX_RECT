@@ -43,8 +43,6 @@ type
     Button9: TButton;
     Selection1: TSelection;
     SpectrumSelection1: TSpectrumSelection;
-    Rectangle1: TRectangle;
-    Rectangle2: TRectangle;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
