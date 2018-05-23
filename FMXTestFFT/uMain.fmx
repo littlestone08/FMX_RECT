@@ -178,13 +178,17 @@ object Form3: TForm3
     Text = '110%'
   end
   object Button9: TButton
-    Position.X = 16.000000000000000000
-    Position.Y = 416.000000000000000000
+    Position.X = 8.000000000000000000
+    Position.Y = 376.000000000000000000
+    Size.Width = 105.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
     TabOrder = 39
-    Text = 'Button9'
+    Text = 'Show Mask Form'
     OnClick = Button9Click
   end
   object SpectrumSelection1: TSpectrumSelection
+    Enabled = False
     GripSize = 3.000000000000000000
     Proportional = False
     Position.X = 424.000000000000000000
@@ -193,7 +197,18 @@ object Form3: TForm3
     Size.Height = 209.000000000000000000
     Size.PlatformDefault = False
     ShowHandles = True
+    Visible = False
     Handles = [LeftTop, RightTop, LeftBottom, RightBottom, LeftCenter, RightCenter]
+  end
+  object Button10: TButton
+    Position.X = 8.000000000000000000
+    Position.Y = 400.000000000000000000
+    Size.Width = 105.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 44
+    Text = 'Add Selection'
+    OnClick = Button10Click
   end
   object SignalRectangeDrawer1: TSpectrumDrawer
     PeakDecrement = 0.100000001490116100

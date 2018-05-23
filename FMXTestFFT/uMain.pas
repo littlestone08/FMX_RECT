@@ -42,6 +42,7 @@ type
     rbZoomOut: TRadioButton;
     Button9: TButton;
     SpectrumSelection1: TSpectrumSelection;
+    Button10: TButton;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -69,6 +70,7 @@ type
     procedure Button9Click(Sender: TObject);
     procedure SpectrumSelection1Track(Sender: TObject);
     procedure SplitedDrawer1ColorBarClick(Sender: TObject);
+    procedure Button10Click(Sender: TObject);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -234,6 +236,11 @@ begin
     self.SplitedDrawer1.AxisesData.Bottom.Zoom(1.1, 60);
   end;
 
+end;
+
+procedure TForm3.Button10Click(Sender: TObject);
+begin
+  self.SplitedDrawer1.AddSelection(0.4, 0.6);
 end;
 
 procedure TForm3.Button1Click(Sender: TObject);

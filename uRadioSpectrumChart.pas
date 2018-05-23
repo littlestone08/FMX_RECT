@@ -231,6 +231,7 @@ type
         Procedure HandleTrackProc(Sender: TObject);
     Public
       Constructor Create(AOwner: TComponent); Override;
+      Destructor Destroy; Override;
       Property Marked[Value: TSelectionEnum]: Single Read GetMarked Write SetMarked;
       Property LeftPosPercent: Single read FLeftPosPercent;
       Property RightPosPercent: Single read FRightPosPercent;
@@ -544,6 +545,8 @@ end;
 
 destructor TSignalChart.Destroy;
 begin
+  if FDrawer <> Nil then
+    FDrawer.SetChart(Nil);
   FreeAndNil(FBKGraphic);
   // FreeAndNil(FEquationBottomIn);
   FreeAndNil(FFrameCounter);
@@ -1345,11 +1348,14 @@ begin
 end;
 
 destructor TSpectrumDrawer.Destroy;
+var
+  i: Integer;
 begin
   // FreeAndNil(FAxisesView);
   FreeAndNil(FAxisesData);
   FreeAndNil(FGrid);
   FreeAndNil(FSectionBrush);
+
   FreeAndNil(FSelections);
   inherited;
 end;
@@ -1486,7 +1492,7 @@ var
   ALeft: Single;
   ARight: Single;
 begin
-  Result:= TLocatedSelection.Create(Self);
+  Result:= TLocatedSelection.Create(Nil);
   FSelections.Add(Result);
   Result.FLeftPosPercent:= EnsureRange(PosLeft, 0, 1);
   Result.FRightPosPercent:= EnsureRange(PosRight, 0, 1);
@@ -1768,7 +1774,7 @@ begin
     Left:= ALeft + FGraphicGridR.Left;
     Top:= FGraphicGridR.Top;
 
-    Parent:= self.FChart;
+    Value.Parent:= FChart;
   end;
 end;
 
@@ -2502,6 +2508,12 @@ begin
 end;
 
 
+destructor TSpectrumDrawer.TLocatedSelection.Destroy;
+begin
+
+  inherited;
+end;
+
 function TSpectrumDrawer.TLocatedSelection.GetMarked(
   Value: TSelectionEnum): Single;
 begin
@@ -2530,6 +2542,6 @@ end;
 
 initialization
 
-//GlobalUseGPUCanvas := True;
+GlobalUseGPUCanvas := True;
 // GlobalUseDX10Software:= True;
 end.
