@@ -309,6 +309,7 @@ type
   Public
     Procedure DeleteSelection(ASelection: TLocatedSelection);
     function AddSelection(PosLeft, PosRight: Single): TLocatedSelection;
+    Procedure ClearSection();
   Public
     Constructor Create(AOwner: TComponent); Override;
     Destructor Destroy; Override;
@@ -326,7 +327,6 @@ type
     Property PeakVisible: Boolean read FPeakVisible write SetPeakVisible;
     Property CrossOpacity: Single Read FCrossOpacity Write FCrossOpacity;
     Property AxisesData: TAxises Read FAxisesData Write FAxisesData;
-    // Property AxisesView: TAxises Read FAxisesView Write FAxisesView;
     Property BKColor: TAlphaColor read FBKColor write SetBKColor;
     Property GridBoundColor: TAlphaColor read FGridBoundColor
       write SetGridBoundColor;
@@ -1322,6 +1322,11 @@ begin
   // DrawData(FData);
 end;
 
+procedure TSpectrumDrawer.ClearSection;
+begin
+  FSelections.Clear;
+end;
+
 constructor TSpectrumDrawer.Create(AOwner: TComponent);
 begin
   inherited;
@@ -1711,23 +1716,35 @@ end;
 
 procedure TSpectrumDrawer.Internal_UnSelectionMask;
 var
-  ARect: TRectF;
-  ExcludeRect: TRectF;
+//  ARect: TRectF;
+//  ExcludeRect: TRectF;
+  iSection: TLocatedSelection;
   Save: TCanvasSaveState;
 begin
-  ARect:=  TRectF.Create(FGraphicGridR.TopLeft, 100, FGraphicGridR.Height);
+  Exit;
+//  ARect:=  TRectF.Create(FGraphicGridR.TopLeft, 100, FGraphicGridR.Height);
 
-  ExcludeRect:= TRectF.Create(100, 0, 200, FGraphicGridR.Height);
-  ExcludeRect.Offset(FGraphicGridR.TopLeft);
+//  ExcludeRect:= TRectF.Create(100, 0, 200, FGraphicGridR.Height);
+//  ExcludeRect.Offset(FGraphicGridR.TopLeft);
 
-  Save:= Chart.Canvas.SaveState;
-  try
-    Chart.Canvas.ExcludeClipRect(ExcludeRect);
-    Chart.Canvas.FillRect(self.FGraphicGridR, 0, 0, [], 0.3, FSectionBrush);
-  finally
-    Chart.Canvas.RestoreState(Save);
-  end;
+    if Not GlobalUseGPUCanvas then
+    begin
+      if FSelections.Count > 0 then
+      begin
+          Save:= Chart.Canvas.SaveState;
+          try
+        //    Chart.Canvas.ExcludeClipRect(ExcludeRect);
+            for iSection in FSelections do
+            begin
+              Chart.Canvas.ExcludeClipRect(iSection.BoundsRect);
+            end;
 
+            Chart.Canvas.FillRect(self.FGraphicGridR, 0, 0, [], 0.3, FSectionBrush);
+          finally
+            Chart.Canvas.RestoreState(Save);
+          end;
+      end;
+    end;
 end;
 
 function TSpectrumDrawer.RatioXByCursor: Single;
@@ -2564,7 +2581,7 @@ begin
     px:= self.LocalToScreen(TPointF.Create(X, Y));
     px:= AChart.ScreenToLocal(px);
     AChart.MouseMove(Shift, px.X, px.Y);
-//    AChart.InvalidateRect(ADrawer.FGraphicGridR);
+    AChart.InvalidateRect(ADrawer.FGraphicGridR);
   end;
   inherited;
 end;
@@ -2585,6 +2602,6 @@ end;
 initialization
 
 GlobalUseGPUCanvas := True;
-// GlobalUseDX10Software:= True;
+//GlobalUseDX10Software:= True;
 //GlobalUseDirect2D:= True;
 end.

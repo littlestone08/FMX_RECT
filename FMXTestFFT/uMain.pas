@@ -43,6 +43,7 @@ type
     Button9: TButton;
     SpectrumSelection1: TSpectrumSelection;
     Button10: TButton;
+    Button11: TButton;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -71,6 +72,7 @@ type
     procedure SpectrumSelection1Track(Sender: TObject);
     procedure SplitedDrawer1ColorBarClick(Sender: TObject);
     procedure Button10Click(Sender: TObject);
+    procedure Button11Click(Sender: TObject);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -241,6 +243,11 @@ end;
 procedure TForm3.Button10Click(Sender: TObject);
 begin
   self.SplitedDrawer1.AddSelection(0.4, 0.6);
+end;
+
+procedure TForm3.Button11Click(Sender: TObject);
+begin
+  self.SplitedDrawer1.ClearSection();
 end;
 
 procedure TForm3.Button1Click(Sender: TObject);

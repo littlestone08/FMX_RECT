@@ -210,6 +210,16 @@ object Form3: TForm3
     Text = 'Add Selection'
     OnClick = Button10Click
   end
+  object Button11: TButton
+    Position.X = 8.000000000000000000
+    Position.Y = 424.000000000000000000
+    Size.Width = 105.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 50
+    Text = 'Del Section'
+    OnClick = Button11Click
+  end
   object SignalRectangeDrawer1: TSpectrumDrawer
     PeakDecrement = 0.100000001490116100
     FalloffDecrement = 0.500000000000000000
