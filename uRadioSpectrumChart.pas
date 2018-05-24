@@ -223,8 +223,7 @@ type
 
     TLocatedSelection = Class(TSpectrumSelection)
     Private
-      FLeftPosPercent: Single;
-      FRightPosPercent: Single;
+      FAnchorLeft: TPointF;
       function GetMarked(Value: TSelectionEnum): Single;
       procedure SetMarked(Idx: TSelectionEnum; const Value: Single);
       Procedure UpdatePosPercentByCoordinal;
@@ -233,6 +232,8 @@ type
         var Drawer: TSpectrumDrawer): Boolean; inline;
     Private
       Procedure HandleTrackProc(Sender: TObject);
+        function GetLeftPosPercent: Single;
+        function GetRightPosPercent: Single;
     Protected
 
     Public
@@ -241,8 +242,8 @@ type
       procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
       Property Marked[Value: TSelectionEnum]: Single Read GetMarked
         Write SetMarked;
-      Property LeftPosPercent: Single read FLeftPosPercent;
-      Property RightPosPercent: Single read FRightPosPercent;
+      Property LeftPosPercent: Single read GetLeftPosPercent;
+      Property RightPosPercent: Single read GetRightPosPercent;
     end;
   Private
     FSelections: TObjectList<TLocatedSelection>;
@@ -310,8 +311,10 @@ type
       var Handled: Boolean); Override;
   Public
     Procedure DeleteSelection(ASelection: TLocatedSelection);
-    function AddSelection(PosLeft, PosRight: Single): TLocatedSelection;
+    function AddSelectionViaPercent(AnchorFrom, AnchorTo: Single): TLocatedSelection;
     Procedure ClearSection();
+  Public //×ø±ê¼ÆËã¡¡
+    function Trans_Percent2ChartCoordinal(Percent: TPointF; var Coordinal: TPointF): Boolean;
   Public
     Constructor Create(AOwner: TComponent); Override;
     Destructor Destroy; Override;
@@ -1498,14 +1501,21 @@ begin
 
 end;
 
-function TSpectrumDrawer.AddSelection(PosLeft, PosRight: Single)
+function TSpectrumDrawer.AddSelectionViaPercent(AnchorFrom, AnchorTo: Single)
   : TLocatedSelection;
+var
+  X, Y: Single;
 begin
-  Result := TLocatedSelection.Create(Self);
-  FSelections.Add(Result);
-  Result.FLeftPosPercent := EnsureRange(PosLeft, 0, 1);
-  Result.FRightPosPercent := EnsureRange(PosRight, 0, 1);
-  ResettleSelectoin(Result);
+//  if Trans_Percent2ChartCoordinal(TPoiAnchorFrom, AnchorTo, X, Y) then
+  begin
+    Result := TLocatedSelection.Create(Self);
+    FSelections.Add(Result);
+
+
+//    Result.Marked[seLeft]: = EnsureRange(PosLeft, 0, 1);
+//    Result.FRightPosPercent := EnsureRange(PosRight, 0, 1);
+    ResettleSelectoin(Result);
+  end;
 end;
 
 procedure TSpectrumDrawer.AfterChangeSize;
@@ -1864,6 +1874,12 @@ end;
 procedure TSpectrumDrawer.SetPeakVisible(const Value: Boolean);
 begin
   FPeakVisible := Value;
+end;
+
+function TSpectrumDrawer.Trans_Percent2ChartCoordinal(Percent: TPointF; var Coordinal: TPointF): Boolean;
+begin
+  Result:= False;
+//  X
 end;
 
 procedure TSpectrumDrawer.UpdateGraphicRect;
@@ -2544,8 +2560,18 @@ begin
   end;
 end;
 
+function TSpectrumDrawer.TLocatedSelection.GetLeftPosPercent: Single;
+begin
+
+end;
+
 function TSpectrumDrawer.TLocatedSelection.GetMarked
   (Value: TSelectionEnum): Single;
+begin
+
+end;
+
+function TSpectrumDrawer.TLocatedSelection.GetRightPosPercent: Single;
 begin
 
 end;
