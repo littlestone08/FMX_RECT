@@ -94,6 +94,32 @@ type
     Property UnitStr: String Read FUnitStr Write SetUnitStr;
   End;
 
+  TSelectionData = Class
+  Public type
+    TSelectionAnchor = Record
+      Left, Right: Single;
+    End;
+  Private
+    [weak]FAxis: TCustomAxis;
+    ////以轴的标称值表示的锚点
+    FAnchor: TSelectionAnchor;
+  Private
+    function GetAnchorLeft: Single;
+    procedure SetAnchorRight(const Value: Single);
+    function GetAnchorRight: Single;
+    procedure SetAnchorLeft(const Value: Single);
+    procedure SetAnchorRgiht(const Value: Single);
+  Protected
+    Procedure DoAnchorChange();
+  Public
+    Function TransAnchorToChart(AAnchor: TSelectionAnchor; var X1: Single; var X2: Single): Boolean;
+    Function TransChartToAnchor(X1: Single; X2: Single; var AAnchor: TSelectionAnchor): Boolean;
+    function GetDrawerAndChart(out Drawer: TAbstractSignalDrawer; out Chart: TSignalChart): Boolean;
+    Property AnchorLeft: Single Read GetAnchorLeft Write SetAnchorLeft;
+    Property AnchorRight: Single Read GetAnchorRight Write SetAnchorRgiht;
+    Property Anchor: TSelectionAnchor Read FAnchor;
+  End;
+
   TLeftAxis = Class(TCustomAxis)
   Protected
     function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF;
@@ -2623,6 +2649,90 @@ procedure TSpectrumDrawer.TLocatedSelection.UpdatePosPercentByCoordinal;
 begin
   { TODO: 根据控件坐标更新相对百分比 }
 end;
+
+{ TSelectionData }
+
+
+procedure TSelectionData.DoAnchorChange;
+begin
+
+end;
+
+function TSelectionData.GetAnchorLeft: Single;
+begin
+  Result:= FAnchor.Left;
+end;
+
+function TSelectionData.GetAnchorRight: Single;
+begin
+  Result:= FAnchor.Right;
+end;
+
+function TSelectionData.GetDrawerAndChart(out Drawer: TAbstractSignalDrawer;
+  out Chart: TSignalChart): Boolean;
+begin
+  Result := False;
+
+  Chart := Nil;
+  Drawer := Nil;
+
+  if (FAxis <> Nil) and (FAxis.FDrawer <> Nil) then
+  begin
+    Drawer:= FAxis.FDrawer;
+    Chart:= Drawer.FChart;
+    Result:= True;
+  end;
+end;
+
+procedure TSelectionData.SetAnchorLeft(const Value: Single);
+var
+  NewValue: Single;
+begin
+  if FAxis <> Nil then
+  begin
+    NewValue:= EnsureRange(Value, FAxis.FMin, Min(FAxis.FMax, FAnchor.Right));
+    if FAnchor.Left <> NewValue then
+    begin
+      FAnchor.Left:= NewValue;
+      DoAnchorChange();
+    end;
+  end;
+end;
+
+procedure TSelectionData.SetAnchorRgiht(const Value: Single);
+var
+  NewValue: Single;
+begin
+  if FAxis <> Nil then
+  begin
+    NewValue:= EnsureRange(Value,  Max(FAxis.FMin, FAnchor.Left), FAxis.FMax);
+    if FAnchor.Right <> NewValue then
+    begin
+      FAnchor.Right:= NewValue;
+      DoAnchorChange();
+    end;
+  end;
+end;
+
+procedure TSelectionData.SetAnchorRight(const Value: Single);
+begin
+
+end;
+
+function TSelectionData.TransAnchorToChart(AAnchor: TSelectionAnchor; var X1,
+  X2: Single): Boolean;
+begin
+  Result:= False;
+
+end;
+
+function TSelectionData.TransChartToAnchor(X1, X2: Single;
+  var AAnchor: TSelectionAnchor): Boolean;
+begin
+  Result:= False;
+end;
+
+
 
 initialization
 
