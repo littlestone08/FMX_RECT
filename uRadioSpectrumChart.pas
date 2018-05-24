@@ -219,6 +219,7 @@ type
   TSpectrumDrawer = Class(TAbstractSignalDrawer)
   Private Type
     {TODO: 界面拖动时需要更新LeftPosPercent, RightPosPercent}
+    {TODO: 拖动时FPS会增加，如何处理？}
     TSelectionEnum = (seLeft, seCenter, seRight);
     TLocatedSelection = Class (TSpectrumSelection)
     Private
@@ -232,10 +233,11 @@ type
     Private
         Procedure HandleTrackProc(Sender: TObject);
     Protected
-        procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
+
     Public
       Constructor Create(AOwner: TComponent); Override;
       Destructor Destroy; Override;
+      procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
       Property Marked[Value: TSelectionEnum]: Single Read GetMarked Write SetMarked;
       Property LeftPosPercent: Single read FLeftPosPercent;
       Property RightPosPercent: Single read FRightPosPercent;
@@ -935,7 +937,6 @@ var
   BoundL, BoundH: Single;
   BoundH_Int, BoundL_Int: Integer;
   L0, H0: Single;
-  DeltaCount: Integer;
 begin
 
   With TSpectrumDrawer(FDrawer).AxisesData do
@@ -1352,8 +1353,6 @@ begin
 end;
 
 destructor TSpectrumDrawer.Destroy;
-var
-  i: Integer;
 begin
   // FreeAndNil(FAxisesView);
   FreeAndNil(FAxisesData);
@@ -1492,9 +1491,6 @@ end;
 
 function TSpectrumDrawer.AddSelection(PosLeft,
   PosRight: Single): TLocatedSelection;
-var
-  ALeft: Single;
-  ARight: Single;
 begin
   Result:= TLocatedSelection.Create(Self);
   FSelections.Add(Result);
@@ -1999,11 +1995,6 @@ begin
 end;
 
 constructor TWaterFallDrawer.Create(AOwner: TComponent);
-
-var
-  i: Integer;
-  AColor: TAlphaColor;
-
 begin
   inherited;
   FColorBarGradient:= TGradient.Create;
@@ -2024,10 +2015,6 @@ begin
 end;
 
 procedure TWaterFallDrawer.DockColorBar;
-var
-  i: Integer;
-  Step: Single;
-  ColorRect: TRectF;
 begin
   inherited;
   if FChart = Nil then
@@ -2124,7 +2111,6 @@ ViewIdxFrom, ViewIdxTo: Integer);
     AColor: TAlphaColor;
     HStep: Single;
     ViewCount: Integer;
-    ColorIndex: Cardinal;
     Clip: TClipRects;
   begin
     if FWaterFallBuf.HandleAllocated then
@@ -2184,7 +2170,7 @@ var
   BmpData: TBitmapData;
   MoveBytes: Integer;
   BMP_TOP_INDEX: Integer;
-  MovedH: Integer;
+//  MovedH: Integer;
   offset: Integer;
 begin
   // if Not FWaterFallBmp.HandleAllocated then Exit;
@@ -2213,7 +2199,7 @@ begin
       begin
         if FWaterFallBmpStart < BMP_TOP_INDEX then with FWaterFallBuf do
         begin
-          MovedH := Ceil(FWaterFallGridR.Height);
+//          MovedH := Ceil(FWaterFallGridR.Height);
           if Map(TMapAccess.ReadWrite, BmpData) then
           begin
             try
@@ -2572,16 +2558,15 @@ var
   ADrawer: TSpectrumDrawer;
   px: TPointF;
 begin
-  inherited;
   if GetChartAndDrawer(Self, AChart, ADrawer) then
   begin
 
     px:= self.LocalToScreen(TPointF.Create(X, Y));
     px:= AChart.ScreenToLocal(px);
     AChart.MouseMove(Shift, px.X, px.Y);
-    AChart.Repaint;
+//    AChart.InvalidateRect(ADrawer.FGraphicGridR);
   end;
-fdsa
+  inherited;
 end;
 
 procedure TSpectrumDrawer.TLocatedSelection.SetMarked(Idx: TSelectionEnum;
@@ -2599,7 +2584,7 @@ end;
 
 initialization
 
-//GlobalUseGPUCanvas := True;
+GlobalUseGPUCanvas := True;
 // GlobalUseDX10Software:= True;
-GlobalUseDirect2D:= True;
+//GlobalUseDirect2D:= True;
 end.
