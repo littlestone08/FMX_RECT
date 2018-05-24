@@ -215,30 +215,32 @@ type
     Property Chart: TSignalChart Read FChart Write SetChart;
   End;
 
-
   TSpectrumDrawer = Class(TAbstractSignalDrawer)
   Private Type
-    {TODO: 界面拖动时需要更新LeftPosPercent, RightPosPercent}
-    {TODO: 拖动时FPS会增加，如何处理？}
+    { TODO: 界面拖动时需要更新LeftPosPercent, RightPosPercent }
+    { TODO: 拖动时FPS会增加，如何处理？ }
     TSelectionEnum = (seLeft, seCenter, seRight);
-    TLocatedSelection = Class (TSpectrumSelection)
+
+    TLocatedSelection = Class(TSpectrumSelection)
     Private
-        FLeftPosPercent: Single;
-        FRightPosPercent: Single;
-        function GetMarked(Value: TSelectionEnum): Single;
-        procedure SetMarked(Idx: TSelectionEnum; const Value: Single);
-        Procedure UpdatePosPercentByCoordinal;
-        Class function GetChartAndDrawer(Sender: TSpectrumDrawer.TLocatedSelection;
-                          var Chart: TSignalChart; var Drawer: TSpectrumDrawer): Boolean; inline;
+      FLeftPosPercent: Single;
+      FRightPosPercent: Single;
+      function GetMarked(Value: TSelectionEnum): Single;
+      procedure SetMarked(Idx: TSelectionEnum; const Value: Single);
+      Procedure UpdatePosPercentByCoordinal;
+      Class function GetChartAndDrawer
+        (Sender: TSpectrumDrawer.TLocatedSelection; var Chart: TSignalChart;
+        var Drawer: TSpectrumDrawer): Boolean; inline;
     Private
-        Procedure HandleTrackProc(Sender: TObject);
+      Procedure HandleTrackProc(Sender: TObject);
     Protected
 
     Public
       Constructor Create(AOwner: TComponent); Override;
       Destructor Destroy; Override;
       procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
-      Property Marked[Value: TSelectionEnum]: Single Read GetMarked Write SetMarked;
+      Property Marked[Value: TSelectionEnum]: Single Read GetMarked
+        Write SetMarked;
       Property LeftPosPercent: Single read FLeftPosPercent;
       Property RightPosPercent: Single read FRightPosPercent;
     end;
@@ -247,7 +249,7 @@ type
     Procedure ResettleSelectoin(Value: TLocatedSelection);
     Procedure ResettleSelections;
   Protected
-      Procedure Internal_SetChart(const Value: TSignalChart); Override;
+    Procedure Internal_SetChart(const Value: TSignalChart); Override;
   Private
     FGrid: TBitmap;
     // corss cursor
@@ -383,8 +385,10 @@ type
   Published
     Property ShowWaterfall: Boolean read FShowWaterfall write SetShowWaterfall;
     Property LargeBuf: Boolean read FLargeBuf write SetLargeBuf;
-    Property OnColorBarClick: TNotifyEvent read FOnColorBarClick write SetOnColorBarClick;
-    Property ColorBarGradient: TGradient read FColorBarGradient write SetColorBarGradient;
+    Property OnColorBarClick: TNotifyEvent read FOnColorBarClick
+      write SetOnColorBarClick;
+    Property ColorBarGradient: TGradient read FColorBarGradient
+      write SetColorBarGradient;
   End;
 
 procedure Register;
@@ -1330,8 +1334,8 @@ end;
 constructor TSpectrumDrawer.Create(AOwner: TComponent);
 begin
   inherited;
-  FSelections:= TObjectList<TLocatedSelection>.Create(True);
-  FSectionBrush:= TBrush.Create(TBrushKind.Solid, TAlphaColorRec.Gray);
+  FSelections := TObjectList<TLocatedSelection>.Create(True);
+  FSectionBrush := TBrush.Create(TBrushKind.Solid, TAlphaColorRec.Gray);
   FGrid := TBitmap.Create;
   FAxisesData := TAxises.Create(Self);
   // FAxisesView := TAxises.Create(self);
@@ -1352,7 +1356,7 @@ procedure TSpectrumDrawer.DeleteSelection(ASelection: TLocatedSelection);
 var
   Index: Integer;
 begin
-  Index:= FSelections.IndexOf(ASelection);
+  Index := FSelections.IndexOf(ASelection);
   if Index > 0 then
     FSelections.Delete(Index);
 end;
@@ -1494,13 +1498,13 @@ begin
 
 end;
 
-function TSpectrumDrawer.AddSelection(PosLeft,
-  PosRight: Single): TLocatedSelection;
+function TSpectrumDrawer.AddSelection(PosLeft, PosRight: Single)
+  : TLocatedSelection;
 begin
-  Result:= TLocatedSelection.Create(Self);
+  Result := TLocatedSelection.Create(Self);
   FSelections.Add(Result);
-  Result.FLeftPosPercent:= EnsureRange(PosLeft, 0, 1);
-  Result.FRightPosPercent:= EnsureRange(PosRight, 0, 1);
+  Result.FLeftPosPercent := EnsureRange(PosLeft, 0, 1);
+  Result.FRightPosPercent := EnsureRange(PosRight, 0, 1);
   ResettleSelectoin(Result);
 end;
 
@@ -1708,43 +1712,43 @@ var
   i: Integer;
 begin
   inherited;
-  for i := 0 to self.FSelections.Count - 1 do
+  for i := 0 to Self.FSelections.Count - 1 do
   begin
-    FSelections[i].Parent:= Value;
+    FSelections[i].Parent := Value;
   end;
 end;
 
 procedure TSpectrumDrawer.Internal_UnSelectionMask;
 var
-//  ARect: TRectF;
-//  ExcludeRect: TRectF;
+  // ARect: TRectF;
+  // ExcludeRect: TRectF;
   iSection: TLocatedSelection;
   Save: TCanvasSaveState;
 begin
   Exit;
-//  ARect:=  TRectF.Create(FGraphicGridR.TopLeft, 100, FGraphicGridR.Height);
+  // ARect:=  TRectF.Create(FGraphicGridR.TopLeft, 100, FGraphicGridR.Height);
 
-//  ExcludeRect:= TRectF.Create(100, 0, 200, FGraphicGridR.Height);
-//  ExcludeRect.Offset(FGraphicGridR.TopLeft);
+  // ExcludeRect:= TRectF.Create(100, 0, 200, FGraphicGridR.Height);
+  // ExcludeRect.Offset(FGraphicGridR.TopLeft);
 
-    if Not GlobalUseGPUCanvas then
+  if Not GlobalUseGPUCanvas then
+  begin
+    if FSelections.Count > 0 then
     begin
-      if FSelections.Count > 0 then
-      begin
-          Save:= Chart.Canvas.SaveState;
-          try
-        //    Chart.Canvas.ExcludeClipRect(ExcludeRect);
-            for iSection in FSelections do
-            begin
-              Chart.Canvas.ExcludeClipRect(iSection.BoundsRect);
-            end;
+      Save := Chart.Canvas.SaveState;
+      try
+        // Chart.Canvas.ExcludeClipRect(ExcludeRect);
+        for iSection in FSelections do
+        begin
+          Chart.Canvas.ExcludeClipRect(iSection.BoundsRect);
+        end;
 
-            Chart.Canvas.FillRect(self.FGraphicGridR, 0, 0, [], 0.3, FSectionBrush);
-          finally
-            Chart.Canvas.RestoreState(Save);
-          end;
+        Chart.Canvas.FillRect(Self.FGraphicGridR, 0, 0, [], 0.3, FSectionBrush);
+      finally
+        Chart.Canvas.RestoreState(Save);
       end;
     end;
+  end;
 end;
 
 function TSpectrumDrawer.RatioXByCursor: Single;
@@ -1782,19 +1786,18 @@ var
 begin
   With Value do
   begin
-    ALeft:= FGraphicGridR.Width * LeftPosPercent;
-    ARight:= FGraphicGridR.Width * RightPosPercent;
+    ALeft := FGraphicGridR.Width * LeftPosPercent;
+    ARight := FGraphicGridR.Width * RightPosPercent;
 
-    Width:= ARight - ALeft;
-    Height:= FGraphicGridR.Height;
+    Width := ARight - ALeft;
+    Height := FGraphicGridR.Height;
 
-    Parent:= FChart;
+    Parent := FChart;
 
-    Position.X:= ALeft + FGraphicGridR.Left;
-    Position.Y:= FGraphicGridR.Top;
+    Position.X := ALeft + FGraphicGridR.Left;
+    Position.Y := FGraphicGridR.Top;
   end;
 end;
-
 
 procedure TSpectrumDrawer.Internal_DrawGraphicBound(ACanvas: TCanvas);
 const
@@ -1916,7 +1919,7 @@ begin
   FGraphicGridR.Bottom := FGraphicGridR.Bottom - FLeftTextR.Height * 0.5 -
     FBottomTextR.Height;
   FGraphicGridR.Right := FGraphicGridR.Right - FBottomTextR.Width * 0.5;
-  //===========================================================================
+  // ===========================================================================
   ResettleSelections();
 end;
 
@@ -1953,7 +1956,7 @@ begin
   LastChart := FChart;
   if FChart <> Value then
   begin
-    self.Internal_SetChart(Value);
+    Self.Internal_SetChart(Value);
 
     if LastChart <> Nil then
     begin
@@ -2014,11 +2017,11 @@ end;
 constructor TWaterFallDrawer.Create(AOwner: TComponent);
 begin
   inherited;
-  FColorBarGradient:= TGradient.Create;
+  FColorBarGradient := TGradient.Create;
   FWaterFallBuf := TBitmap.Create(1, 1);
   FColorBar := TColorBar.Create(Self);
   FColorBar.SetSize(1, 1);
-  FColorBar.OnClick:= HandleColorBarClickProc;
+  FColorBar.OnClick := HandleColorBarClickProc;
 
   InitGradientRainBow(FColorBarGradient);
   FColorBar.InitColors(FColorBarGradient);
@@ -2054,7 +2057,7 @@ end;
 
 procedure TWaterFallDrawer.HandleColorBarClickProc(Sender: TObject);
 begin
-  if Assigned(self.FOnColorBarClick) then
+  if Assigned(Self.FOnColorBarClick) then
     FOnColorBarClick(Sender);
 end;
 
@@ -2187,7 +2190,7 @@ var
   BmpData: TBitmapData;
   MoveBytes: Integer;
   BMP_TOP_INDEX: Integer;
-//  MovedH: Integer;
+  // MovedH: Integer;
   offset: Integer;
 begin
   // if Not FWaterFallBmp.HandleAllocated then Exit;
@@ -2214,33 +2217,34 @@ begin
       // -----------------
       if FLargeBuf then
       begin
-        if FWaterFallBmpStart < BMP_TOP_INDEX then with FWaterFallBuf do
-        begin
-//          MovedH := Ceil(FWaterFallGridR.Height);
-          if Map(TMapAccess.ReadWrite, BmpData) then
+        if FWaterFallBmpStart < BMP_TOP_INDEX then
+          with FWaterFallBuf do
           begin
-            try
-              MoveBytes := Width * BmpData.BytesPerPixel;
-              offset := Ceil(FWaterFallBuf.Height -
-                FWaterFallGridR.Height + 1);
-              // 移动图像向下一像素 ,要每行移动，不要多行同时移动，否则会出错，
-              // 而且对速度性能益处有限
-              for i := (Ceil(FWaterFallGridR.Height) - 2) Downto 0 do
-              begin // 移动Height-1行到底部,舍掉最下一行
-                System.Move(BmpData.GetPixelAddr(0, BMP_TOP_INDEX + i)^,
-                  BmpData.GetPixelAddr(0, i + offset)^, MoveBytes);
-              end;
-              // FWaterFallBmpStart := Offset - 1;
-              // FWaterFallBmpStart := Offset - 1 + BMP_TOP_INDEX;
-              FWaterFallBmpStart := offset;
+            // MovedH := Ceil(FWaterFallGridR.Height);
+            if Map(TMapAccess.ReadWrite, BmpData) then
+            begin
+              try
+                MoveBytes := Width * BmpData.BytesPerPixel;
+                offset := Ceil(FWaterFallBuf.Height -
+                  FWaterFallGridR.Height + 1);
+                // 移动图像向下一像素 ,要每行移动，不要多行同时移动，否则会出错，
+                // 而且对速度性能益处有限
+                for i := (Ceil(FWaterFallGridR.Height) - 2) Downto 0 do
+                begin // 移动Height-1行到底部,舍掉最下一行
+                  System.Move(BmpData.GetPixelAddr(0, BMP_TOP_INDEX + i)^,
+                    BmpData.GetPixelAddr(0, i + offset)^, MoveBytes);
+                end;
+                // FWaterFallBmpStart := Offset - 1;
+                // FWaterFallBmpStart := Offset - 1 + BMP_TOP_INDEX;
+                FWaterFallBmpStart := offset;
 
-              FWaterFallBuf.Canvas.Stroke.Kind := TBrushKind.Solid;
-              FWaterFallBuf.Canvas.Fill.Kind := TBrushKind.Solid;
-            finally
-              Unmap(BmpData);
+                FWaterFallBuf.Canvas.Stroke.Kind := TBrushKind.Solid;
+                FWaterFallBuf.Canvas.Fill.Kind := TBrushKind.Solid;
+              finally
+                Unmap(BmpData);
+              end;
             end;
           end;
-        end;
 
         if FWaterFallBuf.HandleAllocated then
         begin
@@ -2456,8 +2460,6 @@ begin
   FColorsLen := 1000 + 1;
 end;
 
-
-
 procedure TWaterFallDrawer.TColorBar.InitColors(Gradient: TGradient);
 var
   i: Integer;
@@ -2512,11 +2514,10 @@ end;
 constructor TSpectrumDrawer.TLocatedSelection.Create(AOwner: TComponent);
 begin
   inherited;
-  MinSize:=1;
-  OnTrack:= HandleTrackProc;
-  Handles:= [LeftCenter, RightCenter];
+  MinSize := 1;
+  OnTrack := HandleTrackProc;
+  Handles := [LeftCenter, RightCenter];
 end;
-
 
 destructor TSpectrumDrawer.TLocatedSelection.Destroy;
 begin
@@ -2524,26 +2525,27 @@ begin
   inherited;
 end;
 
-Class Function  TSpectrumDrawer.TLocatedSelection.GetChartAndDrawer(Sender: TSpectrumDrawer.TLocatedSelection;
-  var Chart: TSignalChart; var Drawer: TSpectrumDrawer): Boolean;
+Class Function TSpectrumDrawer.TLocatedSelection.GetChartAndDrawer
+  (Sender: TSpectrumDrawer.TLocatedSelection; var Chart: TSignalChart;
+var Drawer: TSpectrumDrawer): Boolean;
 begin
-  Result:= False;
-  Chart:= Nil;
-  Drawer:= Nil;
-  Sender:= TSpectrumDrawer.TLocatedSelection(Sender);
+  Result := False;
+  Chart := Nil;
+  Drawer := Nil;
+  Sender := TSpectrumDrawer.TLocatedSelection(Sender);
   if Sender.Parent is TSignalChart then
   begin
-    Chart:= TSignalChart(Sender.Parent);
+    Chart := TSignalChart(Sender.Parent);
     if TSignalChart(Sender.Parent).Drawer is TSpectrumDrawer then
     begin
-      Drawer:= TSpectrumDrawer(TSignalChart(Sender.Parent).Drawer);
-      Result:= True;
+      Drawer := TSpectrumDrawer(TSignalChart(Sender.Parent).Drawer);
+      Result := True;
     end;
   end;
 end;
 
-function TSpectrumDrawer.TLocatedSelection.GetMarked(
-  Value: TSelectionEnum): Single;
+function TSpectrumDrawer.TLocatedSelection.GetMarked
+  (Value: TSelectionEnum): Single;
 begin
 
 end;
@@ -2556,20 +2558,19 @@ var
 begin
   if Sender is TSpectrumDrawer.TLocatedSelection then
   begin
-    ASection:= TSpectrumDrawer.TLocatedSelection(Sender);
-    if GetChartAndDrawer(ASection, AChart, ADrawer)then
+    ASection := TSpectrumDrawer.TLocatedSelection(Sender);
+    if GetChartAndDrawer(ASection, AChart, ADrawer) then
     begin
-      ASection.Position.Y:= ADrawer.FGraphicGridR.Top; //fix the selection position
+      ASection.Position.Y := ADrawer.FGraphicGridR.Top;
+      // fix the selection position
     end;
   end;
 
   UpdatePosPercentByCoordinal();
 end;
 
-
-
-procedure TSpectrumDrawer.TLocatedSelection.MouseMove(Shift: TShiftState; X,
-  Y: Single);
+procedure TSpectrumDrawer.TLocatedSelection.MouseMove(Shift: TShiftState;
+X, Y: Single);
 var
   AChart: TSignalChart;
   ADrawer: TSpectrumDrawer;
@@ -2578,8 +2579,8 @@ begin
   if GetChartAndDrawer(Self, AChart, ADrawer) then
   begin
 
-    px:= self.LocalToScreen(TPointF.Create(X, Y));
-    px:= AChart.ScreenToLocal(px);
+    px := Self.LocalToScreen(TPointF.Create(X, Y));
+    px := AChart.ScreenToLocal(px);
     AChart.MouseMove(Shift, px.X, px.Y);
     AChart.InvalidateRect(ADrawer.FGraphicGridR);
   end;
@@ -2587,21 +2588,20 @@ begin
 end;
 
 procedure TSpectrumDrawer.TLocatedSelection.SetMarked(Idx: TSelectionEnum;
-  const Value: Single);
+const Value: Single);
 begin
 
 end;
 
-
-
 procedure TSpectrumDrawer.TLocatedSelection.UpdatePosPercentByCoordinal;
 begin
-  {TODO: 根据控件坐标更新相对百分比}
+  { TODO: 根据控件坐标更新相对百分比 }
 end;
 
 initialization
 
 GlobalUseGPUCanvas := True;
-//GlobalUseDX10Software:= True;
-//GlobalUseDirect2D:= True;
+
+// GlobalUseDX10Software:= True;
+// GlobalUseDirect2D:= True;
 end.
