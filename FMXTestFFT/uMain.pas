@@ -241,7 +241,7 @@ end;
 
 procedure TForm3.Button10Click(Sender: TObject);
 begin
-//  self.SplitedDrawer1.AddSelection(0.4, 0.6);
+  self.SplitedDrawer1.AddSelectionViaPercent(0.4, 0.6);
 end;
 
 procedure TForm3.Button11Click(Sender: TObject);

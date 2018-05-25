@@ -86,7 +86,7 @@ object Form3: TForm3
   end
   object Panel1: TPanel
     Align = Scale
-    Position.X = 264.300964355468700000
+    Position.X = 264.300964355468800000
     Size.Width = 449.519775390625000000
     Size.Height = 17.421550750732420000
     Size.PlatformDefault = False
@@ -273,7 +273,7 @@ object Form3: TForm3
       end
       item
         Color = claAqua
-        Offset = 0.414999991655349800
+        Offset = 0.414999991655349700
       end
       item
         Color = claLime
@@ -285,11 +285,11 @@ object Form3: TForm3
       end
       item
         Color = claRed
-        Offset = 0.800000011920928900
+        Offset = 0.800000011920929000
       end
       item
         Color = claWhite
-        Offset = 0.949999988079071100
+        Offset = 0.949999988079071000
       end>
     Left = 80
     Top = 520

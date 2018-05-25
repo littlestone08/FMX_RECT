@@ -28,6 +28,7 @@ type
   TSignalChart = Class;
   TAbstractSignalDrawer = Class;
   TSpectrumDrawer = Class;
+  TSelectionManager = Class;
 
   TCustomAxis = Class(TPersistent)
   Private
@@ -60,6 +61,8 @@ type
     procedure SetViewMin(const Value: Integer);
     Function TransRatio2Mark(L, H: Single; PercentValue: Single): Single; inline;
     Function TransMark2Ratio(MarkValue: Single; L, H: Single): Single; inline;
+  Private
+    FSelectoinManager: TSelectionManager;
   Protected
     function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF;
       const offset: TPointF): TRectF; Virtual; Abstract;
@@ -71,6 +74,7 @@ type
     function GetHTextAlign: TTextAlign; Virtual; Abstract;
   Public
     Constructor Create(ADrawer: TAbstractSignalDrawer); Virtual;
+    Destructor Destroy; Override;
 
     Class function CalcuStep(Range: Integer; N: Integer): Integer;
     Class Function CalcuValueStep(Limits: Single;
@@ -86,6 +90,7 @@ type
     Property ViewRatioTo: Single Read FViewRatioTo;
     Property ViewDataIdxFrom: Integer Read FViewDataIdxFrom;
     Property ViewDataIdxTo: Integer Read FViewDataIdxTo;
+    Property SelectionManager: TSelectionManager Read FSelectoinManager;
   Published
     Property Min: Integer read FMin write SetMin;
     Property Max: Integer read FMax write SetMax;
@@ -107,22 +112,25 @@ type
     Protected
       Procedure DoTrack(); Override;
       procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
+    Public
+      Constructor Create(AOwner: TComponent); Override;
+      Destructor Destroy; Override;
     End;
   Strict Private
     [weak]FAxis: TCustomAxis;
     ////以轴的标称值表示的锚点
-    FUI: TSelectionUI;
+
     FAnchor: TSelectionAnchor; //数值为轴的Mark值
     function GetAnchorLeft: Single;
     procedure SetAnchorRight(const Value: Single);
     function GetAnchorRight: Single;
     procedure SetAnchorLeft(const Value: Single);
-    Procedure HandleTrackProc(Sender: TObject);
     function GetAnchorRatioLeft: Single;
     function GetAnchorRatioRight: Single;
     procedure SetAnchorRatioLeft(const Value: Single);
     procedure SetAnchorRatioRight(const Value: Single);
   Protected
+    FUI: TSelectionUI;
     Procedure DoAnchorChange(); Virtual;
   Public
     Constructor Create(Axis: TCustomAxis);
@@ -162,6 +170,8 @@ type
   end;
 
   TBottomAxis = Class(TCustomAxis)
+  Private
+
   Protected
     function CalcuLabelR(const Line: TLine; const StdTextRect: TRectF;
       const offset: TPointF): TRectF; override;
@@ -173,6 +183,8 @@ type
     function GetHTextAlign: TTextAlign; Override;
   Public
     Constructor Create(ADrawer: TAbstractSignalDrawer); Override;
+    Destructor Destroy; Override;
+
   end;
 
   TLinearEquations = Class
@@ -272,36 +284,10 @@ type
   Private Type
     { TODO: 界面拖动时需要更新LeftPosPercent, RightPosPercent }
     { TODO: 拖动时FPS会增加，如何处理？ }
-    TSelectionEnum = (seLeft, seCenter, seRight);
-
-    TLocatedSelection = Class(TSelectionUI)
-    Private
-      function GetMarked(Value: TSelectionEnum): Single;
-      procedure SetMarked(Idx: TSelectionEnum; const Value: Single);
-      Class function GetChartAndDrawer
-        (Sender: TSpectrumDrawer.TLocatedSelection; var Chart: TSignalChart;
-        var Drawer: TSpectrumDrawer): Boolean; inline;
-    Private
-      Procedure HandleTrackProc(Sender: TObject);
-        function GetLeftPosPercent: Single;
-        function GetRightPosPercent: Single;
-    Protected
-
-    Public
-      Constructor Create(AOwner: TComponent); Override;
-      Destructor Destroy; Override;
-      procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
-      Property Marked[Value: TSelectionEnum]: Single Read GetMarked
-        Write SetMarked;
-      Property LeftPosPercent: Single read GetLeftPosPercent;
-      Property RightPosPercent: Single read GetRightPosPercent;
-    end;
   Private
-    FSelections: TObjectList<TLocatedSelection>;
-    Procedure ResettleSelectoin(Value: TLocatedSelection);
+//    Procedure ResettleSelectoin(Value: TLocatedSelection);
     Procedure ResettleSelections;
-  Protected
-    Procedure Internal_SetChart(const Value: TSignalChart); Override;
+
   Private
     FGrid: TBitmap;
     // corss cursor
@@ -347,6 +333,8 @@ type
     Procedure UpdateGraphicRect; Override;
     Procedure UpdateViewRangeIndex(Axis: TCustomAxis); Override;
   Protected
+    Procedure Internal_SetChart(const Value: TSignalChart); Override;
+  Protected
     Procedure Internal_DrawGraphicBound(ACanvas: TCanvas); Virtual;
     Procedure Internal_DrawGraphicFrame(ACanvas: TCanvas); Virtual;
     Procedure Internal_DrawViewData(const AData: TArray<Single>;
@@ -361,8 +349,8 @@ type
     Procedure ChartSinkMouseWheel(Shift: TShiftState; WheelDelta: Integer;
       var Handled: Boolean); Override;
   Public
-    Procedure DeleteSelection(ASelection: TLocatedSelection);
-    function AddSelectionViaPercent(AnchorFrom, AnchorTo: Single): TLocatedSelection;
+//    Procedure DeleteSelection(ASelection: TLocatedSelection);
+    function AddSelectionViaPercent(AnchorFrom, AnchorTo: Single): TAxisSelection;
     Procedure ClearSection();
   Public
     Constructor Create(AOwner: TComponent); Override;
@@ -810,6 +798,15 @@ begin
   FViewMax := 0;
   FViewMin := -140;
   UpdateViewRatio;
+
+  FSelectoinManager:= TSelectionManager.Create(True);
+  FSelectoinManager.FAxis:= Self;
+end;
+
+destructor TCustomAxis.Destroy;
+begin
+  FSelectoinManager.Free;
+  inherited;
 end;
 
 procedure TCustomAxis.DoChanged;
@@ -1133,7 +1130,13 @@ begin
   inherited;
   FMax := 1023;
   FMin := 0;
-  FUnitStr := 'MHz'
+  FUnitStr := 'MHz';
+
+end;
+
+destructor TBottomAxis.Destroy;
+begin
+  inherited;
 end;
 
 function TBottomAxis.GetHTextAlign: TTextAlign;
@@ -1408,13 +1411,13 @@ end;
 
 procedure TSpectrumDrawer.ClearSection;
 begin
-  FSelections.Clear;
+//  FSelections.Clear;
 end;
 
 constructor TSpectrumDrawer.Create(AOwner: TComponent);
 begin
   inherited;
-  FSelections := TObjectList<TLocatedSelection>.Create(True);
+//  FSelections := TObjectList<TLocatedSelection>.Create(True);
   FSectionBrush := TBrush.Create(TBrushKind.Solid, TAlphaColorRec.Gray);
   FGrid := TBitmap.Create;
   FAxisesData := TAxises.Create(Self);
@@ -1432,14 +1435,14 @@ begin
     FillDesigningTestData();
 end;
 
-procedure TSpectrumDrawer.DeleteSelection(ASelection: TLocatedSelection);
-var
-  Index: Integer;
-begin
-  Index := FSelections.IndexOf(ASelection);
-  if Index > 0 then
-    FSelections.Delete(Index);
-end;
+//procedure TSpectrumDrawer.DeleteSelection(ASelection: TLocatedSelection);
+//var
+//  Index: Integer;
+//begin
+//  Index := FSelections.IndexOf(ASelection);
+//  if Index > 0 then
+//    FSelections.Delete(Index);
+//end;
 
 destructor TSpectrumDrawer.Destroy;
 begin
@@ -1448,7 +1451,7 @@ begin
   FreeAndNil(FGrid);
   FreeAndNil(FSectionBrush);
 
-  FreeAndNil(FSelections);
+//  FreeAndNil(FSelections);
   inherited;
 end;
 
@@ -1575,20 +1578,25 @@ begin
 end;
 
 function TSpectrumDrawer.AddSelectionViaPercent(AnchorFrom, AnchorTo: Single)
-  : TLocatedSelection;
+  : TAxisSelection;
 var
   X, Y: Single;
 begin
-//  if Trans_Percent2ChartCoordinal(TPoiAnchorFrom, AnchorTo, X, Y) then
+  With FAxisesData.Bottom.SelectionManager.AddSelection do
   begin
-    Result := TLocatedSelection.Create(Self);
-    FSelections.Add(Result);
-
-
-//    Result.Marked[seLeft]: = EnsureRange(PosLeft, 0, 1);
-//    Result.FRightPosPercent := EnsureRange(PosRight, 0, 1);
-    ResettleSelectoin(Result);
+    AnchorRatioLeft:= AnchorFrom;
+    AnchorRatioRight:= AnchorTo;
   end;
+////  if Trans_Percent2ChartCoordinal(TPoiAnchorFrom, AnchorTo, X, Y) then
+//  begin
+//    Result := TLocatedSelection.Create(Self);
+//    FSelections.Add(Result);
+//
+//
+////    Result.Marked[seLeft]: = EnsureRange(PosLeft, 0, 1);
+////    Result.FRightPosPercent := EnsureRange(PosRight, 0, 1);
+//    ResettleSelectoin(Result);
+//  end;
 end;
 
 procedure TSpectrumDrawer.AfterChangeSize;
@@ -1791,47 +1799,52 @@ begin
 end;
 
 procedure TSpectrumDrawer.Internal_SetChart(const Value: TSignalChart);
-var
-  i: Integer;
+  Procedure SetSelectUIParentNil(List: TSelectionManager);
+  var
+    i: Integer;
+  begin
+    for i := 0 to List.Count - 1 do
+    begin
+      List.Items[i].FUI.Parent:= Nil;
+    end;
+  end;
 begin
   inherited;
-  for i := 0 to Self.FSelections.Count - 1 do
-  begin
-    FSelections[i].Parent := Value;
-  end;
+  SetSelectUIParentNil(self.FAxisesData.Bottom.SelectionManager);
+  SetSelectUIParentNil(self.FAxisesData.Left.SelectionManager);
 end;
 
 procedure TSpectrumDrawer.Internal_UnSelectionMask;
 var
   // ARect: TRectF;
   // ExcludeRect: TRectF;
-  iSection: TLocatedSelection;
+//  iSection: TLocatedSelection;
   Save: TCanvasSaveState;
 begin
   Exit;
-  // ARect:=  TRectF.Create(FGraphicGridR.TopLeft, 100, FGraphicGridR.Height);
-
-  // ExcludeRect:= TRectF.Create(100, 0, 200, FGraphicGridR.Height);
-  // ExcludeRect.Offset(FGraphicGridR.TopLeft);
-
-  if Not GlobalUseGPUCanvas then
-  begin
-    if FSelections.Count > 0 then
-    begin
-      Save := Chart.Canvas.SaveState;
-      try
-        // Chart.Canvas.ExcludeClipRect(ExcludeRect);
-        for iSection in FSelections do
-        begin
-          Chart.Canvas.ExcludeClipRect(iSection.BoundsRect);
-        end;
-
-        Chart.Canvas.FillRect(Self.FGraphicGridR, 0, 0, [], 0.3, FSectionBrush);
-      finally
-        Chart.Canvas.RestoreState(Save);
-      end;
-    end;
-  end;
+//  // ARect:=  TRectF.Create(FGraphicGridR.TopLeft, 100, FGraphicGridR.Height);
+//
+//  // ExcludeRect:= TRectF.Create(100, 0, 200, FGraphicGridR.Height);
+//  // ExcludeRect.Offset(FGraphicGridR.TopLeft);
+//
+//  if Not GlobalUseGPUCanvas then
+//  begin
+//    if FSelections.Count > 0 then
+//    begin
+//      Save := Chart.Canvas.SaveState;
+//      try
+//        // Chart.Canvas.ExcludeClipRect(ExcludeRect);
+//        for iSection in FSelections do
+//        begin
+//          Chart.Canvas.ExcludeClipRect(iSection.BoundsRect);
+//        end;
+//
+//        Chart.Canvas.FillRect(Self.FGraphicGridR, 0, 0, [], 0.3, FSectionBrush);
+//      finally
+//        Chart.Canvas.RestoreState(Save);
+//      end;
+//    end;
+//  end;
 end;
 
 function TSpectrumDrawer.CursorXRatio: Single;
@@ -1855,34 +1868,34 @@ begin
 end;
 
 procedure TSpectrumDrawer.ResettleSelections;
-var
-  iSelection: TLocatedSelection;
+//var
+//  iSelection: TLocatedSelection;
 begin
-  for iSelection in FSelections do
-  begin
-    ResettleSelectoin(iSelection);
-  end;
+//  for iSelection in FSelections do
+//  begin
+//    ResettleSelectoin(iSelection);
+//  end;
 end;
 
-procedure TSpectrumDrawer.ResettleSelectoin(Value: TLocatedSelection);
-var
-  ALeft: Single;
-  ARight: Single;
-begin
-  With Value do
-  begin
-    ALeft := FGraphicGridR.Width * LeftPosPercent;
-    ARight := FGraphicGridR.Width * RightPosPercent;
-
-    Width := ARight - ALeft;
-    Height := FGraphicGridR.Height;
-
-    Parent := FChart;
-
-    Position.X := ALeft + FGraphicGridR.Left;
-    Position.Y := FGraphicGridR.Top;
-  end;
-end;
+//procedure TSpectrumDrawer.ResettleSelectoin(Value: TLocatedSelection);
+//var
+//  ALeft: Single;
+//  ARight: Single;
+//begin
+//  With Value do
+//  begin
+//    ALeft := FGraphicGridR.Width * LeftPosPercent;
+//    ARight := FGraphicGridR.Width * RightPosPercent;
+//
+//    Width := ARight - ALeft;
+//    Height := FGraphicGridR.Height;
+//
+//    Parent := FChart;
+//
+//    Position.X := ALeft + FGraphicGridR.Left;
+//    Position.Y := FGraphicGridR.Top;
+//  end;
+//end;
 
 procedure TSpectrumDrawer.Internal_DrawGraphicBound(ACanvas: TCanvas);
 const
@@ -2684,98 +2697,6 @@ begin
   end;
 end;
 
-{ TSpectrumDrawer.TLocatedSelection }
-
-constructor TSpectrumDrawer.TLocatedSelection.Create(AOwner: TComponent);
-begin
-  inherited;
-  MinSize := 1;
-  OnTrack := HandleTrackProc;
-  Handles := [LeftCenter, RightCenter];
-end;
-
-destructor TSpectrumDrawer.TLocatedSelection.Destroy;
-begin
-
-  inherited;
-end;
-
-Class Function TSpectrumDrawer.TLocatedSelection.GetChartAndDrawer
-  (Sender: TSpectrumDrawer.TLocatedSelection; var Chart: TSignalChart;
-var Drawer: TSpectrumDrawer): Boolean;
-begin
-  Result := False;
-  Chart := Nil;
-  Drawer := Nil;
-  Sender := TSpectrumDrawer.TLocatedSelection(Sender);
-  if Sender.Parent is TSignalChart then
-  begin
-    Chart := TSignalChart(Sender.Parent);
-    if TSignalChart(Sender.Parent).Drawer is TSpectrumDrawer then
-    begin
-      Drawer := TSpectrumDrawer(TSignalChart(Sender.Parent).Drawer);
-      Result := True;
-    end;
-  end;
-end;
-
-function TSpectrumDrawer.TLocatedSelection.GetLeftPosPercent: Single;
-begin
-
-end;
-
-function TSpectrumDrawer.TLocatedSelection.GetMarked
-  (Value: TSelectionEnum): Single;
-begin
-
-end;
-
-function TSpectrumDrawer.TLocatedSelection.GetRightPosPercent: Single;
-begin
-
-end;
-
-procedure TSpectrumDrawer.TLocatedSelection.HandleTrackProc(Sender: TObject);
-var
-  ASection: TSpectrumDrawer.TLocatedSelection;
-  ADrawer: TSpectrumDrawer;
-  AChart: TSignalChart;
-begin
-  // fix the selection Top position
-  if Sender is TSpectrumDrawer.TLocatedSelection then
-  begin
-    ASection := TSpectrumDrawer.TLocatedSelection(Sender);
-    if GetChartAndDrawer(ASection, AChart, ADrawer) then
-    begin
-      ASection.Position.Y := ADrawer.FGraphicGridR.Top;
-    end;
-  end;
-end;
-
-procedure TSpectrumDrawer.TLocatedSelection.MouseMove(Shift: TShiftState;
-X, Y: Single);
-var
-  AChart: TSignalChart;
-  ADrawer: TSpectrumDrawer;
-  px: TPointF;
-begin
-  if GetChartAndDrawer(Self, AChart, ADrawer) then
-  begin
-
-    px := Self.LocalToScreen(TPointF.Create(X, Y));
-    px := AChart.ScreenToLocal(px);
-    AChart.MouseMove(Shift, px.X, px.Y);
-    AChart.InvalidateRect(ADrawer.FGraphicGridR);
-  end;
-  inherited;
-end;
-
-procedure TSpectrumDrawer.TLocatedSelection.SetMarked(Idx: TSelectionEnum;
-const Value: Single);
-begin
-
-end;
-
 
 { TSelectionData }
 
@@ -2786,14 +2707,12 @@ begin
   FAxis:= Axis;
   FUI:= TSelectionUI2.Create(Nil);
   FUI.Tag:= NativeInt(Self);
-  FUI.OnTrack:= HandleTrackProc;
   self.DoAnchorChange;
 end;
 
 destructor TAxisSelection.Destroy;
 begin
   FUI.Free;
-  FAxis.Free;
   inherited;
 end;
 
@@ -2861,26 +2780,6 @@ begin
   end;
 end;
 
-procedure TAxisSelection.HandleTrackProc(Sender: TObject);
-var
-  ASection: TSpectrumDrawer.TLocatedSelection;
-  ADrawer: TSpectrumDrawer;
-  AChart: TSignalChart;
-begin
-
-  if Sender is TSpectrumDrawer.TLocatedSelection then
-  begin
-    ASection := TSpectrumDrawer.TLocatedSelection(Sender);
-    if ASection.GetChartAndDrawer(ASection, AChart, ADrawer) then
-    begin
-       // fix the selection position
-      ASection.Position.Y := ADrawer.FGraphicGridR.Top;
-      //Update L, R Mark
-      FAnchor.Left:= ADrawer.Trans_GridRCoordinalX2Mark(FUI.Position.X);
-      FAnchor.Right:= ADrawer.Trans_GridRCoordinalX2Mark(FUI.Position.X + FUI.Width);
-    end;
-  end;
-end;
 
 procedure TAxisSelection.SetAnchorLeft(const Value: Single);
 var
@@ -2958,25 +2857,35 @@ end;
 
 function TSelectionManager.AddSelection: TAxisSelection;
 var
-  ASelectoin: TAxisSelection;
   ADrawer: TSpectrumDrawer;
   AChart: TSignalChart;
 begin
-  ASelectoin:= TAxisSelection.Create(FAxis);
-  Add(ASelectoin);
-  ASelectoin.AnchorRatioRight:= 0.6;
-  ASelectoin.AnchorRatioRight:= 0.4;
-  ASelectoin.DoAnchorChange();
+  Result:= TAxisSelection.Create(FAxis);
+  Add(Result);
+  Result.AnchorRatioRight:= 0.6;
+  Result.AnchorRatioRight:= 0.4;
+  Result.DoAnchorChange();
 end;
 
 { TAxisSelection.TSelection2 }
+
+constructor TAxisSelection.TSelectionUI2.Create(AOwner: TComponent);
+begin
+  inherited;
+  Handles:= [LeftCenter, RightCenter];
+end;
+
+destructor TAxisSelection.TSelectionUI2.Destroy;
+begin
+
+  inherited;
+end;
 
 procedure TAxisSelection.TSelectionUI2.DoTrack;
 var
   AAxisSelection: TAxisSelection;
   ADrawer: TSpectrumDrawer;
   AChart: TSignalChart;
-
 begin
   AAxisSelection:= TAxisSelection(self.Tag);
 
