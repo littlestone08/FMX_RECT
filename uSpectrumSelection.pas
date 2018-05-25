@@ -46,12 +46,12 @@ type
       var Pivot: TPointF);
     procedure GetTransformRightCenter(AX, AY: Single; var NewSize: TPointF;
       var Pivot: TPointF);
-    procedure MoveHandle(AX, AY: Single);
     procedure SetShowHandles(const Value: Boolean);
     procedure SetColor(const Value: TAlphaColor);
     procedure SetHandles(const Value: TGrabHandles);
     procedure SetCanMove(const Value: Boolean);
   protected
+    procedure MoveHandle(AX, AY: Single); Virtual;
     function DoGetUpdateRect: TRectF; override;
     procedure Paint; override;
     /// <summary>Draw grip handle</summary>
