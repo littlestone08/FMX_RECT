@@ -59,6 +59,7 @@ type
       const Rect: TRectF); virtual;
     /// <summary>Draw frame rectangle</summary>
     procedure DrawFrame(const Canvas: TCanvas; const Rect: TRectF); virtual;
+    Procedure DoTrack(); virtual;
   public
     function PointInObjectLocal(X, Y: Single): Boolean; override;
     constructor Create(AOwner: TComponent); override;
@@ -130,7 +131,7 @@ type
     Property Handles: TGrabHandles read FHandles write SetHandles;
   end;
 
-  TSpectrumSelection = Class(TSelection6P)
+  TSelectionUI = Class(TSelection6P)
   private
     FCenterLinePen: TStrokeBrush;
     procedure SetCenterLinePen(const Value: TStrokeBrush);
@@ -316,8 +317,7 @@ begin
               Position.Y := Canvas.Height - Height;
           end;
         end;
-        if Assigned(FOnTrack) then
-          FOnTrack(Self);
+        DoTrack();
       end;
       Exit;
     end;
@@ -686,6 +686,12 @@ begin
   Repaint;
 end;
 
+procedure TSelection6P.DoTrack();
+begin
+  if Assigned(FOnTrack) then
+    FOnTrack(Self);
+end;
+
 procedure TSelection6P.SetHandles(const Value: TGrabHandles);
 begin
   FHandles := Value;
@@ -743,26 +749,26 @@ begin
   end;
 end;
 
-procedure TSpectrumSelection.SetCenterLinePen(const Value: TStrokeBrush);
+procedure TSelectionUI.SetCenterLinePen(const Value: TStrokeBrush);
 begin
   FCenterLinePen.Assign(Value);
 end;
 
 { TSpectrumSelection }
 
-constructor TSpectrumSelection.Create(AOwner: TComponent);
+constructor TSelectionUI.Create(AOwner: TComponent);
 begin
   inherited;
   FCenterLinePen:= TStrokeBrush.Create(TBrushKind.Solid, TAlphaColors.Red);
 end;
 
-destructor TSpectrumSelection.Destroy;
+destructor TSelectionUI.Destroy;
 begin
   FreeAndNil(FCenterLinePen);
   inherited;
 end;
 
-procedure TSpectrumSelection.Paint;
+procedure TSelectionUI.Paint;
 var
   R : TRectF;
   A, B: TPointF;

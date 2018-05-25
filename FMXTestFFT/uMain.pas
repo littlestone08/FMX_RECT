@@ -41,7 +41,6 @@ type
     rbZoomIn: TRadioButton;
     rbZoomOut: TRadioButton;
     Button9: TButton;
-    SpectrumSelection1: TSpectrumSelection;
     Button10: TButton;
     Button11: TButton;
     procedure Button3Click(Sender: TObject);
@@ -528,9 +527,9 @@ begin
   if SplitedDrawer1.CursorInGraphicGrid then
   begin
     if WheelDelta < 0 then
-      SplitedDrawer1.AxisesData.Bottom.Zoom(abs(WheelDelta) / 100, SplitedDrawer1.ViewIndexByCursor)
+      SplitedDrawer1.AxisesData.Bottom.Zoom(abs(WheelDelta) / 100, SplitedDrawer1.CursorViewIndex)
     else  if WheelDelta > 0 then
-      SplitedDrawer1.AxisesData.Bottom.Zoom(100 / abs(WheelDelta), SplitedDrawer1.ViewIndexByCursor);
+      SplitedDrawer1.AxisesData.Bottom.Zoom(100 / abs(WheelDelta), SplitedDrawer1.CursorViewIndex);
   end;
 end;
 

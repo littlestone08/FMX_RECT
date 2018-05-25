@@ -187,19 +187,6 @@ object Form3: TForm3
     Text = 'Show Mask Form'
     OnClick = Button9Click
   end
-  object SpectrumSelection1: TSpectrumSelection
-    Enabled = False
-    GripSize = 3.000000000000000000
-    Proportional = False
-    Position.X = 424.000000000000000000
-    Position.Y = 48.000000000000000000
-    Size.Width = 73.000000000000000000
-    Size.Height = 209.000000000000000000
-    Size.PlatformDefault = False
-    ShowHandles = True
-    Visible = False
-    Handles = [LeftTop, RightTop, LeftBottom, RightBottom, LeftCenter, RightCenter]
-  end
   object Button10: TButton
     Position.X = 8.000000000000000000
     Position.Y = 400.000000000000000000
