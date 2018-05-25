@@ -131,7 +131,7 @@ type
     procedure SetAnchorRatioLeft(const Value: Single);
     procedure SetAnchorRatioRight(const Value: Single);
   Private
-    Procedure _FixTopBottom;
+    Procedure CheckUIBound;
   Protected
     FUI: TSelectionUI;
     Procedure DoAnchorChange(); Virtual;
@@ -1577,7 +1577,6 @@ begin
     end;
     DrawHint();
   end;
-
 end;
 
 function TSpectrumDrawer.AddSelectionViaPercent(AnchorFrom, AnchorTo: Single)
@@ -1587,8 +1586,8 @@ var
 begin
   With FAxisesData.Bottom.SelectionManager.AddSelection do
   begin
-    AnchorRatioLeft:= AnchorFrom;
     AnchorRatioRight:= AnchorTo;
+    AnchorRatioLeft:= AnchorFrom;
     DoAnchorChange();
   end;
 end;
@@ -2722,7 +2721,7 @@ begin
     begin
       ARightPos:= ADrawer.Trans_RatioX2GridRCoordinal(FAnchor.Right) + ADrawer.FGraphicGridR.Left;
 
-      _FixTopBottom();
+      CheckUIBound();
 //      Position.Y := ADrawer.FGraphicGridR.Top;
 //      Height:= ADrawer.FGraphicGridR.Height;
 
@@ -2845,11 +2844,7 @@ begin
 end;
 
 
-
-
-
-
-procedure TAxisSelection._FixTopBottom;
+procedure TAxisSelection.CheckUIBound;
 var
   ADrawer: TSpectrumDrawer;
   AChart: TSignalChart;
@@ -2860,6 +2855,11 @@ begin
 
     FUI.Position.Y := ADrawer.FGraphicGridR.Top;
     FUI.Height:= ADrawer.FGraphicGridR.Height;
+
+    FUI.Position.X:= EnsureRange(FUI.Position.X, ADrawer.FGraphicGridR.Left, ADrawer.FGraphicGridR.Right - FUI.Width);
+
+
+
 //    //Update L, R Mark
 //    AAxisSelection.FAnchor.Left:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X);
 //    AAxisSelection.FAnchor.Right:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X + Width);
@@ -2904,7 +2904,8 @@ begin
 
   if AAxisSelection.GetDrawerAndChart(ADrawer, AChart) then
   begin
-    AAxisSelection._FixTopBottom();
+    AAxisSelection.CheckUIBound();
+
     //Update L, R Mark
     AAxisSelection.FAnchor.Left:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X);
     AAxisSelection.FAnchor.Right:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X + Width);
@@ -2933,9 +2934,32 @@ end;
 
 
 procedure TAxisSelection.TSelectionUI2.MoveHandle(AX, AY: Single);
+var
+  ASelection: TAxisSelection;
+  ADrawer: TSpectrumDrawer;
+  AChart: TSignalChart;
+  OldWidth: Single;
+  OldPosition: TPosition;
 begin
+  OldWidth:= Width;
+  OldPosition:= Position;
+
   inherited;
 
+  ASelection:= TAxisSelection(self.Tag);
+  if ASelection.GetDrawerAndChart(ADrawer, AChart) then
+  begin
+    if Position.X < ADrawer.FGraphicGridR.Left then
+    begin
+      Position.X:= ADrawer.FGraphicGridR.Left;
+      Width:= OldWidth;
+    end;
+    if Position.X + Width > ADrawer.FGraphicGridR.Right then
+    begin
+      Width:= OldWidth;
+      Position.X:= ADrawer.FGraphicGridR.Right - OldWidth;
+    end;
+  end;
 end;
 
 initialization
