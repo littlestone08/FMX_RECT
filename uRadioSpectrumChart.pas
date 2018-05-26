@@ -112,10 +112,10 @@ type
     Protected
       Procedure DoTrack(); Override;
       procedure MoveHandle(AX, AY: Single); Override;
-      procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
     Public
       Constructor Create(AOwner: TComponent); Override;
       Destructor Destroy; Override;
+      procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
     End;
   Strict Private
     [weak]FAxis: TCustomAxis;
@@ -366,9 +366,9 @@ type
     function CursorMarkX(): Single; inline;
     function CursorMarkY(): Single; inline;
 
-    function Trans_RatioX2GridRCoordinal(RatioX: Single): Single; inline;
+    function Trans_RatioX2GridRCoordinal(RatioX: Single): Single; //inline;
     function Trans_RatioY2GridRCoordinal(RatioY: Single): Single; inline;
-    function Trans_MarkX2GridRCoordinal(X: Single): Single; inline;
+    function Trans_MarkX2GridRCoordinal(X: Single): Single; //inline;
     function Trans_MarkY2GridRCoordinal(Y: Single): Single; inline;
 
     function Trans_RatioX2Mark(Percent: Single): Single; inline;
@@ -1581,10 +1581,9 @@ end;
 
 function TSpectrumDrawer.AddSelectionViaPercent(AnchorFrom, AnchorTo: Single)
   : TAxisSelection;
-var
-  X, Y: Single;
 begin
-  With FAxisesData.Bottom.SelectionManager.AddSelection do
+  Result:= FAxisesData.Bottom.SelectionManager.AddSelection;
+  With  Result do
   begin
     AnchorRatioRight:= AnchorTo;
     AnchorRatioLeft:= AnchorFrom;
@@ -1969,10 +1968,10 @@ end;
 
 function TSpectrumDrawer.Trans_MarkX2GridRCoordinal(X: Single): Single;
 var
-  APercent: Single;
+  ARatio: Single;
 begin
-  APercent:= Trans_MarkX2Ratio(X);
-//  Result:= TranTrans_RatioX2GridRCoordinalrcent);
+  ARatio:= Trans_MarkX2Ratio(X);
+  Result:= Trans_RatioX2GridRCoordinal(ARatio);
 end;
 
 function TSpectrumDrawer.Trans_MarkX2Ratio(Mark: Single): Single;
@@ -2019,12 +2018,12 @@ end;
 
 function TSpectrumDrawer.Trans_RatioX2GridRCoordinal(RatioX: Single): Single;
 begin
-  Result := RatioX * FGraphicGridR.Width + FGraphicGridR.Left - 1
+  Result := RatioX * FGraphicGridR.Width;// + FGraphicGridR.Left - 1
 end;
 
 function TSpectrumDrawer.Trans_RatioY2GridRCoordinal(RatioY: Single): Single;
 begin
-  Result:= RatioY * FGraphicGridR.Width + FGraphicGridR.Left - 1;
+  Result:= RatioY * FGraphicGridR.Width;// + FGraphicGridR.Height - 1;
 end;
 
 procedure TSpectrumDrawer.UpdateGraphicRect;
@@ -2717,17 +2716,14 @@ begin
   if FUI.Parent <> AChart then
   begin
     FUI.Parent:= AChart;
-    if AChart <> Nil then
-    begin
-      ARightPos:= ADrawer.Trans_RatioX2GridRCoordinal(FAnchor.Right) + ADrawer.FGraphicGridR.Left;
+  end;
 
-      CheckUIBound();
-//      Position.Y := ADrawer.FGraphicGridR.Top;
-//      Height:= ADrawer.FGraphicGridR.Height;
-
-      FUI.Position.X:= ADrawer.Trans_MarkX2GridRCoordinal(FAnchor.Left) + ADrawer.FGraphicGridR.Left;
-      FUI.Width:= ARightPos - FUI.Position.X;
-    end;
+  if AChart <> Nil then
+  begin
+    ARightPos:= ADrawer.Trans_MarkX2GridRCoordinal(FAnchor.Right) + ADrawer.FGraphicGridR.Left;
+    FUI.Position.X:= ADrawer.Trans_MarkX2GridRCoordinal(FAnchor.Left) + ADrawer.FGraphicGridR.Left;
+    FUI.Width:= ARightPos - FUI.Position.X;
+    CheckUIBound();
   end;
 end;
 
@@ -2806,12 +2802,9 @@ procedure TAxisSelection.SetAnchorRatioRight(const Value: Single);
 var
   ADrawer: TSpectrumDrawer;
   AChart: TSignalChart;
-  ARightPos: Single;
 begin
   GetDrawerAndChart(ADrawer, AChart);
   AnchorRight:= ADrawer.Trans_RatioX2Mark(Value);
-//  ARightPos:= ADrawer.Trans_RatioX2GridRCoordinal(Value) + ADrawer.FGraphicGridR.Left;
-//  FUI.Width:= ARightPos - FUI.Position.X;
 end;
 
 procedure TAxisSelection.SetAnchorRight(const Value: Single);
@@ -2869,15 +2862,9 @@ end;
 { TSelectionManager }
 
 function TSelectionManager.AddSelection: TAxisSelection;
-var
-  ADrawer: TSpectrumDrawer;
-  AChart: TSignalChart;
 begin
   Result:= TAxisSelection.Create(FAxis);
   Add(Result);
-  Result.AnchorRatioLeft  := 0.4;
-  Result.AnchorRatioRight := 0.6;
-//  Result.DoAnchorChange();
 end;
 
 { TAxisSelection.TSelection2 }
@@ -2939,10 +2926,10 @@ var
   ADrawer: TSpectrumDrawer;
   AChart: TSignalChart;
   OldWidth: Single;
-  OldPosition: TPosition;
+  ///OldPosition: TPosition;
 begin
   OldWidth:= Width;
-  OldPosition:= Position;
+  ///OldPosition:= Position;
 
   inherited;
 
