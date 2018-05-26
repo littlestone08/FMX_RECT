@@ -43,6 +43,9 @@ type
     Button9: TButton;
     Button10: TButton;
     Button11: TButton;
+    Button12: TButton;
+    Switch2: TSwitch;
+    Timer2: TTimer;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -72,6 +75,9 @@ type
     procedure SplitedDrawer1ColorBarClick(Sender: TObject);
     procedure Button10Click(Sender: TObject);
     procedure Button11Click(Sender: TObject);
+    procedure Switch2Switch(Sender: TObject);
+    procedure Button12Click(Sender: TObject);
+    procedure Timer2Timer(Sender: TObject);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -103,7 +109,7 @@ implementation
 
 uses
   SpectraLibrary, FMX.Printer{$IFDEF MSWINDOWS}, CnDebug, FMX.Design.Brush{$ENDIF},
-  ufrmMask;
+  ufrmMask, uFrmLog;
 
 function MakeScaleScreenshot(Sender: TControl): TBitmap; Overload;
 var
@@ -236,7 +242,6 @@ begin
   begin
     self.SplitedDrawer1.AxisesData.Bottom.Zoom(1.1, 60);
   end;
-
 end;
 
 procedure TForm3.Button10Click(Sender: TObject);
@@ -247,6 +252,109 @@ end;
 procedure TForm3.Button11Click(Sender: TObject);
 begin
   self.SplitedDrawer1.ClearSection();
+end;
+
+procedure TForm3.Button12Click(Sender: TObject);
+  function GetObjectInfo(const obj: TFmxObject): String;
+  var
+    c: TControl;
+  begin
+    if obj = NIl then
+    begin
+      Result:= 'object is Nil'
+    end
+    else
+    begin
+      Result:= Result + obj.ToString();
+
+//      Result:= Format('object:{name: %s, ClassName: %s',
+//          [obj.Name, obj.ClassName]);
+//      if obj is TControl then
+//      begin
+//        c:= TControl(c);
+//        Result:= Result + ', IsFocused: ' + c.IsFocused.ToString(True);
+//      end;
+      Result:= Result + '}';
+    end;
+  end;
+var
+  s: String;
+  ARoot: IRoot;
+  obj: TFmxObject;
+  i: Integer;
+  ASele: TAxisSelection;
+begin
+  ARoot:= self.SignalChart1.Root;
+  if (ARoot <> Nil) then
+  begin
+    obj:= ARoot.GetObject;
+    s:= 'Root: '#$D#$A;
+    s:= s + '     GetObject:'#$D#$A;
+    s:= s + '           ' + GetObjectInfo(obj)+#$D#$A;
+//      s:= 'Root of SignalChart is ' + Root.Name;
+    s:= s + '     GetActiveControl:'#$D#$A;
+    if ARoot.GetActiveControl = Nil then
+    begin
+      s:= s + '           ' + 'Nil'+#$D#$A;
+    end
+    else
+    begin
+      s:= s + '           ' + GetObjectInfo(Aroot.GetActiveControl.GetObject)+#$D#$A;
+    end;
+    s:= s + '     Captured:'#$D#$A;
+    if ARoot.Captured = Nil then
+    begin
+      s:= s + '           ' + 'Nil'+#$D#$A;
+    end
+    else
+    begin
+      s:= s + '           ' + GetObjectInfo(Aroot.Captured.GetObject)+#$D#$A;
+    end;
+    s:= s + '     Focused:'#$D#$A;
+    if ARoot.Focused = Nil then
+    begin
+      s:= s + '           ' + 'Nil'+#$D#$A;
+    end
+    else
+    begin
+      s:= s + '           ' + GetObjectInfo(Aroot.Focused.GetObject)+#$D#$A;
+    end;
+  end
+  else
+  begin
+    s:= 'Root of SignalChart is Nil';
+  end;
+  frmLog.Label1.Text:= s;
+  //
+//  s:= '';
+//  for ASele in SplitedDrawer1.AxisesData.Bottom.SelectionManager do
+//  begin
+////    s:= s + Format('(%.2f, %.2f, %.2f)', [ASele.AnchorLeft, (ASele.AnchorLeft + ASele.AnchorRight) / 2, ASele.AnchorRight]);
+//    s:= s + '1';
+////    s:= s + #$D#$A;
+////    s:= DateTimeToStr(Now );// + #$D#$A;
+//  end;
+
+  if SplitedDrawer1.AxisesData.Bottom.SelectionManager.Count > 0 then
+  begin
+    s:= '';
+    for i := 0 to SplitedDrawer1.AxisesData.Bottom.SelectionManager.Count - 1 do
+    begin
+      ASele:= SplitedDrawer1.AxisesData.Bottom.SelectionManager[i];
+      s:= s + Format('(%.2f, %.2f, %.2f)'#$D#$A, [ASele.AnchorLeft, (ASele.AnchorLeft + ASele.AnchorRight) / 2, ASele.AnchorRight]);
+    end;
+  end
+  else
+  begin
+    s:= ' ';
+  end;
+
+  frmLog.Label2.Text:= s;
+  frmLog.Label2.Change;
+  frmLog.Memo1.Text:= frmLog.Label2.Text;
+  frmLog.Memo1.Lines.Add(
+    frmLog.Label2.BoundsRect.Width.ToString + ', ' + frmLog.Label2.BoundsRect.Height.ToString);
+  //frmLog.Label2.Text:= '123';
 end;
 
 procedure TForm3.Button1Click(Sender: TObject);
@@ -412,6 +520,7 @@ BEGIN
 
   self.sbMin.Value:= SplitedDrawer1.AxisesData.Bottom.ViewMin;
   self.sbMax.Value:= SplitedDrawer1.AxisesData.Bottom.ViewMax;
+
 end;
 
 procedure TForm3.FormPaint(Sender: TObject; Canvas: TCanvas;
@@ -562,6 +671,11 @@ end;
 procedure TForm3.Switch1Switch(Sender: TObject);
 begin
   SplitedDrawer1.LargeBuf:= self.Switch1.IsChecked;
+end;
+
+procedure TForm3.Switch2Switch(Sender: TObject);
+begin
+  frmLog.Visible:= Switch2.IsChecked;
 end;
 
 procedure TForm3.InitRainbow;
@@ -746,6 +860,11 @@ begin
   Caption := 'FPS: ' + IntToStr(SignalChart1.FPS);
 
 end;
+procedure TForm3.Timer2Timer(Sender: TObject);
+begin
+  self.Button12Click(Sender);
+end;
+
 {$ENDIF}
 // var
 // i: Integer;

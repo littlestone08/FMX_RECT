@@ -87,7 +87,7 @@ object Form3: TForm3
   end
   object Panel1: TPanel
     Align = Scale
-    Position.X = 264.300964355468700000
+    Position.X = 264.300964355468800000
     Size.Width = 449.519775390625000000
     Size.Height = 17.421550750732420000
     Size.PlatformDefault = False
@@ -208,6 +208,32 @@ object Form3: TForm3
     Text = 'Del Section'
     OnClick = Button11Click
   end
+  object Button12: TButton
+    Position.X = 8.000000000000000000
+    Position.Y = 448.000000000000000000
+    Size.Width = 105.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 55
+    Text = 'QueryFocus'
+    OnClick = Button12Click
+  end
+  object Switch2: TSwitch
+    IsChecked = False
+    Position.X = 64.000000000000000000
+    Position.Y = 256.000000000000000000
+    Size.Width = 49.000000000000000000
+    Size.Height = 27.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 61
+    OnSwitch = Switch2Switch
+  end
+  object Timer2: TTimer
+    Interval = 500
+    OnTimer = Timer2Timer
+    Left = 344
+    Top = 528
+  end
   object SignalRectangeDrawer1: TSpectrumDrawer
     PeakDecrement = 0.100000001490116100
     FalloffDecrement = 0.500000000000000000
@@ -230,8 +256,8 @@ object Form3: TForm3
     AxisesData.Bottom.UnitStr = 'MHz'
     BKColor = claNull
     GridBoundColor = claDarkslategray
-    Left = 16
-    Top = 464
+    Left = 240
+    Top = 536
   end
   object SplitedDrawer1: TWaterFallDrawer
     Chart = SignalChart1
@@ -274,7 +300,7 @@ object Form3: TForm3
       end
       item
         Color = claAqua
-        Offset = 0.414999991655349800
+        Offset = 0.414999991655349700
       end
       item
         Color = claLime
@@ -286,11 +312,11 @@ object Form3: TForm3
       end
       item
         Color = claRed
-        Offset = 0.800000011920928900
+        Offset = 0.800000011920929000
       end
       item
         Color = claWhite
-        Offset = 0.949999988079071100
+        Offset = 0.949999988079071000
       end>
     Left = 80
     Top = 520

@@ -163,10 +163,13 @@ begin
   FCanMove:= True;
   AutoCapture := True;
   ParentBounds := True;
+//  CanFocus:= True;
+
   FColor := DefaultColor;
   FShowHandles := True;
   FMinSize := 15;
   FGripSize := 3;
+
   SetAcceptsControls(False);
 end;
 

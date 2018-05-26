@@ -132,6 +132,7 @@ type
     procedure SetAnchorRatioRight(const Value: Single);
   Private
     Procedure CheckUIBound;
+    Procedure Internal_UpdateAnchorValue;
   Protected
     FUI: TSelectionUI;
     Procedure DoAnchorChange(); Virtual;
@@ -1410,7 +1411,7 @@ end;
 
 procedure TSpectrumDrawer.ClearSection;
 begin
-//  FSelections.Clear;
+  AxisesData.Bottom.SelectionManager.Clear;
 end;
 
 constructor TSpectrumDrawer.Create(AOwner: TComponent);
@@ -2760,6 +2761,20 @@ begin
 end;
 
 
+procedure TAxisSelection.Internal_UpdateAnchorValue;
+var
+  ADrawer: TSpectrumDrawer;
+begin
+
+  if GetDrawer(ADrawer) then
+  begin
+    CheckUIBound();
+    //Update L, R Mark
+    FAnchor.Left:= ADrawer.Trans_GridRCoordinalX2Mark(FUI.Position.X - ADrawer.FGraphicGridR.Left);
+    FAnchor.Right:= ADrawer.Trans_GridRCoordinalX2Mark(FUI.Position.X - ADrawer.FGraphicGridR.Left + FUI.Width);
+  end;
+end;
+
 procedure TAxisSelection.SetAnchorLeft(const Value: Single);
 var
   NewValue: Single;
@@ -2847,21 +2862,22 @@ begin
 end;
 
 procedure TAxisSelection.TSelectionUI2.DoTrack;
-var
-  AAxisSelection: TAxisSelection;
-  ADrawer: TSpectrumDrawer;
+//var
+//  AAxisSelection: TAxisSelection;
+//  ADrawer: TSpectrumDrawer;
 //  AChart: TSignalChart;
 begin
-  AAxisSelection:= TAxisSelection(self.Tag);
-
-  if AAxisSelection.GetDrawer(ADrawer) then
-  begin
-    AAxisSelection.CheckUIBound();
-
-    //Update L, R Mark
-    AAxisSelection.FAnchor.Left:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X);
-    AAxisSelection.FAnchor.Right:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X + Width);
-  end;
+//  AAxisSelection:= TAxisSelection(self.Tag);
+//
+//  if AAxisSelection.GetDrawer(ADrawer) then
+//  begin
+//    AAxisSelection.CheckUIBound();
+//
+//    //Update L, R Mark
+//    AAxisSelection.FAnchor.Left:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X - ADrawer.FGraphicGridR.Left);
+//    AAxisSelection.FAnchor.Right:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X - ADrawer.FGraphicGridR.Left + Width);
+//  end;
+  TAxisSelection(tag).Internal_UpdateAnchorValue();
   inherited;
 end;
 
@@ -2909,11 +2925,12 @@ begin
       Position.X:= ADrawer.FGraphicGridR.Right - OldWidth;
     end;
   end;
+  TAxisSelection(tag).Internal_UpdateAnchorValue();
 end;
 
 initialization
 
-GlobalUseGPUCanvas := True;
+//GlobalUseGPUCanvas := True;
 
 // GlobalUseDX10Software:= True;
 // GlobalUseDirect2D:= True;
