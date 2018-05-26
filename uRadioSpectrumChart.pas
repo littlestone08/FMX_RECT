@@ -138,9 +138,9 @@ type
   Public
     Constructor Create(Axis: TCustomAxis);
     Destructor Destroy; Override;
-    Function TransAnchorToChart(AAnchor: TSelectionAnchor; var X1: Single; var X2: Single): Boolean;
-    Function TransChartToAnchor(X1: Single; X2: Single; var AAnchor: TSelectionAnchor): Boolean;
     function GetDrawerAndChart(out Drawer: TSpectrumDrawer; out Chart: TSignalChart): Boolean;
+    function GetDrawer(out Drawer: TSpectrumDrawer): Boolean;
+    function GetChart(out Chart: TSignalChart): Boolean;
     Property AnchorLeft: Single Read GetAnchorLeft Write SetAnchorLeft;
     Property AnchorRight: Single Read GetAnchorRight Write SetAnchorRight;
     Property AnchorRatioLeft: Single Read GetAnchorRatioLeft Write SetAnchorRatioLeft;
@@ -287,10 +287,6 @@ type
   Private Type
     { TODO: 界面拖动时需要更新LeftPosPercent, RightPosPercent }
     { TODO: 拖动时FPS会增加，如何处理？ }
-  Private
-//    Procedure ResettleSelectoin(Value: TLocatedSelection);
-    Procedure ResettleSelections;
-
   Private
     FGrid: TBitmap;
     // corss cursor
@@ -1849,35 +1845,6 @@ begin
   Result:= Trans_GridRCoordinalY2Ratio(FCrossY - FGraphicGridR.Top);
 end;
 
-procedure TSpectrumDrawer.ResettleSelections;
-//var
-//  iSelection: TLocatedSelection;
-begin
-//  for iSelection in FSelections do
-//  begin
-//    ResettleSelectoin(iSelection);
-//  end;
-end;
-
-//procedure TSpectrumDrawer.ResettleSelectoin(Value: TLocatedSelection);
-//var
-//  ALeft: Single;
-//  ARight: Single;
-//begin
-//  With Value do
-//  begin
-//    ALeft := FGraphicGridR.Width * LeftPosPercent;
-//    ARight := FGraphicGridR.Width * RightPosPercent;
-//
-//    Width := ARight - ALeft;
-//    Height := FGraphicGridR.Height;
-//
-//    Parent := FChart;
-//
-//    Position.X := ALeft + FGraphicGridR.Left;
-//    Position.Y := FGraphicGridR.Top;
-//  end;
-//end;
 
 procedure TSpectrumDrawer.Internal_DrawGraphicBound(ACanvas: TCanvas);
 const
@@ -2079,8 +2046,6 @@ begin
   FGraphicGridR.Bottom := FGraphicGridR.Bottom - FLeftTextR.Height * 0.5 -
     FBottomTextR.Height;
   FGraphicGridR.Right := FGraphicGridR.Right - FBottomTextR.Width * 0.5;
-  // ===========================================================================
-  ResettleSelections();
 end;
 
 procedure TSpectrumDrawer.UpdateViewRangeIndex(Axis: TCustomAxis);
@@ -2735,24 +2700,47 @@ end;
 function TAxisSelection.GetAnchorRatioLeft: Single;
 var
   ADrawer: TSpectrumDrawer;
-  AChart: TSignalChart;
+//  AChart: TSignalChart;
 begin
-  GetDrawerAndChart(ADrawer, AChart);
+  GetDrawer(ADrawer);
   Result:= ADrawer.Trans_MarkX2Ratio(FAnchor.Left);
 end;
 
 function TAxisSelection.GetAnchorRatioRight: Single;
 var
   ADrawer: TSpectrumDrawer;
-  AChart: TSignalChart;
+//  AChart: TSignalChart;
 begin
-  GetDrawerAndChart(ADrawer, AChart);
+  GetDrawer(ADrawer);
   Result:= ADrawer.Trans_MarkX2Ratio(FAnchor.Right);
 end;
 
 function TAxisSelection.GetAnchorRight: Single;
 begin
   Result:= FAnchor.Right;
+end;
+
+function TAxisSelection.GetChart(out Chart: TSignalChart): Boolean;
+var
+  ADrawer: TSpectrumDrawer;
+begin
+  Chart:= Nil;
+  if GetDrawer(ADrawer) then
+  begin
+    Chart:= ADrawer.Chart;
+  end;
+  Result:= Chart <> Nil;
+end;
+
+function TAxisSelection.GetDrawer(out Drawer: TSpectrumDrawer): Boolean;
+begin
+  Result := False;
+  Drawer := Nil;
+  if (FAxis <> Nil) and (FAxis.FDrawer <> Nil) then
+  begin
+    Drawer:= FAxis.FDrawer as TSpectrumDrawer;
+    Result:= True;
+  end;
 end;
 
 function TAxisSelection.GetDrawerAndChart(out Drawer: TSpectrumDrawer;
@@ -2791,20 +2779,17 @@ end;
 procedure TAxisSelection.SetAnchorRatioLeft(const Value: Single);
 var
   ADrawer: TSpectrumDrawer;
-  AChart: TSignalChart;
 begin
-  GetDrawerAndChart(ADrawer, AChart);
+  if GetDrawer(ADrawer) then
   AnchorLeft:= ADrawer.Trans_RatioX2Mark(Value);
-  //FUI.Position.X:= ADrawer.Trans_RatioX2GridRCoordinal(Value) + ADrawer.FGraphicGridR.Left;
 end;
 
 procedure TAxisSelection.SetAnchorRatioRight(const Value: Single);
 var
   ADrawer: TSpectrumDrawer;
-  AChart: TSignalChart;
 begin
-  GetDrawerAndChart(ADrawer, AChart);
-  AnchorRight:= ADrawer.Trans_RatioX2Mark(Value);
+  if GetDrawer(ADrawer) then
+    AnchorRight:= ADrawer.Trans_RatioX2Mark(Value);
 end;
 
 procedure TAxisSelection.SetAnchorRight(const Value: Single);
@@ -2823,39 +2808,19 @@ begin
 end;
 
 
-function TAxisSelection.TransAnchorToChart(AAnchor: TSelectionAnchor; var X1,
-  X2: Single): Boolean;
-begin
-  Result:= False;
 
-end;
 
-function TAxisSelection.TransChartToAnchor(X1, X2: Single;
-  var AAnchor: TSelectionAnchor): Boolean;
-begin
-  Result:= False;
-end;
 
 
 procedure TAxisSelection.CheckUIBound;
 var
   ADrawer: TSpectrumDrawer;
-  AChart: TSignalChart;
 begin
-  if GetDrawerAndChart(ADrawer, AChart) then
+  if GetDrawer(ADrawer) then
   begin
-    // fix the selection position
-
     FUI.Position.Y := ADrawer.FGraphicGridR.Top;
     FUI.Height:= ADrawer.FGraphicGridR.Height;
-
     FUI.Position.X:= EnsureRange(FUI.Position.X, ADrawer.FGraphicGridR.Left, ADrawer.FGraphicGridR.Right - FUI.Width);
-
-
-
-//    //Update L, R Mark
-//    AAxisSelection.FAnchor.Left:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X);
-//    AAxisSelection.FAnchor.Right:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X + Width);
   end;
 end;
 
@@ -2885,11 +2850,11 @@ procedure TAxisSelection.TSelectionUI2.DoTrack;
 var
   AAxisSelection: TAxisSelection;
   ADrawer: TSpectrumDrawer;
-  AChart: TSignalChart;
+//  AChart: TSignalChart;
 begin
   AAxisSelection:= TAxisSelection(self.Tag);
 
-  if AAxisSelection.GetDrawerAndChart(ADrawer, AChart) then
+  if AAxisSelection.GetDrawer(ADrawer) then
   begin
     AAxisSelection.CheckUIBound();
 
@@ -2924,17 +2889,14 @@ procedure TAxisSelection.TSelectionUI2.MoveHandle(AX, AY: Single);
 var
   ASelection: TAxisSelection;
   ADrawer: TSpectrumDrawer;
-  AChart: TSignalChart;
+//  AChart: TSignalChart;
   OldWidth: Single;
-  ///OldPosition: TPosition;
 begin
   OldWidth:= Width;
-  ///OldPosition:= Position;
-
   inherited;
 
   ASelection:= TAxisSelection(self.Tag);
-  if ASelection.GetDrawerAndChart(ADrawer, AChart) then
+  if ASelection.GetDrawer(ADrawer) then
   begin
     if Position.X < ADrawer.FGraphicGridR.Left then
     begin
