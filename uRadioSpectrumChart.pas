@@ -2,6 +2,7 @@ unit uRadioSpectrumChart;
 
 interface
 
+{TODO: 绘制类接口化来继承，使让瀑布图可以挂在任何的谱线图上}
 uses
   System.Classes, System.SysUtils, System.Types, System.UITypes, //System.Contnrs,
   System.Math, System.DateUtils, System.IOUtils, System.Generics.Collections,
@@ -1921,7 +1922,8 @@ end;
 
 function TSpectrumDrawer.Trans_GridRCoordinalX2Ratio(X: Single): Single;
 begin
-  Result := (X + 1) / (FGraphicGridR.Width);
+//  Result := (X + 1) / (FGraphicGridR.Width); /选区位置计算要求不能 加１
+  Result := (X) / (FGraphicGridR.Width);
 end;
 
 function TSpectrumDrawer.Trans_GridRCoordinalY2Mark(Y: Single): Single;
@@ -1931,7 +1933,9 @@ end;
 
 function TSpectrumDrawer.Trans_GridRCoordinalY2Ratio(Y: Single): Single;
 begin
-  Result := (Y + 1) / (FGraphicGridR.Height);
+//  Result := (Y + 1) / (FGraphicGridR.Height);   //选区位置计算要求不能 加１
+
+  Result := (Y) / (FGraphicGridR.Height);
 end;
 
 function TSpectrumDrawer.Trans_MarkX2GridRCoordinal(X: Single): Single;
@@ -2905,24 +2909,38 @@ procedure TAxisSelection.TSelectionUI2.MoveHandle(AX, AY: Single);
 var
   ASelection: TAxisSelection;
   ADrawer: TSpectrumDrawer;
-//  AChart: TSignalChart;
   OldWidth: Single;
+  OppositePos: Single;
 begin
-  OldWidth:= Width;
   inherited;
+
 
   ASelection:= TAxisSelection(self.Tag);
   if ASelection.GetDrawer(ADrawer) then
   begin
-    if Position.X < ADrawer.FGraphicGridR.Left then
-    begin
-      Position.X:= ADrawer.FGraphicGridR.Left;
-      Width:= OldWidth;
-    end;
-    if Position.X + Width > ADrawer.FGraphicGridR.Right then
-    begin
-      Width:= OldWidth;
-      Position.X:= ADrawer.FGraphicGridR.Right - OldWidth;
+    case HotHandle of
+      None: ;
+      LeftTop: ;
+      RightTop: ;
+      LeftBottom: ;
+      RightBottom: ;
+      LeftCenter:
+      begin
+        OppositePos:=  Position.X + Width;
+        if Position.X < ADrawer.FGraphicGridR.Left then
+        begin
+          Position.X:= ADrawer.FGraphicGridR.Left;
+          Width:= OppositePos - Position.X;
+        end
+      end ;
+      RightCenter:
+      begin
+        OppositePos:= Position.X;
+        if Position.X + Width > ADrawer.FGraphicGridR.Right then
+        begin
+          Width:= ADrawer.FGraphicGridR.Right - OppositePos;
+        end;
+      end;
     end;
   end;
   TAxisSelection(tag).Internal_UpdateAnchorValue();

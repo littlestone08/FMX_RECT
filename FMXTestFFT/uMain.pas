@@ -77,7 +77,6 @@ type
     procedure Button11Click(Sender: TObject);
     procedure Switch2Switch(Sender: TObject);
     procedure Button12Click(Sender: TObject);
-    procedure Timer2Timer(Sender: TObject);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -860,10 +859,7 @@ begin
   Caption := 'FPS: ' + IntToStr(SignalChart1.FPS);
 
 end;
-procedure TForm3.Timer2Timer(Sender: TObject);
-begin
-  self.Button12Click(Sender);
-end;
+
 
 {$ENDIF}
 // var
