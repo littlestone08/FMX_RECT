@@ -124,19 +124,23 @@ type
       private
         FDontDrawLeftEdge: Boolean;
         FDontDrawRightEdge: Boolean;
+        FDontDrawCenterLine: Boolean;
         procedure SetDontDrawLeftEdge(const Value: Boolean);
         procedure SetDontDrawRightEdge(const Value: Boolean);
+        procedure SetDontDrawCenterLine(const Value: Boolean);
     Protected
       Procedure DoTrack(); Override;
       procedure MoveHandle(AX, AY: Single); Override;
       procedure DrawFrame(const Canvas: TCanvas; const Rect: TRectF); Override;
       procedure DrawHandles(R: TRectF; AHandles: TSelection6P.TGrabHandles); override;
+      Procedure DrawCenterLine(const Canvas: TCanvas; const Rect: TRectF); Override;
     Public
       Constructor Create(AOwner: TComponent); Override;
       Destructor Destroy; Override;
       procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
       Property DontDrawLeftEdge: Boolean read FDontDrawLeftEdge write SetDontDrawLeftEdge;
       Property DontDrawRightEdge: Boolean read FDontDrawRightEdge write SetDontDrawRightEdge;
+      Property DontDrawCenterLine: Boolean read FDontDrawCenterLine write SetDontDrawCenterLine;
     End;
   Strict Private[weak]
     FAxis: TCustomAxis;
@@ -2920,6 +2924,13 @@ begin
   inherited;
 end;
 
+procedure TAxisSelection.TSelectionUI2.DrawCenterLine(const Canvas: TCanvas;
+  const Rect: TRectF);
+begin
+  if Not FDontDrawCenterLine then
+    inherited;
+end;
+
 procedure TAxisSelection.TSelectionUI2.DrawFrame(const Canvas: TCanvas;
   const Rect: TRectF);
 var
@@ -3026,16 +3037,40 @@ begin
   TAxisSelection(Tag).Internal_UpdateAnchorValue();
 end;
 
-procedure TAxisSelection.TSelectionUI2.SetDontDrawLeftEdge(
+procedure TAxisSelection.TSelectionUI2.SetDontDrawCenterLine(
   const Value: Boolean);
 begin
-  FDontDrawLeftEdge := Value;
+  FDontDrawCenterLine := Value;
+
+  InvalidateRect(LocalRect);
+end;
+
+procedure TAxisSelection.TSelectionUI2.SetDontDrawLeftEdge(
+  const Value: Boolean);
+var
+  R: TRectF;
+begin
+  if FDontDrawLeftEdge <> Value then
+  begin
+    FDontDrawLeftEdge := Value;
+    R:= LocalRect;
+    R.Inflate(GripSize, 0);
+    InvalidateRect(R);
+  end;
 end;
 
 procedure TAxisSelection.TSelectionUI2.SetDontDrawRightEdge(
   const Value: Boolean);
+var
+  R: TRectF;
 begin
-  FDontDrawRightEdge := Value;
+  if FDontDrawRightEdge <> Value then
+  begin
+    FDontDrawRightEdge := Value;
+    R:= LocalRect;
+    R.Inflate(GripSize, 0);
+    InvalidateRect(R);
+  end;
 end;
 
 initialization

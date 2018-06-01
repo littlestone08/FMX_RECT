@@ -139,6 +139,7 @@ type
     FCenterLinePen: TStrokeBrush;
     procedure SetCenterLinePen(const Value: TStrokeBrush);
   Protected
+    Procedure DrawCenterLine(const Canvas: TCanvas; const Rect: TRectF); virtual;
     procedure Paint; override;
   Public
     Constructor Create(AOwner: TComponent); Override;
@@ -765,18 +766,27 @@ begin
   inherited;
 end;
 
+procedure TSelectionUI.DrawCenterLine(const Canvas: TCanvas;
+  const Rect: TRectF);
+var
+  A, B: TPointF;
+begin
+  A:= TPointF.Create((Rect.Left + Rect.Right) / 2, Rect.Top);
+  B:= TPointF.Create((Rect.Left + Rect.Right) / 2, Rect.Bottom);
+  Canvas.DrawLine(A, B, 1, FCenterLinePen);
+end;
+
+
 procedure TSelectionUI.Paint;
 var
   R : TRectF;
-  A, B: TPointF;
 begin
   inherited;
+
   R:= LocalRect;
   R.Inflate(-0.5, -0.5);
 
-  A:= TPointF.Create((R.Left + R.Right) / 2, R.Top);
-  B:= TPointF.Create((R.Left + R.Right) / 2, R.Bottom);
-  Canvas.DrawLine(A, B, 1, FCenterLinePen);
+  DrawCenterLine(Canvas, R);
 end;
 
 end.

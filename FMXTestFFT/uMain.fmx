@@ -2,8 +2,8 @@ object Form3: TForm3
   Left = 0
   Top = 0
   Caption = 'Form3'
-  ClientHeight = 576
-  ClientWidth = 975
+  ClientHeight = 626
+  ClientWidth = 999
   Position = MainFormCenter
   FormFactor.Width = 320
   FormFactor.Height = 480
@@ -13,24 +13,24 @@ object Form3: TForm3
   DesignerMasterStyle = 0
   object Button1: TButton
     Anchors = [akBottom]
-    Position.X = 508.000000000000000000
-    Position.Y = 532.000000000000000000
+    Position.X = 521.489257812500000000
+    Position.Y = 582.000000000000000000
     TabOrder = 5
     Text = 'Stop'
     OnClick = Button1Click
   end
   object Button2: TButton
     Anchors = [akBottom]
-    Position.X = 841.000000000000000000
-    Position.Y = 532.000000000000000000
+    Position.X = 862.686157226562500000
+    Position.Y = 582.000000000000000000
     TabOrder = 6
     Text = 'Button2'
     OnClick = Button2Click
   end
   object Button3: TButton
     Anchors = [akBottom]
-    Position.X = 137.000000000000000000
-    Position.Y = 532.000000000000000000
+    Position.X = 141.356918334960900000
+    Position.Y = 582.000000000000000000
     TabOrder = 7
     Text = 'Start'
     OnClick = Button3Click
@@ -87,9 +87,9 @@ object Form3: TForm3
   end
   object Panel1: TPanel
     Align = Scale
-    Position.X = 264.300964355468700000
-    Size.Width = 449.519775390625000000
-    Size.Height = 17.421550750732420000
+    Position.X = 270.806854248046900000
+    Size.Width = 460.584869384765600000
+    Size.Height = 18.933841705322270000
     Size.PlatformDefault = False
     TabOrder = 13
     OnMouseDown = Panel1MouseDown
@@ -121,9 +121,9 @@ object Form3: TForm3
     Anchors = [akLeft, akTop, akRight, akBottom]
     Locked = True
     Position.X = 120.000000000000000000
-    Position.Y = 40.000000000000000000
-    Size.Width = 807.000000000000000000
-    Size.Height = 486.000000000000000000
+    Position.Y = 64.000000000000000000
+    Size.Width = 831.000000000000000000
+    Size.Height = 512.000000000000000000
     Size.PlatformDefault = False
     OnMouseMove = SignalChart1MouseMove
     OnMouseWheel = SignalChart1MouseWheel
@@ -234,15 +234,35 @@ object Form3: TForm3
     Left = 344
     Top = 528
   end
-  object Switch3: TSwitch
+  object swL: TSwitch
     IsChecked = False
-    Position.X = 8.000000000000000000
-    Position.Y = 472.000000000000000000
+    Position.X = 120.000000000000000000
+    Position.Y = 24.000000000000000000
+    Size.Width = 57.000000000000000000
+    Size.Height = 27.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 70
+    OnSwitch = swLSwitch
+  end
+  object swC: TSwitch
+    IsChecked = False
+    Position.X = 192.000000000000000000
+    Position.Y = 24.000000000000000000
+    Size.Width = 57.000000000000000000
+    Size.Height = 27.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 69
+    OnSwitch = swLSwitch
+  end
+  object swR: TSwitch
+    IsChecked = False
+    Position.X = 256.000000000000000000
+    Position.Y = 24.000000000000000000
     Size.Width = 57.000000000000000000
     Size.Height = 27.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 68
-    OnSwitch = Switch3Switch
+    OnSwitch = swLSwitch
   end
   object SignalRectangeDrawer1: TSpectrumDrawer
     PeakDecrement = 0.100000001490116100
@@ -310,7 +330,7 @@ object Form3: TForm3
       end
       item
         Color = claAqua
-        Offset = 0.414999991655349800
+        Offset = 0.414999991655349700
       end
       item
         Color = claLime
@@ -322,11 +342,11 @@ object Form3: TForm3
       end
       item
         Color = claRed
-        Offset = 0.800000011920928900
+        Offset = 0.800000011920929000
       end
       item
         Color = claWhite
-        Offset = 0.949999988079071100
+        Offset = 0.949999988079071000
       end>
     Left = 80
     Top = 520

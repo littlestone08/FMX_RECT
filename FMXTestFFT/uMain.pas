@@ -44,7 +44,9 @@ type
     Button12: TButton;
     Switch2: TSwitch;
     Timer2: TTimer;
-    Switch3: TSwitch;
+    swL: TSwitch;
+    swC: TSwitch;
+    swR: TSwitch;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -76,7 +78,7 @@ type
     procedure Button11Click(Sender: TObject);
     procedure Switch2Switch(Sender: TObject);
     procedure Button12Click(Sender: TObject);
-    procedure Switch3Switch(Sender: TObject);
+    procedure swLSwitch(Sender: TObject);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -679,7 +681,7 @@ begin
   frmLog.Visible:= Switch2.IsChecked;
 end;
 
-procedure TForm3.Switch3Switch(Sender: TObject);
+procedure TForm3.swLSwitch(Sender: TObject);
 var
   i: Integer;
   ASele: TAxisSelection;
@@ -689,7 +691,12 @@ begin
     for i := 0 to SplitedDrawer1.AxisesData.Bottom.SelectionManager.Count - 1 do
     begin
       ASele:= SplitedDrawer1.AxisesData.Bottom.SelectionManager[i];
-      ASele.FUI.DontDrawLeftEdge:= Switch3.IsChecked;
+      if Sender = swL then
+        ASele.FUI.DontDrawLeftEdge:= TSwitch(Sender).IsChecked
+      else if Sender = swC then
+        ASele.FUI.DontDrawCenterLine:= TSwitch(Sender).IsChecked
+      else if Sender = swR then
+        ASele.FUI.DontDrawRightEdge:= TSwitch(Sender).IsChecked
 //      ASele.Destroy:= s + Format('(%.2f, %.2f, %.2f)'#$D#$A, [ASele.AnchorLeft, (ASele.AnchorLeft + ASele.AnchorRight) / 2, ASele.AnchorRight]);
     end;
   end
