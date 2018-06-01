@@ -52,7 +52,7 @@ type
     procedure SetCanMove(const Value: Boolean);
   protected
     procedure DrawFrame(const Canvas: TCanvas; const Rect: TRectF); virtual;
-    procedure DrawHandles(R: TRectF); virtual;
+    procedure DrawHandles(R: TRectF; AHandles: TGrabHandles); virtual;
   Protected
     procedure MoveHandle(AX, AY: Single); Virtual;
     function DoGetUpdateRect: TRectF; override;
@@ -424,7 +424,7 @@ begin
 
   if (FHandles <> [])  and ShowHandles then
   begin
-    DrawHandles(R);
+    DrawHandles(R, FHandles);
   end;
 end;
 
@@ -666,20 +666,20 @@ begin
   Repaint;
 end;
 
-procedure TSelection6P.DrawHandles(R: TRectF);
+procedure TSelection6P.DrawHandles(R: TRectF; AHandles: TGrabHandles);
 begin
   R := LocalRect;
-  if TGrabHandle.LeftTop in FHandles then
+  if TGrabHandle.LeftTop in AHandles then
     DrawHandle(Canvas, TGrabHandle.LeftTop, TRectF.Create(R.Left - GripSize, R.Top - GripSize, R.Left + GripSize, R.Top + GripSize));
-  if TGrabHandle.RightTop in FHandles then
+  if TGrabHandle.RightTop in AHandles then
     DrawHandle(Canvas, TGrabHandle.RightTop, TRectF.Create(R.Right - GripSize, R.Top - GripSize, R.Right + GripSize, R.Top + GripSize));
-  if TGrabHandle.LeftBottom in FHandles then
+  if TGrabHandle.LeftBottom in AHandles then
     DrawHandle(Canvas, TGrabHandle.LeftBottom, TRectF.Create(R.Left - GripSize, R.Bottom - GripSize, R.Left + GripSize, R.Bottom + GripSize));
-  if TGrabHandle.RightBottom in FHandles then
+  if TGrabHandle.RightBottom in AHandles then
     DrawHandle(Canvas, TGrabHandle.RightBottom, TRectF.Create(R.Right - GripSize, R.Bottom - GripSize, R.Right + GripSize, R.Bottom + GripSize));
-  if TGrabHandle.LeftCenter in FHandles then
+  if TGrabHandle.LeftCenter in AHandles then
     DrawHandle(Canvas, TGrabHandle.LeftCenter, TRectF.Create(R.Left - GripSize, (R.Bottom + R.Top) / 2 - GripSize, R.Left + GripSize, (R.Bottom + R.Top) / 2 + GripSize));
-  if TGrabHandle.RightCenter in FHandles then
+  if TGrabHandle.RightCenter in AHandles then
     DrawHandle(Canvas, TGrabHandle.RightCenter, TRectF.Create(R.Right - GripSize, (R.Bottom + R.Top) / 2 - GripSize, R.Right + GripSize, (R.Bottom + R.Top) / 2 + GripSize));
 end;
 

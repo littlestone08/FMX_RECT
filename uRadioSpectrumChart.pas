@@ -121,13 +121,22 @@ type
     End;
   Private Type
     TSelectionUI2 = Class(TSelectionUI)
+      private
+        FDontDrawLeftEdge: Boolean;
+        FDontDrawRightEdge: Boolean;
+        procedure SetDontDrawLeftEdge(const Value: Boolean);
+        procedure SetDontDrawRightEdge(const Value: Boolean);
     Protected
       Procedure DoTrack(); Override;
       procedure MoveHandle(AX, AY: Single); Override;
+      procedure DrawFrame(const Canvas: TCanvas; const Rect: TRectF); Override;
+      procedure DrawHandles(R: TRectF; AHandles: TSelection6P.TGrabHandles); override;
     Public
       Constructor Create(AOwner: TComponent); Override;
       Destructor Destroy; Override;
       procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
+      Property DontDrawLeftEdge: Boolean read FDontDrawLeftEdge write SetDontDrawLeftEdge;
+      Property DontDrawRightEdge: Boolean read FDontDrawRightEdge write SetDontDrawRightEdge;
     End;
   Strict Private[weak]
     FAxis: TCustomAxis;
@@ -145,8 +154,8 @@ type
   Private
     Procedure CheckUIBound;
     Procedure Internal_UpdateAnchorValue;
-  Protected
-    FUI: TSelectionUI;
+  Public
+    FUI: TSelectionUI2;
   Public
     Constructor Create(Axis: TCustomAxis);
     Destructor Destroy; Override;
@@ -2911,6 +2920,48 @@ begin
   inherited;
 end;
 
+procedure TAxisSelection.TSelectionUI2.DrawFrame(const Canvas: TCanvas;
+  const Rect: TRectF);
+var
+  ASides: TSides;
+  OldDash: TStrokeDash;
+  OldColor: TAlphaColor;
+begin
+  if FDontDrawLeftEdge or FDontDrawRightEdge then
+  begin
+    ASides:= [TSide.Top, TSide.Bottom, TSide.Left, TSide.Right];
+    if FDontDrawLeftEdge then
+      Exclude(ASides, TSide.Left);
+    if FDontDrawRightEdge then
+      Exclude(ASides, TSide.Right);
+
+    OldDash:= Canvas.Stroke.Dash;
+    OldColor:= CAnvas.Stroke.Color;
+    try
+      Canvas.Stroke.Dash:=  TStrokeDash.Dash.sdDash;
+      Canvas.Stroke.Color:= Color;
+      Canvas.DrawRectSides(Rect, 0, 0, [], AbsoluteOpacity, ASides);
+      Canvas.Stroke.Dash:= OldDash;
+    finally
+      Canvas.Stroke.Dash:= OldDash;
+      Canvas.Stroke.Color:= OldColor;
+    end;
+  end
+  else
+  begin
+    inherited DrawFrame(Canvas, Rect);
+  end;
+end;
+
+procedure TAxisSelection.TSelectionUI2.DrawHandles(R: TRectF; AHandles: TSelection6P.TGrabHandles);
+begin
+  if DontDrawLeftEdge then
+    Exclude(AHandles, TGrabHandle.LeftCenter);
+  if DontDrawRightEdge then
+    Exclude(AHandles, TGrabHandle.RightCenter);
+  inherited DrawHandles(R, AHandles);
+end;
+
 procedure TAxisSelection.TSelectionUI2.MouseMove(Shift: TShiftState;
 X, Y: Single);
 var
@@ -2975,9 +3026,21 @@ begin
   TAxisSelection(Tag).Internal_UpdateAnchorValue();
 end;
 
+procedure TAxisSelection.TSelectionUI2.SetDontDrawLeftEdge(
+  const Value: Boolean);
+begin
+  FDontDrawLeftEdge := Value;
+end;
+
+procedure TAxisSelection.TSelectionUI2.SetDontDrawRightEdge(
+  const Value: Boolean);
+begin
+  FDontDrawRightEdge := Value;
+end;
+
 initialization
 
- GlobalUseGPUCanvas := True;
+// GlobalUseGPUCanvas := True;
 
 // GlobalUseDX10Software:= True;
 // GlobalUseDirect2D:= True;

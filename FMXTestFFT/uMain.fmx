@@ -87,7 +87,7 @@ object Form3: TForm3
   end
   object Panel1: TPanel
     Align = Scale
-    Position.X = 264.300964355468800000
+    Position.X = 264.300964355468700000
     Size.Width = 449.519775390625000000
     Size.Height = 17.421550750732420000
     Size.PlatformDefault = False
@@ -234,6 +234,16 @@ object Form3: TForm3
     Left = 344
     Top = 528
   end
+  object Switch3: TSwitch
+    IsChecked = False
+    Position.X = 8.000000000000000000
+    Position.Y = 472.000000000000000000
+    Size.Width = 57.000000000000000000
+    Size.Height = 27.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 68
+    OnSwitch = Switch3Switch
+  end
   object SignalRectangeDrawer1: TSpectrumDrawer
     PeakDecrement = 0.100000001490116100
     FalloffDecrement = 0.500000000000000000
@@ -300,7 +310,7 @@ object Form3: TForm3
       end
       item
         Color = claAqua
-        Offset = 0.414999991655349700
+        Offset = 0.414999991655349800
       end
       item
         Color = claLime
@@ -312,11 +322,11 @@ object Form3: TForm3
       end
       item
         Color = claRed
-        Offset = 0.800000011920929000
+        Offset = 0.800000011920928900
       end
       item
         Color = claWhite
-        Offset = 0.949999988079071000
+        Offset = 0.949999988079071100
       end>
     Left = 80
     Top = 520

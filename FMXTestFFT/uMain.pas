@@ -8,9 +8,7 @@ uses
   System.DateUtils,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.Effects,
   FMX.Filter.Effects, FMX.Objects, FMX.Controls.Presentation, FMX.StdCtrls,
-  FMX.Layouts, FMX.ExtCtrls, uRadioSpectrumChart, FMXTee.Engine, FMXTee.Series,
-  FMXTee.Procs, FMXTee.Chart,
-  FMX.PlatForm,
+  FMX.Layouts, FMX.ExtCtrls, uRadioSpectrumChart,  FMX.PlatForm,
   {$IFDEF MSWINDOWS}
   Bass,
   {$ENDIF}
@@ -46,6 +44,7 @@ type
     Button12: TButton;
     Switch2: TSwitch;
     Timer2: TTimer;
+    Switch3: TSwitch;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -77,6 +76,7 @@ type
     procedure Button11Click(Sender: TObject);
     procedure Switch2Switch(Sender: TObject);
     procedure Button12Click(Sender: TObject);
+    procedure Switch3Switch(Sender: TObject);
   private
     { Private declarations }
     FData: TArray<Single>;
@@ -659,7 +659,9 @@ begin
   AGradient:= TGradient.Create;
   try
     AGradient.Assign(SplitedDrawer1.ColorBarGradient);
+    {$IFDEF MSWINDOWS}
     ShowGradientDialog(AGradient);
+    {$ENDIF}
     SplitedDrawer1.ColorBarGradient:= AGradient;
   finally
     AGradient.Free;
@@ -675,6 +677,23 @@ end;
 procedure TForm3.Switch2Switch(Sender: TObject);
 begin
   frmLog.Visible:= Switch2.IsChecked;
+end;
+
+procedure TForm3.Switch3Switch(Sender: TObject);
+var
+  i: Integer;
+  ASele: TAxisSelection;
+begin
+  if SplitedDrawer1.AxisesData.Bottom.SelectionManager.Count > 0 then
+  begin
+    for i := 0 to SplitedDrawer1.AxisesData.Bottom.SelectionManager.Count - 1 do
+    begin
+      ASele:= SplitedDrawer1.AxisesData.Bottom.SelectionManager[i];
+      ASele.FUI.DontDrawLeftEdge:= Switch3.IsChecked;
+//      ASele.Destroy:= s + Format('(%.2f, %.2f, %.2f)'#$D#$A, [ASele.AnchorLeft, (ASele.AnchorLeft + ASele.AnchorRight) / 2, ASele.AnchorRight]);
+    end;
+  end
+
 end;
 
 procedure TForm3.InitRainbow;
@@ -707,10 +726,11 @@ var
   rr, gg, bb: double;
   AColor: TAlphaColor;
 begin
+  {$IFDEF MSWINDOWS}
   for i := 400 to 700 do
   begin
     if i = 678 then
-      ShowMessageUser('123');
+      ShowMessage('123');
     spectral_color(rr, gg, bb, i);
     With TAlphaColorRec(AColor) do
     begin
@@ -721,6 +741,7 @@ begin
     end;
     Insert(AColor, FSpectralColors, Length(FSpectralColors));
   end;
+  {$ENDIF}
 end;
 
 procedure TForm3.InitSpectralColors2;
