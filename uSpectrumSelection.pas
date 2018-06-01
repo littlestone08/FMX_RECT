@@ -51,6 +51,9 @@ type
     procedure SetHandles(const Value: TGrabHandles);
     procedure SetCanMove(const Value: Boolean);
   protected
+    procedure DrawFrame(const Canvas: TCanvas; const Rect: TRectF); virtual;
+    procedure DrawHandles(R: TRectF); virtual;
+  Protected
     procedure MoveHandle(AX, AY: Single); Virtual;
     function DoGetUpdateRect: TRectF; override;
     procedure Paint; override;
@@ -58,7 +61,7 @@ type
     procedure DrawHandle(const Canvas: TCanvas; const Handle: TGrabHandle;
       const Rect: TRectF); virtual;
     /// <summary>Draw frame rectangle</summary>
-    procedure DrawFrame(const Canvas: TCanvas; const Rect: TRectF); virtual;
+
     Procedure DoTrack(); virtual;
   public
     function PointInObjectLocal(X, Y: Single): Boolean; override;
@@ -414,40 +417,14 @@ procedure TSelection6P.Paint;
 var
   R: TRectF;
 begin
-  if (FHandles = [])  then Exit;
 
   R := LocalRect;
   R.Inflate(-0.5, -0.5);
   DrawFrame(Canvas, R);
 
-  if ShowHandles then
+  if (FHandles <> [])  and ShowHandles then
   begin
-    R := LocalRect;
-
-    if TGrabHandle.LeftTop in FHandles then
-      DrawHandle(Canvas, TGrabHandle.LeftTop, TRectF.Create(R.Left - GripSize,
-        R.Top - GripSize, R.Left + GripSize, R.Top + GripSize));
-
-    if TGrabHandle.RightTop in FHandles then
-      DrawHandle(Canvas, TGrabHandle.RightTop, TRectF.Create(R.Right - GripSize,
-        R.Top - GripSize, R.Right + GripSize, R.Top + GripSize));
-
-    if TGrabHandle.LeftBottom in FHandles then
-      DrawHandle(Canvas, TGrabHandle.LeftBottom, TRectF.Create(R.Left - GripSize,
-        R.Bottom - GripSize, R.Left + GripSize, R.Bottom + GripSize));
-
-    if TGrabHandle.RightBottom in FHandles then
-      DrawHandle(Canvas, TGrabHandle.RightBottom,
-        TRectF.Create(R.Right - GripSize, R.Bottom - GripSize, R.Right + GripSize,
-        R.Bottom + GripSize));
-
-    if TGrabHandle.LeftCenter in FHandles then
-      DrawHandle(Canvas, TGrabHandle.LeftCenter, TRectF.Create(R.Left - GripSize,
-        (R.Bottom + R.Top)/ 2 - GripSize, R.Left + GripSize, (R.Bottom + R.Top)/ 2 + GripSize));
-
-    if TGrabHandle.RightCenter in FHandles then
-      DrawHandle(Canvas, TGrabHandle.RightCenter,  TRectF.Create(R.Right - GripSize,
-        (R.Bottom + R.Top)/ 2 - GripSize, R.Right + GripSize, (R.Bottom + R.Top)/ 2 + GripSize));
+    DrawHandles(R);
   end;
 end;
 
@@ -687,6 +664,23 @@ begin
   inherited;
   FHotHandle := TGrabHandle.None;
   Repaint;
+end;
+
+procedure TSelection6P.DrawHandles(R: TRectF);
+begin
+  R := LocalRect;
+  if TGrabHandle.LeftTop in FHandles then
+    DrawHandle(Canvas, TGrabHandle.LeftTop, TRectF.Create(R.Left - GripSize, R.Top - GripSize, R.Left + GripSize, R.Top + GripSize));
+  if TGrabHandle.RightTop in FHandles then
+    DrawHandle(Canvas, TGrabHandle.RightTop, TRectF.Create(R.Right - GripSize, R.Top - GripSize, R.Right + GripSize, R.Top + GripSize));
+  if TGrabHandle.LeftBottom in FHandles then
+    DrawHandle(Canvas, TGrabHandle.LeftBottom, TRectF.Create(R.Left - GripSize, R.Bottom - GripSize, R.Left + GripSize, R.Bottom + GripSize));
+  if TGrabHandle.RightBottom in FHandles then
+    DrawHandle(Canvas, TGrabHandle.RightBottom, TRectF.Create(R.Right - GripSize, R.Bottom - GripSize, R.Right + GripSize, R.Bottom + GripSize));
+  if TGrabHandle.LeftCenter in FHandles then
+    DrawHandle(Canvas, TGrabHandle.LeftCenter, TRectF.Create(R.Left - GripSize, (R.Bottom + R.Top) / 2 - GripSize, R.Left + GripSize, (R.Bottom + R.Top) / 2 + GripSize));
+  if TGrabHandle.RightCenter in FHandles then
+    DrawHandle(Canvas, TGrabHandle.RightCenter, TRectF.Create(R.Right - GripSize, (R.Bottom + R.Top) / 2 - GripSize, R.Right + GripSize, (R.Bottom + R.Top) / 2 + GripSize));
 end;
 
 procedure TSelection6P.DoTrack();
