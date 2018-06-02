@@ -138,6 +138,7 @@ type
         AHandles: TSelection6P.TGrabHandles); override;
       Procedure DrawCenterLine(const Canvas: TCanvas;
         const Rect: TRectF); Override;
+      function DoGetUpdateRect: TRectF; override;
     Public
       Constructor Create(AOwner: TComponent); Override;
       Destructor Destroy; Override;
@@ -2761,14 +2762,14 @@ begin
 
   if AChart <> Nil then
   begin
-    PosRight := ADrawer.Trans_MarkX2GridRCoordinal(FAnchor.Right) +
+    PosRight := ADrawer.Trans_MarkX2GridRCoordinal(AnchorRight) +
       ADrawer.FGraphicGridR.Left;
-    PosRight:= EnsureRange(PosRight, ADrawer.FGraphicGridR.Left, ADrawer.FGraphicGridR.Right);
+    // PosRight:= EnsureRange(PosRight, ADrawer.FGraphicGridR.Left, ADrawer.FGraphicGridR.Right);
 
-    FUI.Position.X := ADrawer.Trans_MarkX2GridRCoordinal(FAnchor.Left) +
+    FUI.Position.X := ADrawer.Trans_MarkX2GridRCoordinal(AnchorLeft) +
       ADrawer.FGraphicGridR.Left;
-
-    FUI.Width := PosRight - EnsureRange(FUI.Position.X, ADrawer.FGraphicGridR.Left, ADrawer.FGraphicGridR.Right);
+    FUI.Width := PosRight - FUI.Position.X;
+    // EnsureRange(FUI.Position.X, ADrawer.FGraphicGridR.Left, ADrawer.FGraphicGridR.Right);
     VerticalReposition();
   end;
 
@@ -2856,9 +2857,9 @@ begin
       begin
         FAnchor.Left := ADrawer.Trans_GridRCoordinalX2Mark
           (FUI.Position.X - ADrawer.FGraphicGridR.Left);
-//        {$IFDEF MSWINDOWS}
-//        CnDebugger.LogMsg('FAnchor.Left = ' + FloatToStr(FAnchor.Left));
-//        {$ENDIF}
+        // {$IFDEF MSWINDOWS}
+        // CnDebugger.LogMsg('FAnchor.Left = ' + FloatToStr(FAnchor.Left));
+        // {$ENDIF}
       end;
 
       if ueRight in Edges then
@@ -2939,8 +2940,6 @@ begin
   begin
     FUI.Position.Y := ADrawer.FGraphicGridR.Top;
     FUI.Height := ADrawer.FGraphicGridR.Height;
-    FUI.Position.X := EnsureRange(FUI.Position.X, ADrawer.FGraphicGridR.Left,
-      ADrawer.FGraphicGridR.Right - FUI.Width);
   end;
 end;
 
@@ -2958,6 +2957,8 @@ constructor TAxisSelection.TSelectionUI2.Create(AOwner: TComponent);
 begin
   inherited;
   Handles := [LeftCenter, RightCenter];
+  // self.Canvas.Fill.Kind:= TBrushKind.Solid;
+  // self.Opacity:= 0.3
 end;
 
 destructor TAxisSelection.TSelectionUI2.Destroy;
@@ -2966,26 +2967,60 @@ begin
   inherited;
 end;
 
-procedure TAxisSelection.TSelectionUI2.DoTrack;
+function TAxisSelection.TSelectionUI2.DoGetUpdateRect: TRectF;
 // var
-// AAxisSelection: TAxisSelection;
 // ADrawer: TSpectrumDrawer;
-// AChart: TSignalChart;
+// ARect: TRectF;
 begin
-  // AAxisSelection:= TAxisSelection(self.Tag);
-  //
-  // if AAxisSelection.GetDrawer(ADrawer) then
+  Result := inherited;
+  // if TAxisSelection(tag).GetDrawer(ADrawer) then
   // begin
-  // AAxisSelection.CheckUIBound();
-  //
-  // //Update L, R Mark
-  // AAxisSelection.FAnchor.Left:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X - ADrawer.FGraphicGridR.Left);
-  // AAxisSelection.FAnchor.Right:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X - ADrawer.FGraphicGridR.Left + Width);
+  // ARect:= ADrawer.FGraphicGridR;
+  /// /    ARect.Location:= ADrawer.Chart.LocalToAbsolute()
+  // Result.Intersect(ADrawer.FGraphicRect);
+  /// /    SELF.ScreenToLocal()
+  // if Canvas.BeginScene() then
+  // begin
+  // Canvas.Fill.Kind:= TBrushKind.Solid;
+  // Canvas.Fill.Color:= TAlphaColors.Red;
+  // Canvas.FillRect(Result, 0, 0, [], 1);
+  // CAnvas.EndScene;
   // end;
-  TAxisSelection(Tag).UpdateAnchorValueFromUI([ueLeft, ueRight]);
-  // {$IFDEF MSWINDOWS}
-  // CnDebugger.LogMsg('Do Track and UpdateAnchorValueFromUI([ueLeft, ueRight])');
-  // {$ENDIF}
+  // end;
+end;
+
+procedure TAxisSelection.TSelectionUI2.DoTrack;
+var
+ ASelection: TAxisSelection;
+ ADrawer: TSpectrumDrawer;
+var
+  OldAnchor: TSelectionAnchor;
+  NewLeft, NewRight: Single;
+begin
+  ASelection:= TAxisSelection(tag);
+  OldAnchor:= ASelection.Anchor;
+  if ASelection.GetDrawer(ADrawer) then
+  begin
+    ASelection.UpdateAnchorValueFromUI([ueLeft, ueRight]);
+    // {$IFDEF MSWINDOWS}
+    // CnDebugger.LogMsg('Do Track and UpdateAnchorValueFromUI([ueLeft, ueRight])');
+    // {$ENDIF}
+    NewLeft:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X - ADrawer.FGraphicGridR.Left);
+    NewRight:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X - ADrawer.FGraphicGridR.Left + Width);
+    if NewLeft < ADrawer.AxisesData.Bottom.Min then
+    begin
+      NewLeft:= ADrawer.AxisesData.Bottom.Min;
+      NewRight:= NewLeft + (OldAnchor.Right - OldAnchor.Left);
+    end;
+    if NewRight > ADrawer.AxisesData.Bottom.Max then
+    begin
+      NewRight:= ADrawer.AxisesData.Bottom.Max;
+      NewLeft:= NewRight - (OldAnchor.Right - OldAnchor.Left);
+    end;
+    ASelection.AnchorLeft:= NewLeft;
+    ASelection.AnchorRight:= NewRight;
+    ASelection.DoAnchorChange();
+  end;
   inherited;
 end;
 
@@ -3024,6 +3059,9 @@ var
   OldDash: TStrokeDash;
   OldColor: TAlphaColor;
 begin
+  { TODO: TESTING }
+  inherited;
+  Exit;
   if FDontDrawLeftEdge or FDontDrawRightEdge then
   begin
     ASides := [TSide.Top, TSide.Bottom, TSide.Left, TSide.Right];
@@ -3053,6 +3091,9 @@ end;
 procedure TAxisSelection.TSelectionUI2.DrawHandles(R: TRectF;
 AHandles: TSelection6P.TGrabHandles);
 begin
+  { TODO: TESTING }
+  inherited;
+  Exit;
   if DontDrawLeftEdge then
     Exclude(AHandles, TGrabHandle.LeftCenter);
   if DontDrawRightEdge then
@@ -3104,21 +3145,21 @@ begin
         ;
       LeftCenter:
         begin
-          // OppositePos := Position.X + Width;
-          // if Position.X < ADrawer.FGraphicGridR.Left then
-          // begin
-          // Position.X := ADrawer.FGraphicGridR.Left;
-          // Width := OppositePos - Position.X;
-          // end;
+          OppositePos := Position.X + Width;
+          if Position.X < ADrawer.FGraphicGridR.Left then
+          begin
+            Position.X := ADrawer.FGraphicGridR.Left;
+            Width := OppositePos - Position.X;
+          end;
           TAxisSelection(Tag).UpdateAnchorValueFromUI([ueLeft]);
         end;
       RightCenter:
         begin
-          // OppositePos := Position.X;
-          // if Position.X + Width > ADrawer.FGraphicGridR.Right then
-          // begin
-          // Width := ADrawer.FGraphicGridR.Right - OppositePos;
-          // end;
+          OppositePos := Position.X;
+          if Position.X + Width > ADrawer.FGraphicGridR.Right then
+          begin
+            Width := ADrawer.FGraphicGridR.Right - OppositePos;
+          end;
           TAxisSelection(Tag).UpdateAnchorValueFromUI([ueRight]);
         end;
     end;
