@@ -61,6 +61,7 @@ type
     procedure SetUnitStr(const Value: String);
     function FChart: TSignalChart;
     Procedure CheckViewRange;
+    Procedure DoViewChange();
     procedure SetViewMax(const Value: Integer);
     procedure SetViewMin(const Value: Integer);
     Function TransRatio2Mark(L, H: Single; PercentValue: Single)
@@ -115,13 +116,14 @@ type
   //    标志要在必要的时候及时检查进行设置，比如Zoom的时候,设置AxisView范围的时候，
   //    也要要重绘Selection，设置Selection Anchor范围的时候，也需要重绘Selection
   //    可不可以在重绘时每次都检查一下？ 这样就不需要外部进行检查了。
+  //    View范围变化和Selection变化时需要进行检查
   Public type
     TSelectionAnchor = Record
       Left, Right: Single;
     End;
   Private Type
     TSelectionUI2 = Class(TSelectionUI)
-      private
+    private
         FDontDrawLeftEdge: Boolean;
         FDontDrawRightEdge: Boolean;
         FDontDrawCenterLine: Boolean;
@@ -142,8 +144,9 @@ type
       Property DontDrawRightEdge: Boolean read FDontDrawRightEdge write SetDontDrawRightEdge;
       Property DontDrawCenterLine: Boolean read FDontDrawCenterLine write SetDontDrawCenterLine;
     End;
-  Strict Private[weak]
+  Private[weak]
     FAxis: TCustomAxis;
+  Strict Private
     /// /以轴的标称值表示的锚点
 
     FAnchor: TSelectionAnchor; // 数值为轴的Mark值
@@ -156,8 +159,9 @@ type
     procedure SetAnchorRatioLeft(const Value: Single);
     procedure SetAnchorRatioRight(const Value: Single);
   Private
-    Procedure CheckUIBound;
-    Procedure Internal_UpdateAnchorValue;
+    Procedure CheckVerticalBound();
+    Procedure CheckSelectionOutOfViewRange( );
+    Procedure UpdateAnchorValueFromUI();
   Public
     FUI: TSelectionUI2;
   Public
@@ -801,6 +805,7 @@ begin
 end;
 
 procedure TCustomAxis.CheckViewRange;
+
 begin
   if FViewMin > FViewMax then
   begin
@@ -814,6 +819,8 @@ begin
     FViewMax := FMax;
 
   UpdateViewRatio();
+
+
 end;
 
 constructor TCustomAxis.Create(ADrawer: TAbstractSignalDrawer);
@@ -849,6 +856,21 @@ begin
       FChart.UpdateBitmap;
       FChart.InvalidateRect(FChart.LocalRect);
     end;
+  end;
+end;
+
+procedure TCustomAxis.DoViewChange;
+var
+  iSelection: TAxisSelection;
+begin
+  CheckViewRange();
+
+  for iSelection in self.FSelectoinManager do
+  begin
+    iSelection.CheckSelectionOutOfViewRange();
+
+    iSelection.DoAnchorChange();     //重新锚定
+    iSelection.FUI.InvalidateRect(iSelection.FUI.LocalRect);
   end;
 end;
 
@@ -933,7 +955,7 @@ begin
   if FViewMax <> Value then
   begin
     FViewMax := Value;
-    CheckViewRange();
+    DoViewChange();
   end;
 end;
 
@@ -942,7 +964,7 @@ begin
   if FViewMin <> Value then
   begin
     FViewMin := Value;
-    CheckViewRange();
+    DoViewChange();
   end;
 end;
 
@@ -963,7 +985,7 @@ begin
       FViewMax := Value;
 
     FMax := Value;
-    CheckViewRange();
+    DoViewChange();
     DoChanged();
   end;
 end;
@@ -976,7 +998,7 @@ begin
       FViewMin := Value;
 
     FMin := Value;
-    CheckViewRange();
+    DoViewChange();
     DoChanged();
   end;
 end;
@@ -2736,8 +2758,11 @@ begin
     FUI.Position.X := ADrawer.Trans_MarkX2GridRCoordinal(FAnchor.Left) +
       ADrawer.FGraphicGridR.Left;
     FUI.Width := ARightPos - FUI.Position.X;
-    CheckUIBound();
+    CheckVerticalBound();
   end;
+
+  CheckSelectionOutOfViewRange();
+
 end;
 
 function TAxisSelection.GetAnchorLeft: Single;
@@ -2807,19 +2832,20 @@ begin
   end;
 end;
 
-procedure TAxisSelection.Internal_UpdateAnchorValue;
+procedure TAxisSelection.UpdateAnchorValueFromUI();
 var
   ADrawer: TSpectrumDrawer;
 begin
 
   if GetDrawer(ADrawer) then
   begin
-    CheckUIBound();
+    CheckVerticalBound();
     // Update L, R Mark
     FAnchor.Left := ADrawer.Trans_GridRCoordinalX2Mark
       (FUI.Position.X - ADrawer.FGraphicGridR.Left);
     FAnchor.Right := ADrawer.Trans_GridRCoordinalX2Mark
       (FUI.Position.X - ADrawer.FGraphicGridR.Left + FUI.Width);
+    DoAnchorChange();
   end;
 end;
 
@@ -2869,7 +2895,17 @@ begin
   end;
 end;
 
-procedure TAxisSelection.CheckUIBound;
+procedure TAxisSelection.CheckSelectionOutOfViewRange( );
+begin
+  if FUI <> Nil then
+  begin
+    FUI.DontDrawLeftEdge:= Not InRange(FAnchor.Left, FAxis.ViewMin, FAxis.ViewMax);
+    FUI.DontDrawCenterLine:= Not InRange((FAnchor.Left + FAnchor.Right) / 2, FAxis.ViewMin, FAxis.ViewMax);
+    FUI.DontDrawRightEdge:= Not InRange(FAnchor.Right, FAxis.ViewMin, FAxis.ViewMax);
+  end;
+end;
+
+procedure TAxisSelection.CheckVerticalBound();
 var
   ADrawer: TSpectrumDrawer;
 begin
@@ -2920,15 +2956,34 @@ begin
   // AAxisSelection.FAnchor.Left:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X - ADrawer.FGraphicGridR.Left);
   // AAxisSelection.FAnchor.Right:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X - ADrawer.FGraphicGridR.Left + Width);
   // end;
-  TAxisSelection(Tag).Internal_UpdateAnchorValue();
+  TAxisSelection(Tag).UpdateAnchorValueFromUI();
   inherited;
 end;
 
 procedure TAxisSelection.TSelectionUI2.DrawCenterLine(const Canvas: TCanvas;
   const Rect: TRectF);
+var
+  ASelection: TAxisSelection;
+  ADrawer: TSpectrumDrawer;
+  XPos: Single;
 begin
-  if Not FDontDrawCenterLine then
-    inherited;
+  if Not (FDontDrawLeftEdge or  FDontDrawCenterLine or FDontDrawRightEdge) then
+  begin
+    inherited DrawCenterLine(Canvas, Rect);
+  end
+  else
+  begin
+    ASelection:= TAxisSelection(Tag);
+    if ASelection.GetDrawer(ADrawer) then
+    begin
+      XPos:= ADrawer.Trans_MarkX2GridRCoordinal((ASelection.AnchorLeft + ASelection.AnchorRight) / 2)
+            + ADrawer.FGraphicGridR.Left;
+      XPos:= XPos - Position.X;
+      Canvas.DrawLine(TPointF.Create(XPos, Rect.Top), TPointF.Create(XPos, Rect.Bottom), 1, FCenterLinePen);
+    end;
+    //得到SELECTION的Anchor Center,换算成GridR的UI坐标，
+    //再映射到Selection控件的位置坐标，得到X坐标后再画线
+  end;
 end;
 
 procedure TAxisSelection.TSelectionUI2.DrawFrame(const Canvas: TCanvas;
@@ -2949,7 +3004,7 @@ begin
     OldDash:= Canvas.Stroke.Dash;
     OldColor:= CAnvas.Stroke.Color;
     try
-      Canvas.Stroke.Dash:=  TStrokeDash.Dash.sdDash;
+      Canvas.Stroke.Dash:=  TStrokeDash.Dash;
       Canvas.Stroke.Color:= Color;
       Canvas.DrawRectSides(Rect, 0, 0, [], AbsoluteOpacity, ASides);
       Canvas.Stroke.Dash:= OldDash;
@@ -3034,7 +3089,7 @@ begin
         end;
     end;
   end;
-  TAxisSelection(Tag).Internal_UpdateAnchorValue();
+  TAxisSelection(Tag).UpdateAnchorValueFromUI();
 end;
 
 procedure TAxisSelection.TSelectionUI2.SetDontDrawCenterLine(
@@ -3075,7 +3130,7 @@ end;
 
 initialization
 
-// GlobalUseGPUCanvas := True;
+ GlobalUseGPUCanvas := True;
 
 // GlobalUseDX10Software:= True;
 // GlobalUseDirect2D:= True;

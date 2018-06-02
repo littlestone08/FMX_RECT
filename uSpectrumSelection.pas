@@ -136,9 +136,9 @@ type
 
   TSelectionUI = Class(TSelection6P)
   private
-    FCenterLinePen: TStrokeBrush;
     procedure SetCenterLinePen(const Value: TStrokeBrush);
   Protected
+    FCenterLinePen: TStrokeBrush;
     Procedure DrawCenterLine(const Canvas: TCanvas; const Rect: TRectF); virtual;
     procedure Paint; override;
   Public
