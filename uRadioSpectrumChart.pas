@@ -109,14 +109,14 @@ type
   End;
 
   TAxisSelection = Class
-  //1　拖动HANDLE时，不能超过坐标框
-  //2　Zoom时，如果由于View坐标格变得范围小，而使Selection被动起过坐标框如何去显示
-  //    这需要外部给Selection一个判断的标志，指写绘图方式，如果超出，则不绘制左右边框
-  //    标志作为Selectoin绘图的一个属性
-  //    标志要在必要的时候及时检查进行设置，比如Zoom的时候,设置AxisView范围的时候，
-  //    也要要重绘Selection，设置Selection Anchor范围的时候，也需要重绘Selection
-  //    可不可以在重绘时每次都检查一下？ 这样就不需要外部进行检查了。
-  //    View范围变化和Selection变化时需要进行检查
+    // 1　拖动HANDLE时，不能超过坐标框
+    // 2　Zoom时，如果由于View坐标格变得范围小，而使Selection被动起过坐标框如何去显示
+    // 这需要外部给Selection一个判断的标志，指写绘图方式，如果超出，则不绘制左右边框
+    // 标志作为Selectoin绘图的一个属性
+    // 标志要在必要的时候及时检查进行设置，比如Zoom的时候,设置AxisView范围的时候，
+    // 也要要重绘Selection，设置Selection Anchor范围的时候，也需要重绘Selection
+    // 可不可以在重绘时每次都检查一下？ 这样就不需要外部进行检查了。
+    // View范围变化和Selection变化时需要进行检查
   Public type
     TSelectionAnchor = Record
       Left, Right: Single;
@@ -124,27 +124,36 @@ type
   Private Type
     TSelectionUI2 = Class(TSelectionUI)
     private
-        FDontDrawLeftEdge: Boolean;
-        FDontDrawRightEdge: Boolean;
-        FDontDrawCenterLine: Boolean;
-        procedure SetDontDrawLeftEdge(const Value: Boolean);
-        procedure SetDontDrawRightEdge(const Value: Boolean);
-        procedure SetDontDrawCenterLine(const Value: Boolean);
+      FDontDrawLeftEdge: Boolean;
+      FDontDrawRightEdge: Boolean;
+      FDontDrawCenterLine: Boolean;
+      procedure SetDontDrawLeftEdge(const Value: Boolean);
+      procedure SetDontDrawRightEdge(const Value: Boolean);
+      procedure SetDontDrawCenterLine(const Value: Boolean);
     Protected
       Procedure DoTrack(); Override;
       procedure MoveHandle(AX, AY: Single); Override;
       procedure DrawFrame(const Canvas: TCanvas; const Rect: TRectF); Override;
-      procedure DrawHandles(R: TRectF; AHandles: TSelection6P.TGrabHandles); override;
-      Procedure DrawCenterLine(const Canvas: TCanvas; const Rect: TRectF); Override;
+      procedure DrawHandles(R: TRectF;
+        AHandles: TSelection6P.TGrabHandles); override;
+      Procedure DrawCenterLine(const Canvas: TCanvas;
+        const Rect: TRectF); Override;
     Public
       Constructor Create(AOwner: TComponent); Override;
       Destructor Destroy; Override;
       procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
-      Property DontDrawLeftEdge: Boolean read FDontDrawLeftEdge write SetDontDrawLeftEdge;
-      Property DontDrawRightEdge: Boolean read FDontDrawRightEdge write SetDontDrawRightEdge;
-      Property DontDrawCenterLine: Boolean read FDontDrawCenterLine write SetDontDrawCenterLine;
+      Property DontDrawLeftEdge: Boolean read FDontDrawLeftEdge
+        write SetDontDrawLeftEdge;
+      Property DontDrawRightEdge: Boolean read FDontDrawRightEdge
+        write SetDontDrawRightEdge;
+      Property DontDrawCenterLine: Boolean read FDontDrawCenterLine
+        write SetDontDrawCenterLine;
     End;
-  Private[weak]
+
+    TSelectionEdge = (ueLeft, ueRight);
+    TSelectionEdges = Set of TSelectionEdge;
+  Private
+    [weak]
     FAxis: TCustomAxis;
   Strict Private
     /// /以轴的标称值表示的锚点
@@ -159,9 +168,9 @@ type
     procedure SetAnchorRatioLeft(const Value: Single);
     procedure SetAnchorRatioRight(const Value: Single);
   Private
-    Procedure CheckVerticalBound();
-    Procedure CheckSelectionOutOfViewRange( );
-    Procedure UpdateAnchorValueFromUI();
+    Procedure VerticalReposition();
+    Procedure CheckEdgeOutOfViewRange();
+    Procedure UpdateAnchorValueFromUI(Edges: TSelectionEdges);
   Public
     FUI: TSelectionUI2;
   Public
@@ -820,7 +829,6 @@ begin
 
   UpdateViewRatio();
 
-
 end;
 
 constructor TCustomAxis.Create(ADrawer: TAbstractSignalDrawer);
@@ -865,11 +873,11 @@ var
 begin
   CheckViewRange();
 
-  for iSelection in self.FSelectoinManager do
+  for iSelection in Self.FSelectoinManager do
   begin
-    iSelection.CheckSelectionOutOfViewRange();
+    iSelection.CheckEdgeOutOfViewRange();
 
-    iSelection.DoAnchorChange();     //重新锚定
+    iSelection.DoAnchorChange(); // 重新锚定
     iSelection.FUI.InvalidateRect(iSelection.FUI.LocalRect);
   end;
 end;
@@ -2743,7 +2751,7 @@ procedure TAxisSelection.DoAnchorChange;
 var
   ADrawer: TSpectrumDrawer;
   AChart: TSignalChart;
-  ARightPos: Single;
+  PosRight: Single;
 begin
   GetDrawerAndChart(ADrawer, AChart);
   if FUI.Parent <> AChart then
@@ -2753,16 +2761,18 @@ begin
 
   if AChart <> Nil then
   begin
-    ARightPos := ADrawer.Trans_MarkX2GridRCoordinal(FAnchor.Right) +
+    PosRight := ADrawer.Trans_MarkX2GridRCoordinal(FAnchor.Right) +
       ADrawer.FGraphicGridR.Left;
+    PosRight:= EnsureRange(PosRight, ADrawer.FGraphicGridR.Left, ADrawer.FGraphicGridR.Right);
+
     FUI.Position.X := ADrawer.Trans_MarkX2GridRCoordinal(FAnchor.Left) +
       ADrawer.FGraphicGridR.Left;
-    FUI.Width := ARightPos - FUI.Position.X;
-    CheckVerticalBound();
+
+    FUI.Width := PosRight - EnsureRange(FUI.Position.X, ADrawer.FGraphicGridR.Left, ADrawer.FGraphicGridR.Right);
+    VerticalReposition();
   end;
 
-  CheckSelectionOutOfViewRange();
-
+  CheckEdgeOutOfViewRange();
 end;
 
 function TAxisSelection.GetAnchorLeft: Single;
@@ -2832,20 +2842,36 @@ begin
   end;
 end;
 
-procedure TAxisSelection.UpdateAnchorValueFromUI();
+procedure TAxisSelection.UpdateAnchorValueFromUI(Edges: TSelectionEdges);
 var
   ADrawer: TSpectrumDrawer;
+  iEdge: TSelectionEdge;
 begin
-
   if GetDrawer(ADrawer) then
   begin
-    CheckVerticalBound();
     // Update L, R Mark
-    FAnchor.Left := ADrawer.Trans_GridRCoordinalX2Mark
-      (FUI.Position.X - ADrawer.FGraphicGridR.Left);
-    FAnchor.Right := ADrawer.Trans_GridRCoordinalX2Mark
-      (FUI.Position.X - ADrawer.FGraphicGridR.Left + FUI.Width);
-    DoAnchorChange();
+    if Edges <> [] then
+    begin
+      for iEdge in Edges do
+      begin
+        case iEdge of
+          ueLeft:
+            begin
+              FAnchor.Left := ADrawer.Trans_GridRCoordinalX2Mark
+                (FUI.Position.X - ADrawer.FGraphicGridR.Left);
+              {$IFDEF MSWINDOWS}
+              CnDebugger.LogMsg('FAnchor.Left = ' + FloatToStr(FAnchor.Left));
+              {$ENDIF}
+            end;
+          ueRight:
+            begin
+              FAnchor.Right := ADrawer.Trans_GridRCoordinalX2Mark
+                (FUI.Position.X - ADrawer.FGraphicGridR.Left + FUI.Width);
+            end;
+        end;
+      end;
+      DoAnchorChange();
+    end;
   end;
 end;
 
@@ -2895,17 +2921,20 @@ begin
   end;
 end;
 
-procedure TAxisSelection.CheckSelectionOutOfViewRange( );
+procedure TAxisSelection.CheckEdgeOutOfViewRange();
 begin
   if FUI <> Nil then
   begin
-    FUI.DontDrawLeftEdge:= Not InRange(FAnchor.Left, FAxis.ViewMin, FAxis.ViewMax);
-    FUI.DontDrawCenterLine:= Not InRange((FAnchor.Left + FAnchor.Right) / 2, FAxis.ViewMin, FAxis.ViewMax);
-    FUI.DontDrawRightEdge:= Not InRange(FAnchor.Right, FAxis.ViewMin, FAxis.ViewMax);
+    FUI.DontDrawLeftEdge := Not InRange(FAnchor.Left, FAxis.ViewMin,
+      FAxis.ViewMax);
+    FUI.DontDrawCenterLine := Not InRange((FAnchor.Left + FAnchor.Right) / 2,
+      FAxis.ViewMin, FAxis.ViewMax);
+    FUI.DontDrawRightEdge := Not InRange(FAnchor.Right, FAxis.ViewMin,
+      FAxis.ViewMax);
   end;
 end;
 
-procedure TAxisSelection.CheckVerticalBound();
+procedure TAxisSelection.VerticalReposition();
 var
   ADrawer: TSpectrumDrawer;
 begin
@@ -2956,38 +2985,43 @@ begin
   // AAxisSelection.FAnchor.Left:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X - ADrawer.FGraphicGridR.Left);
   // AAxisSelection.FAnchor.Right:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X - ADrawer.FGraphicGridR.Left + Width);
   // end;
-  TAxisSelection(Tag).UpdateAnchorValueFromUI();
+  TAxisSelection(Tag).UpdateAnchorValueFromUI([ueLeft, ueRight]);
+  // {$IFDEF MSWINDOWS}
+  // CnDebugger.LogMsg('Do Track and UpdateAnchorValueFromUI([ueLeft, ueRight])');
+  // {$ENDIF}
   inherited;
 end;
 
 procedure TAxisSelection.TSelectionUI2.DrawCenterLine(const Canvas: TCanvas;
-  const Rect: TRectF);
+const Rect: TRectF);
 var
   ASelection: TAxisSelection;
   ADrawer: TSpectrumDrawer;
   XPos: Single;
 begin
-  if Not (FDontDrawLeftEdge or  FDontDrawCenterLine or FDontDrawRightEdge) then
+  if Not(FDontDrawLeftEdge or FDontDrawCenterLine or FDontDrawRightEdge) then
   begin
     inherited DrawCenterLine(Canvas, Rect);
   end
   else
   begin
-    ASelection:= TAxisSelection(Tag);
+    ASelection := TAxisSelection(Tag);
     if ASelection.GetDrawer(ADrawer) then
     begin
-      XPos:= ADrawer.Trans_MarkX2GridRCoordinal((ASelection.AnchorLeft + ASelection.AnchorRight) / 2)
-            + ADrawer.FGraphicGridR.Left;
-      XPos:= XPos - Position.X;
-      Canvas.DrawLine(TPointF.Create(XPos, Rect.Top), TPointF.Create(XPos, Rect.Bottom), 1, FCenterLinePen);
+      XPos := ADrawer.Trans_MarkX2GridRCoordinal
+        ((ASelection.AnchorLeft + ASelection.AnchorRight) / 2) +
+        ADrawer.FGraphicGridR.Left;
+      XPos := XPos - Position.X;
+      Canvas.DrawLine(TPointF.Create(XPos, Rect.Top),
+        TPointF.Create(XPos, Rect.Bottom), 1, FCenterLinePen);
     end;
-    //得到SELECTION的Anchor Center,换算成GridR的UI坐标，
-    //再映射到Selection控件的位置坐标，得到X坐标后再画线
+    // 得到SELECTION的Anchor Center,换算成GridR的UI坐标，
+    // 再映射到Selection控件的位置坐标，得到X坐标后再画线
   end;
 end;
 
 procedure TAxisSelection.TSelectionUI2.DrawFrame(const Canvas: TCanvas;
-  const Rect: TRectF);
+const Rect: TRectF);
 var
   ASides: TSides;
   OldDash: TStrokeDash;
@@ -2995,22 +3029,22 @@ var
 begin
   if FDontDrawLeftEdge or FDontDrawRightEdge then
   begin
-    ASides:= [TSide.Top, TSide.Bottom, TSide.Left, TSide.Right];
+    ASides := [TSide.Top, TSide.Bottom, TSide.Left, TSide.Right];
     if FDontDrawLeftEdge then
       Exclude(ASides, TSide.Left);
     if FDontDrawRightEdge then
       Exclude(ASides, TSide.Right);
 
-    OldDash:= Canvas.Stroke.Dash;
-    OldColor:= CAnvas.Stroke.Color;
+    OldDash := Canvas.Stroke.Dash;
+    OldColor := Canvas.Stroke.Color;
     try
-      Canvas.Stroke.Dash:=  TStrokeDash.Dash;
-      Canvas.Stroke.Color:= Color;
+      Canvas.Stroke.Dash := TStrokeDash.Dash;
+      Canvas.Stroke.Color := Color;
       Canvas.DrawRectSides(Rect, 0, 0, [], AbsoluteOpacity, ASides);
-      Canvas.Stroke.Dash:= OldDash;
+      Canvas.Stroke.Dash := OldDash;
     finally
-      Canvas.Stroke.Dash:= OldDash;
-      Canvas.Stroke.Color:= OldColor;
+      Canvas.Stroke.Dash := OldDash;
+      Canvas.Stroke.Color := OldColor;
     end;
   end
   else
@@ -3019,7 +3053,8 @@ begin
   end;
 end;
 
-procedure TAxisSelection.TSelectionUI2.DrawHandles(R: TRectF; AHandles: TSelection6P.TGrabHandles);
+procedure TAxisSelection.TSelectionUI2.DrawHandles(R: TRectF;
+AHandles: TSelection6P.TGrabHandles);
 begin
   if DontDrawLeftEdge then
     Exclude(AHandles, TGrabHandle.LeftCenter);
@@ -3072,57 +3107,59 @@ begin
         ;
       LeftCenter:
         begin
-          OppositePos := Position.X + Width;
-          if Position.X < ADrawer.FGraphicGridR.Left then
-          begin
-            Position.X := ADrawer.FGraphicGridR.Left;
-            Width := OppositePos - Position.X;
-          end
+          // OppositePos := Position.X + Width;
+          // if Position.X < ADrawer.FGraphicGridR.Left then
+          // begin
+          // Position.X := ADrawer.FGraphicGridR.Left;
+          // Width := OppositePos - Position.X;
+          // end;
+          TAxisSelection(Tag).UpdateAnchorValueFromUI([ueLeft]);
         end;
       RightCenter:
         begin
-          OppositePos := Position.X;
-          if Position.X + Width > ADrawer.FGraphicGridR.Right then
-          begin
-            Width := ADrawer.FGraphicGridR.Right - OppositePos;
-          end;
+          // OppositePos := Position.X;
+          // if Position.X + Width > ADrawer.FGraphicGridR.Right then
+          // begin
+          // Width := ADrawer.FGraphicGridR.Right - OppositePos;
+          // end;
+          TAxisSelection(Tag).UpdateAnchorValueFromUI([ueRight]);
         end;
     end;
   end;
-  TAxisSelection(Tag).UpdateAnchorValueFromUI();
+
 end;
 
-procedure TAxisSelection.TSelectionUI2.SetDontDrawCenterLine(
-  const Value: Boolean);
+procedure TAxisSelection.TSelectionUI2.SetDontDrawCenterLine
+  (const Value: Boolean);
 begin
   FDontDrawCenterLine := Value;
 
   InvalidateRect(LocalRect);
 end;
 
-procedure TAxisSelection.TSelectionUI2.SetDontDrawLeftEdge(
-  const Value: Boolean);
+procedure TAxisSelection.TSelectionUI2.SetDontDrawLeftEdge
+  (const Value: Boolean);
 var
   R: TRectF;
 begin
   if FDontDrawLeftEdge <> Value then
   begin
     FDontDrawLeftEdge := Value;
-    R:= LocalRect;
+    R := LocalRect;
     R.Inflate(GripSize, 0);
     InvalidateRect(R);
   end;
 end;
 
-procedure TAxisSelection.TSelectionUI2.SetDontDrawRightEdge(
-  const Value: Boolean);
+procedure TAxisSelection.TSelectionUI2.SetDontDrawRightEdge
+  (const Value: Boolean);
 var
   R: TRectF;
 begin
   if FDontDrawRightEdge <> Value then
   begin
     FDontDrawRightEdge := Value;
-    R:= LocalRect;
+    R := LocalRect;
     R.Inflate(GripSize, 0);
     InvalidateRect(R);
   end;
@@ -3130,7 +3167,7 @@ end;
 
 initialization
 
- GlobalUseGPUCanvas := True;
+GlobalUseGPUCanvas := True;
 
 // GlobalUseDX10Software:= True;
 // GlobalUseDirect2D:= True;
