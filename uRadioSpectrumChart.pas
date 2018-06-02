@@ -2852,24 +2852,21 @@ begin
     // Update L, R Mark
     if Edges <> [] then
     begin
-      for iEdge in Edges do
+      if ueLeft in Edges then
       begin
-        case iEdge of
-          ueLeft:
-            begin
-              FAnchor.Left := ADrawer.Trans_GridRCoordinalX2Mark
-                (FUI.Position.X - ADrawer.FGraphicGridR.Left);
-              {$IFDEF MSWINDOWS}
-              CnDebugger.LogMsg('FAnchor.Left = ' + FloatToStr(FAnchor.Left));
-              {$ENDIF}
-            end;
-          ueRight:
-            begin
-              FAnchor.Right := ADrawer.Trans_GridRCoordinalX2Mark
-                (FUI.Position.X - ADrawer.FGraphicGridR.Left + FUI.Width);
-            end;
-        end;
+        FAnchor.Left := ADrawer.Trans_GridRCoordinalX2Mark
+          (FUI.Position.X - ADrawer.FGraphicGridR.Left);
+//        {$IFDEF MSWINDOWS}
+//        CnDebugger.LogMsg('FAnchor.Left = ' + FloatToStr(FAnchor.Left));
+//        {$ENDIF}
       end;
+
+      if ueRight in Edges then
+      begin
+        FAnchor.Right := ADrawer.Trans_GridRCoordinalX2Mark
+          (FUI.Position.X - ADrawer.FGraphicGridR.Left + FUI.Width);
+      end;
+
       DoAnchorChange();
     end;
   end;
