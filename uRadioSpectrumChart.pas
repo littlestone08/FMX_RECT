@@ -580,10 +580,13 @@ begin
 end;
 
 procedure TSignalChart.MouseMove(Shift: TShiftState; X, Y: Single);
+var
+  Bmp: TBitmap;
 begin
   if FDrawer <> Nil then
   begin
     FDrawer.ChartSinkMouseMove(Self, Shift, X, Y);
+
 
     if MilliSecondSpan(Now, FLastUpdateTime) > 30 then
     begin
@@ -3099,9 +3102,6 @@ var
   OldDash: TStrokeDash;
   OldColor: TAlphaColor;
 begin
-  { TODO: TESTING }
-  inherited;
-  Exit;
   if FDontDrawLeftEdge or FDontDrawRightEdge then
   begin
     ASides := [TSide.Top, TSide.Bottom, TSide.Left, TSide.Right];
@@ -3131,9 +3131,6 @@ end;
 procedure TAxisSelection.TSelectionUI2.DrawHandles(R: TRectF;
 AHandles: TSelection6P.TGrabHandles);
 begin
-  { TODO: TESTING }
-//  inherited;
-//  Exit;
   if DontDrawLeftEdge then
     Exclude(AHandles, TGrabHandle.LeftCenter);
   if DontDrawRightEdge then
