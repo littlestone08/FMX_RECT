@@ -127,6 +127,7 @@ type
       FDontDrawLeftEdge: Boolean;
       FDontDrawRightEdge: Boolean;
       FDontDrawCenterLine: Boolean;
+      FSelection: TAxisSelection;
       procedure SetDontDrawLeftEdge(const Value: Boolean);
       procedure SetDontDrawRightEdge(const Value: Boolean);
       procedure SetDontDrawCenterLine(const Value: Boolean);
@@ -139,6 +140,7 @@ type
       Procedure DrawCenterLine(const Canvas: TCanvas;
         const Rect: TRectF); Override;
       function DoGetUpdateRect: TRectF; override;
+      Procedure CalcuPaintRect(var Rect: TRectF); Override;
     Public
       Constructor Create(AOwner: TComponent); Override;
       Destructor Destroy; Override;
@@ -149,6 +151,7 @@ type
         write SetDontDrawRightEdge;
       Property DontDrawCenterLine: Boolean read FDontDrawCenterLine
         write SetDontDrawCenterLine;
+      Property Selection: TAxisSelection Read FSelection;
     End;
 
     TSelectionEdge = (ueLeft, ueRight);
@@ -156,10 +159,12 @@ type
   Private
     [weak]
     FAxis: TCustomAxis;
+    FClippedRect: TRectF;
   Strict Private
     /// /以轴的标称值表示的锚点
 
     FAnchor: TSelectionAnchor; // 数值为轴的Mark值
+
     function GetAnchorLeft: Single;
     procedure SetAnchorRight(const Value: Single);
     function GetAnchorRight: Single;
@@ -172,6 +177,7 @@ type
     Procedure VerticalReposition();
     Procedure CheckEdgeOutOfViewRange();
     Procedure UpdateAnchorValueFromUI(Edges: TSelectionEdges);
+
   Public
     FUI: TSelectionUI2;
   Public
@@ -2740,6 +2746,7 @@ begin
   FAxis := Axis;
   FUI := TSelectionUI2.Create(Nil);
   FUI.Tag := NativeInt(Self);
+  FUI.FSelection:= Self;
   Self.DoAnchorChange;
 end;
 
@@ -2920,7 +2927,12 @@ begin
   end;
 end;
 
+
+
 procedure TAxisSelection.CheckEdgeOutOfViewRange();
+var
+  R: TRectF;
+  ADrawer:TSpectrumDrawer;
 begin
   if FUI <> Nil then
   begin
@@ -2930,6 +2942,20 @@ begin
       FAxis.ViewMin, FAxis.ViewMax);
     FUI.DontDrawRightEdge := Not InRange(FAnchor.Right, FAxis.ViewMin,
       FAxis.ViewMax);
+
+    FClippedRect:= FUI.LocalRect;
+    FClippedRect.Offset(-0.5, -0.5);
+
+    //切掉超出FGraphicR的范围的部分
+    if GetDrawer(ADrawer) then
+    begin
+      R:= ADrawer.FGraphicGridR;
+      R.Offset(-FUI.Position.X, -FUI.Position.Y);
+      FClippedRect.Intersect(R);
+    end;
+
+//    FClippedRect.
+//
   end;
 end;
 
@@ -2953,6 +2979,12 @@ begin
 end;
 
 { TAxisSelection.TSelection2 }
+
+procedure TAxisSelection.TSelectionUI2.CalcuPaintRect(var Rect: TRectF);
+begin
+//  inherited;
+  Rect:= Selection.FClippedRect;
+end;
 
 constructor TAxisSelection.TSelectionUI2.Create(AOwner: TComponent);
 begin
@@ -3028,28 +3060,35 @@ end;
 procedure TAxisSelection.TSelectionUI2.DrawCenterLine(const Canvas: TCanvas;
 const Rect: TRectF);
 var
-  ASelection: TAxisSelection;
-  ADrawer: TSpectrumDrawer;
+//  ASelection: TAxisSelection;
+//  ADrawer: TSpectrumDrawer;
   XPos: Single;
 begin
-  if Not(FDontDrawLeftEdge or FDontDrawCenterLine or FDontDrawRightEdge) then
+//  if Not(FDontDrawLeftEdge or FDontDrawCenterLine or FDontDrawRightEdge) then
+//  begin
+//    inherited DrawCenterLine(Canvas, Rect);
+//  end
+//  else
+//  begin
+//    ASelection := TAxisSelection(Tag);
+//    if ASelection.GetDrawer(ADrawer) then
+//    begin
+//      XPos := ADrawer.Trans_MarkX2GridRCoordinal
+//        ((ASelection.AnchorLeft + ASelection.AnchorRight) / 2) +
+//        ADrawer.FGraphicGridR.Left;
+//      XPos := XPos - Position.X;
+//      Canvas.DrawLine(TPointF.Create(XPos, Rect.Top),
+//        TPointF.Create(XPos, Rect.Bottom), 1, FCenterLinePen);
+//    end;
+//    // 得到SELECTION的Anchor Center,换算成GridR的UI坐标，
+//    // 再映射到Selection控件的位置坐标，得到X坐标后再画线
+//  end;
+
+  if Not FDontDrawCenterLine then
   begin
-    inherited DrawCenterLine(Canvas, Rect);
-  end
-  else
-  begin
-    ASelection := TAxisSelection(Tag);
-    if ASelection.GetDrawer(ADrawer) then
-    begin
-      XPos := ADrawer.Trans_MarkX2GridRCoordinal
-        ((ASelection.AnchorLeft + ASelection.AnchorRight) / 2) +
-        ADrawer.FGraphicGridR.Left;
-      XPos := XPos - Position.X;
-      Canvas.DrawLine(TPointF.Create(XPos, Rect.Top),
-        TPointF.Create(XPos, Rect.Bottom), 1, FCenterLinePen);
-    end;
-    // 得到SELECTION的Anchor Center,换算成GridR的UI坐标，
-    // 再映射到Selection控件的位置坐标，得到X坐标后再画线
+    XPos:=  Width / 2 ;
+    Canvas.DrawLine(TPointF.Create(XPos, Rect.Top),
+      TPointF.Create(XPos, Rect.Bottom), 1, FCenterLinePen);
   end;
 end;
 
@@ -3093,8 +3132,8 @@ procedure TAxisSelection.TSelectionUI2.DrawHandles(R: TRectF;
 AHandles: TSelection6P.TGrabHandles);
 begin
   { TODO: TESTING }
-  inherited;
-  Exit;
+//  inherited;
+//  Exit;
   if DontDrawLeftEdge then
     Exclude(AHandles, TGrabHandle.LeftCenter);
   if DontDrawRightEdge then
