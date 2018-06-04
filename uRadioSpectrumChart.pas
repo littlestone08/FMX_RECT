@@ -491,7 +491,8 @@ type
     Property ColorBarGradient: TGradient read FColorBarGradient
       write SetColorBarGradient;
   End;
-
+var
+  _SelectionR: TRectF;
 procedure Register;
 
 implementation

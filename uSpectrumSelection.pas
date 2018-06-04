@@ -56,6 +56,8 @@ type
   Protected
     procedure MoveHandle(AX, AY: Single); Virtual;
     function DoGetUpdateRect: TRectF; override;
+    Procedure PaintSelectoin(Rect: TRectF); virtual;
+    Procedure CalcuPaintRect(var Rect: TRectF); Virtual;
     procedure Paint; override;
     /// <summary>Draw grip handle</summary>
     procedure DrawHandle(const Canvas: TCanvas; const Handle: TGrabHandle;
@@ -140,7 +142,7 @@ type
   Protected
     FCenterLinePen: TStrokeBrush;
     Procedure DrawCenterLine(const Canvas: TCanvas; const Rect: TRectF); virtual;
-    procedure Paint; override;
+    Procedure PaintSelectoin(Rect: TRectF); Override;
   Public
     Constructor Create(AOwner: TComponent); Override;
     Destructor Destroy; Override;
@@ -153,6 +155,12 @@ uses
   System.Math.Vectors, System.UIConsts;
 
 { TSpectrumSelection }
+
+procedure TSelection6P.CalcuPaintRect(var Rect: TRectF);
+begin
+  Rect := LocalRect;
+  Rect.Inflate(-0.5, -0.5);
+end;
 
 constructor TSelection6P.Create(AOwner: TComponent);
 begin
@@ -417,16 +425,20 @@ procedure TSelection6P.Paint;
 var
   R: TRectF;
 begin
+  CalcuPaintRect(R);
+  PaintSelectoin(R);
+end;
 
-  R := LocalRect;
-  R.Inflate(-0.5, -0.5);
-  DrawFrame(Canvas, R);
+procedure TSelection6P.PaintSelectoin(Rect: TRectF);
+begin
+  DrawFrame(Canvas, Rect);
 
   if (FHandles <> [])  and ShowHandles then
   begin
-    DrawHandles(R, FHandles);
+    DrawHandles(Rect, FHandles);
   end;
 end;
+
 
 function TSelection6P.DoGetUpdateRect: TRectF;
 begin
@@ -776,16 +788,12 @@ begin
 end;
 
 
-procedure TSelectionUI.Paint;
-var
-  R : TRectF;
+
+
+procedure TSelectionUI.PaintSelectoin(Rect: TRectF);
 begin
   inherited;
-
-  R:= LocalRect;
-  R.Inflate(-0.5, -0.5);
-
-  DrawCenterLine(Canvas, R);
+  DrawCenterLine(Canvas, Rect);
 end;
 
 end.
