@@ -334,8 +334,8 @@ type
 
   TSpectrumDrawer = Class(TAbstractSignalDrawer)
   Private Type
-    { TODO 1: 界面拖动时需要更新LeftPosPercent, RightPosPercent }
-    { TODO: 拖动时FPS会增加，如何处理？ }
+
+    { TODO 1:拖动时FPS会增加，如何处理？ }
   Private
     FGrid: TBitmap;
     // corss cursor
@@ -997,7 +997,7 @@ var
 
 begin
   if MaxLableCount < 2 then
-    Exit; { TODO: 不符合此条件的以后怎么处理? }
+    Exit;
 
   UpdateLinesPos(FLines, FViewMax - FViewMin, Coordinate.Width,
     Coordinate.Height, MaxLableCount, IsVertical);
@@ -1033,6 +1033,7 @@ begin
       R := CalcuLabelR(FLines[i], StdTextR, GridLocation);
       FillText(R, CalcuLableText(i, LableStep), False, 1, [], HTextAlign,
         TTextAlign.Center);
+//      DrawRect(R, 0, 0, [], 1);   //Draw the Text Region for debug
     end;
   end;
 end;
@@ -1243,6 +1244,7 @@ begin
   Result := StdTextRect;
   Posi := Line.StartPoint;
   Posi.X := Posi.X + offset.X - StdTextRect.Width - 4;
+  Posi.Y:= Posi.Y + StdTextRect.Height / 2;
   Result.SetLocation(Posi);
 end;
 
@@ -1285,6 +1287,7 @@ begin
   Result := StdTextRect;
   Posi := Line.EndPoint;
   Posi.offset(StdTextRect.Width / 2, 2 + Ceil(StdTextRect.Height / 2));
+  Posi.Y:= Posi.Y + StdTextRect.Height / 2;
   Result.SetLocation(Posi);
 end;
 
@@ -1870,6 +1873,8 @@ begin
   end;
 end;
 
+
+
 procedure TSpectrumDrawer.Internal_DrawViewData(const AData: TArray<Single>;
 ViewIdxFrom, ViewIdxTo: Integer);
   function GetHint: String;
@@ -2336,8 +2341,8 @@ begin
     FBottomTextR := MeasureMaxRect(FViewMin, FViewMax, UnitStr);
 
   FGraphicGridR := FGraphicRect;
-  FGraphicGridR.Top := FGraphicGridR.Top + FLeftTextR.Height * 0.5;
-//  FGraphicGridR.Top := FGraphicGridR.Top + FLeftTextR.Height * 1;
+//  FGraphicGridR.Top := FGraphicGridR.Top + FLeftTextR.Height * 0.5;
+  FGraphicGridR.Top := FGraphicGridR.Top + FLeftTextR.Height; //LeftTextR as TopSpace
   FGraphicGridR.Left := FGraphicGridR.Left + FLeftTextR.Width * 1.2;
   FGraphicGridR.Bottom := FGraphicGridR.Bottom - FLeftTextR.Height * 0.5 -
     FBottomTextR.Height;
