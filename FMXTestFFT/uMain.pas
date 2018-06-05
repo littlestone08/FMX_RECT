@@ -582,10 +582,24 @@ procedure TForm3.FormPaint(Sender: TObject; Canvas: TCanvas;
     end;
 
   end;
+  Procedure Test2;
+  var
+    s: TCanvasSaveState;
+  begin
+    s:= Canvas.SaveState;
+    Canvas.Fill.Color:= TAlphaColorRec.Blue;
+    Canvas.Fill.Kind:= TBrushKind.Solid;
 
+    Canvas.FillRect(SignalChart1.BoundsRect, 0, 0, [], 1);
+    Canvas.Fill.Color:= TAlphaColorRec.Lime;
+    Canvas.FillEllipse(SignalChart1.BoundsRect, 1);
+
+    Canvas.RestoreState(s);
+  end;
 begin
   // test;
-  TestText;
+//  TestText;
+//  test2;
 end;
 
 procedure TForm3.Panel1MouseDown(Sender: TObject; Button: TMouseButton;

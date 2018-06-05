@@ -3,8 +3,7 @@ unit uRadioSpectrumChart;
 interface
 
 { TODO: 绘制类接口化来继承，使让瀑布图可以挂在任何的谱线图上 }
-{ TODO: SSELECTION绘制时需要加背景色 }
-{ TODO: ZOOMIN过头了如何显示？ }
+
 uses
   System.Classes, System.SysUtils, System.Types, System.UITypes,
   // System.Contnrs,
@@ -141,6 +140,7 @@ type
         const Rect: TRectF); Override;
       function DoGetUpdateRect: TRectF; override;
       Procedure CalcuPaintRect(var Rect: TRectF); Override;
+      Procedure Paint; Override;
     Public
       Constructor Create(AOwner: TComponent); Override;
       Destructor Destroy; Override;
@@ -358,6 +358,10 @@ type
     FSectionBrush: TBrush;
     Procedure FillDesigningTestData;
   Private
+    FMaskRects: TArray<TRectF>;
+    FUnMaskRects: TArray<TRectF>;
+    Procedure UpdateMaskRects;
+  Private
     FPeaks: TArray<Single>;
     FFallOff: TArray<Single>;
   private
@@ -387,7 +391,8 @@ type
     Procedure Internal_DrawGraphicFrame(ACanvas: TCanvas); Virtual;
     Procedure Internal_DrawViewData(const AData: TArray<Single>;
       ViewIdxFrom, ViewIdxTo: Integer); Virtual;
-    Procedure Internal_UnSelectionMask;
+    Procedure Internal_DrawUnSelectionMask;
+    Procedure Internal_DrawSelectionMask;
   Public
     Procedure ChartSinkMouseMove(Chart: TSignalChart; Shift: TShiftState;
       X, Y: Single); Override;
@@ -497,16 +502,111 @@ type
     Property ColorBarGradient: TGradient read FColorBarGradient
       write SetColorBarGradient;
   End;
-var
-  _SelectionR: TRectF;
+
+Procedure RectExcusion(R: TRectF; var RectsExclude: TArray<TRectF>;
+  out RectsFragment: TArray<TRectF>);
+
 procedure Register;
 
 implementation
 
 uses
-  System.Diagnostics, SpectraLibrary, FMX.PlatForm{$IFDEF MSWINDOWS}, CnDebug
+  System.Generics.Defaults, System.Diagnostics, SpectraLibrary,
+  FMX.PlatForm{$IFDEF MSWINDOWS}, CnDebug
 {$ENDIF};
 
+var
+  g_instance_sort_rect: IComparer<TRectF>;
+
+  {对R进行操作，排除RectsExclude列出的矩形，把R分割成矩形碎块，存储到RectsFragment中 }
+type
+  TSortRect = Class(TComparer<TRectF>)
+  Public
+    Destructor Destroy; Override;
+    function Compare(const Left, Right: TRectF): Integer; Override;
+  End;
+
+Procedure RectExcusion(R: TRectF; var RectsExclude: TArray<TRectF>;
+  out RectsFragment: TArray<TRectF>);
+  function DoMergeRect(var Rects: TArray<TRectF>): Boolean;
+  var
+    i, j: Integer;
+  begin
+    Result := False;
+    for i := 0 to Length(RectsExclude) - 1 do
+    begin
+      for j := i + 1 to Length(RectsExclude) - 1 do
+      begin
+        Result := RectsExclude[i].IntersectsWith(RectsExclude[j]);
+        if Result then
+        begin
+          RectsExclude[i].Union(RectsExclude[j]);
+          Delete(RectsExclude, j, 1);
+          Break;
+        end;
+      end;
+      if Result then
+        Break;
+    end;
+  end;
+
+var
+  i: Integer;
+//  iRect: TRectF;
+  LastIndex: Integer;
+begin
+  SetLength(RectsFragment, 0);
+  if R.IsEmpty then
+    Exit;
+
+  // -----清除不在R范围内或为空的无效矩形-------
+  for i := Length(RectsExclude) - 1 downto 0 do
+  begin
+    if RectsExclude[i].IsEmpty or Not R.IntersectsWith(RectsExclude[i]) then
+      Delete(RectsExclude, i, 1);
+  end;
+
+  // 如果RectsExclude中的矩形可以合并，则进行合并(合并后要重新进行计算)
+  while DoMergeRect(RectsExclude) do;
+
+  // ---分割R,并把分割后的碎片存入RectsFragment------
+
+  TArray.Sort<TRectF>(RectsExclude, g_instance_sort_rect);
+  // 检查RectsExclude中的Rect是否超出了R,如果有超出，删除并调整R，保证R是所有
+  // RectsExclude中的Rect的真超集。
+  while Length(RectsExclude) > 0 do
+  begin
+    if RectsExclude[0].Left > R.Left then
+      Break;
+    R.Left := RectsExclude[0].Right;
+    Delete(RectsExclude, 0, 1);
+  end;
+
+  LastIndex := Length(RectsExclude) - 1;
+  if LastIndex >= 0 then
+  begin
+    repeat
+      if RectsExclude[LastIndex].Right < R.Right then
+        Break;
+      R.Right := RectsExclude[LastIndex].Left;
+      Delete(RectsExclude, LastIndex, 1);
+
+      LastIndex := Length(RectsExclude) - 1;
+    Until (LastIndex < 0);
+  end;
+
+  // 为了方便计算给RectsExclude添加两个假的Rect
+  Insert(TRectF.Create(R.Left - 1, R.Top, R.Left, R.Bottom), RectsExclude, 0);
+  Insert(TRectF.Create(R.Right, R.Top, R.Right + 1, R.Bottom), RectsExclude,
+    Length(RectsExclude));
+  // 找出所有的Rect的左边与上一个Rect的右边组成的矩形
+  for i := 1 to Length(RectsExclude) - 1 do
+  begin
+    Insert(TRectF.Create(RectsExclude[i - 1].Right, R.Top, RectsExclude[i].Left,
+      R.Bottom), RectsFragment, Length(RectsFragment));
+
+  end;
+end;
 { TSpectrumChart }
 
 procedure Register;
@@ -580,13 +680,10 @@ begin
 end;
 
 procedure TSignalChart.MouseMove(Shift: TShiftState; X, Y: Single);
-var
-  Bmp: TBitmap;
 begin
   if FDrawer <> Nil then
   begin
     FDrawer.ChartSinkMouseMove(Self, Shift, X, Y);
-
 
     if MilliSecondSpan(Now, FLastUpdateTime) > 30 then
     begin
@@ -1599,7 +1696,7 @@ begin
   if Chart.ComponentState * [csLoading, csReading] <> [] then
     Exit;
 
-  Internal_UnSelectionMask();
+  Internal_DrawSelectionMask();
 
   With FAxisesData.Bottom do
   begin
@@ -1643,8 +1740,12 @@ begin
     // Exit;
 
     if (nCount > 0) and InRange(ViewDataIdxTo, 0, nCount - 1) then
+    begin
       // Internal_DrawViewData(FData, ViewIdxFrom, ViewIdxTo);
       Internal_DrawViewData(FFallOff, ViewDataIdxFrom, ViewDataIdxTo);
+    end;
+
+    Internal_DrawUnSelectionMask();
   end;
 
   if FCursorInGraphicGrid then
@@ -1656,6 +1757,10 @@ begin
     end;
     DrawHint();
   end;
+
+{$IFDEF MSWINDOWS}
+  CnDebugger.LogMsg('TSpectrumDrawer.DoDraw Complete');
+{$ENDIF}
 end;
 
 function TSpectrumDrawer.AddSelectionViaPercent(AnchorFrom, AnchorTo: Single)
@@ -1892,37 +1997,102 @@ begin
   SetSelectUIParentNil(Self.FAxisesData.Left.SelectionManager);
 end;
 
-procedure TSpectrumDrawer.Internal_UnSelectionMask;
+// procedure TSpectrumDrawer.Internal_DrawUnSelectionMask;
+// var
+// iSelection: TAxisSelection;
+// AChart: TSignalChart;
+// ACanvas: TCanvas;
+// ARect: TRectF;
+// RectList: TArray<TRectF>;
+// Procedure ExcludeRect(var List: TArray<TRectF>; ExcludeRect: TRectF);
+// var
+// SrcRect: TRectF;
+// tmpRect: TRectF;
+// begin
+// SrcRect := List[0];
+// SetLength(List, 0);
+//
+// tmpRect := SrcRect;
+// tmpRect.Right := ExcludeRect.Left;
+// tmpRect.NormalizeRect;
+// tmpRect.offset(-1, 0);
+// tmpRect.Inflate(-0.5, 0);
+//
+// if Not tmpRect.IsEmpty then
+// Insert(tmpRect, List, 0);
+//
+// tmpRect := SrcRect;
+// tmpRect.Left := ExcludeRect.Right;
+// tmpRect.NormalizeRect;
+// tmpRect.offset(1, 0);
+// tmpRect.Inflate(-0.5, 0);
+// if Not tmpRect.IsEmpty then
+// Insert(tmpRect, List, 0);
+// end;
+//
+// begin
+// AChart := FChart;
+// if AChart = Nil then
+// Exit;
+//
+// if Self.FAxisesData.Bottom.SelectionManager.Count > 0 then
+// begin
+// Insert(Self.FGraphicGridR, RectList, 0);
+// for iSelection in Self.FAxisesData.Bottom.SelectionManager do
+// begin
+// ARect := iSelection.FClippedRect;
+// ARect.offset(iSelection.FUI.Position.X, iSelection.FUI.Position.Y);
+// ExcludeRect(RectList, ARect);
+// end;
+//
+// ACanvas := AChart.Canvas;
+// ACanvas.Fill.Color := TAlphaColors.Gray;
+// ACanvas.Fill.Kind := TBrushKind.Solid;
+// for ARect in RectList do
+// begin
+// ACanvas.FillRect(ARect, 0, 0, [], 0.6);
+// end;
+// end;
+// end;
+procedure TSpectrumDrawer.Internal_DrawUnSelectionMask;
 var
-  // ARect: TRectF;
-  // ExcludeRect: TRectF;
-  // iSection: TLocatedSelection;
-  Save: TCanvasSaveState;
+  ExcludeRects, FragmentRects: TArray<TRectF>;
+  AChart: TSignalChart;
+  ACanvas: TCanvas;
+  iSelection: TAxisSelection;
+  ARect: TRectF;
 begin
-  Exit;
-  // // ARect:=  TRectF.Create(FGraphicGridR.TopLeft, 100, FGraphicGridR.Height);
-  //
-  // // ExcludeRect:= TRectF.Create(100, 0, 200, FGraphicGridR.Height);
-  // // ExcludeRect.Offset(FGraphicGridR.TopLeft);
-  //
-  // if Not GlobalUseGPUCanvas then
-  // begin
-  // if FSelections.Count > 0 then
-  // begin
-  // Save := Chart.Canvas.SaveState;
-  // try
-  // // Chart.Canvas.ExcludeClipRect(ExcludeRect);
-  // for iSection in FSelections do
-  // begin
-  // Chart.Canvas.ExcludeClipRect(iSection.BoundsRect);
-  // end;
-  //
-  // Chart.Canvas.FillRect(Self.FGraphicGridR, 0, 0, [], 0.3, FSectionBrush);
-  // finally
-  // Chart.Canvas.RestoreState(Save);
-  // end;
-  // end;
-  // end;
+  if FChart = Nil then  Exit;
+
+  AChart := FChart;
+  if Self.FAxisesData.Bottom.SelectionManager.Count > 0 then
+  begin
+    for iSelection in Self.FAxisesData.Bottom.SelectionManager do
+    begin
+      ARect := iSelection.FClippedRect;
+      ARect.offset(iSelection.FUI.Position.X, iSelection.FUI.Position.Y);
+      Insert(ARect, ExcludeRects, 0);
+    end;
+
+    RectExcusion(FGraphicGridR, ExcludeRects, FragmentRects);
+
+    ACanvas := AChart.Canvas;
+    ACanvas.Fill.Color := TAlphaColors.Gray;
+    ACanvas.Fill.Kind := TBrushKind.Solid;
+    for ARect in FragmentRects do
+    begin
+      ACanvas.FillRect(ARect, 0, 0, [], 0.2);
+    end;
+
+//    for iSelection in Self.FAxisesData.Bottom.SelectionManager do
+//    begin
+//      With iSelection.FUI do
+//      begin
+//        InvalidateRect(LocalRect);
+//      end;
+//    end;
+  end;
+
 end;
 
 function TSpectrumDrawer.CursorXRatio: Single;
@@ -1962,13 +2132,40 @@ begin
   ACanvas.DrawRect(GridFrameR, 0, 0, [], 1);
 end;
 
+procedure TSpectrumDrawer.Internal_DrawSelectionMask;
+var
+  iSelection: TAxisSelection;
+  AChart: TSignalChart;
+  ACanvas: TCanvas;
+  ARect: TRectF;
+begin
+  Exit;
+  AChart := FChart;
+  if AChart = Nil then
+    Exit;
+  ACanvas := AChart.Canvas;
+//  ACanvas.Fill.Color := TAlphaColors.white;
+//  ACanvas.Fill.Color := TAlphaColors.Gray;
+  ACanvas.Fill.Color := TAlphaColors.Red;
+  ACanvas.Fill.Kind := TBrushKind.Solid;
+  for iSelection in Self.FAxisesData.Bottom.SelectionManager do
+  begin
+    ARect := iSelection.FClippedRect;
+    ARect.offset(iSelection.FUI.Position.X, iSelection.FUI.Position.Y);
+    ACanvas.FillRect(ARect, 0, 0, [], 0.9);
+  end;
+end;
+
 procedure TSpectrumDrawer.SetBKColor(const Value: TAlphaColor);
 begin
   if FBKColor <> Value then
   begin
     FBKColor := Value;
-    Chart.UpdateBitmap;
-    Chart.InvalidateRect(Chart.ClipRect);
+    if Chart <> Nil then
+    begin
+      Chart.UpdateBitmap;
+      Chart.InvalidateRect(Chart.ClipRect);
+    end;
   end;
 end;
 
@@ -2128,6 +2325,42 @@ begin
   FGraphicGridR.Bottom := FGraphicGridR.Bottom - FLeftTextR.Height * 0.5 -
     FBottomTextR.Height;
   FGraphicGridR.Right := FGraphicGridR.Right - FBottomTextR.Width * 0.5;
+end;
+
+procedure TSpectrumDrawer.UpdateMaskRects;
+var
+  ExcludeRects, FragmentRects: TArray<TRectF>;
+  AChart: TSignalChart;
+  ACanvas: TCanvas;
+  iSelection: TAxisSelection;
+  ARect: TRectF;
+begin
+  if FChart = Nil then  Exit;
+
+  AChart := FChart;
+  if Self.FAxisesData.Bottom.SelectionManager.Count > 0 then
+  begin
+    for iSelection in Self.FAxisesData.Bottom.SelectionManager do
+    begin
+      ARect := iSelection.FClippedRect;
+      ARect.offset(iSelection.FUI.Position.X, iSelection.FUI.Position.Y);
+      Insert(ARect, ExcludeRects, 0);
+    end;
+
+    RectExcusion(FGraphicGridR, ExcludeRects, FragmentRects);
+
+    FMaskRects:= FragmentRects;
+    FUnMaskRects:= ExcludeRects;
+
+//    for iSelection in Self.FAxisesData.Bottom.SelectionManager do
+//    begin
+//      With iSelection.FUI do
+//      begin
+//        InvalidateRect(LocalRect);
+//      end;
+//    end;
+  end;
+
 end;
 
 procedure TSpectrumDrawer.UpdateViewRangeIndex(Axis: TCustomAxis);
@@ -2298,7 +2531,7 @@ begin
   begin
     With Chart do
     begin
-      Canvas.Stroke.Color := TAlphaColors.White;
+      Canvas.Stroke.Color := TAlphaColors.white;
       Canvas.DrawLine(TPointF.Create(FCrossX, FWaterFallGridR.Top),
         TPointF.Create(FCrossX, FWaterFallGridR.Bottom), CrossOpacity);
     end;
@@ -2749,7 +2982,7 @@ begin
   FAxis := Axis;
   FUI := TSelectionUI2.Create(Nil);
   FUI.Tag := NativeInt(Self);
-  FUI.FSelection:= Self;
+  FUI.FSelection := Self;
   Self.DoAnchorChange;
 end;
 
@@ -2857,7 +3090,6 @@ end;
 procedure TAxisSelection.UpdateAnchorValueFromUI(Edges: TSelectionEdges);
 var
   ADrawer: TSpectrumDrawer;
-  iEdge: TSelectionEdge;
 begin
   if GetDrawer(ADrawer) then
   begin
@@ -2930,12 +3162,10 @@ begin
   end;
 end;
 
-
-
 procedure TAxisSelection.CheckEdgeOutOfViewRange();
 var
   R: TRectF;
-  ADrawer:TSpectrumDrawer;
+  ADrawer: TSpectrumDrawer;
 begin
   if FUI <> Nil then
   begin
@@ -2946,19 +3176,20 @@ begin
     FUI.DontDrawRightEdge := Not InRange(FAnchor.Right, FAxis.ViewMin,
       FAxis.ViewMax);
 
-    FClippedRect:= FUI.LocalRect;
-    FClippedRect.Offset(-0.5, -0.5);
+    FClippedRect := FUI.LocalRect;
+    FClippedRect.offset(-0.5, -0.5);
 
-    //切掉超出FGraphicR的范围的部分
+    // 切掉超出FGraphicR的范围的部分
     if GetDrawer(ADrawer) then
     begin
-      R:= ADrawer.FGraphicGridR;
-      R.Offset(-FUI.Position.X, -FUI.Position.Y);
+      R := ADrawer.FGraphicGridR;
+      R.offset(-FUI.Position.X, -FUI.Position.Y);
       FClippedRect.Intersect(R);
     end;
 
-//    FClippedRect.
-//
+    ADrawer.UpdateMaskRects();
+    // FClippedRect.
+    //
   end;
 end;
 
@@ -2985,8 +3216,8 @@ end;
 
 procedure TAxisSelection.TSelectionUI2.CalcuPaintRect(var Rect: TRectF);
 begin
-//  inherited;
-  Rect:= Selection.FClippedRect;
+  // inherited;
+  Rect := Selection.FClippedRect;
 end;
 
 constructor TAxisSelection.TSelectionUI2.Create(AOwner: TComponent);
@@ -3027,34 +3258,36 @@ end;
 
 procedure TAxisSelection.TSelectionUI2.DoTrack;
 var
- ASelection: TAxisSelection;
- ADrawer: TSpectrumDrawer;
+  ASelection: TAxisSelection;
+  ADrawer: TSpectrumDrawer;
 var
   OldAnchor: TSelectionAnchor;
   NewLeft, NewRight: Single;
 begin
-  ASelection:= TAxisSelection(tag);
-  OldAnchor:= ASelection.Anchor;
+  ASelection := TAxisSelection(Tag);
+  OldAnchor := ASelection.Anchor;
   if ASelection.GetDrawer(ADrawer) then
   begin
     ASelection.UpdateAnchorValueFromUI([ueLeft, ueRight]);
     // {$IFDEF MSWINDOWS}
     // CnDebugger.LogMsg('Do Track and UpdateAnchorValueFromUI([ueLeft, ueRight])');
     // {$ENDIF}
-    NewLeft:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X - ADrawer.FGraphicGridR.Left);
-    NewRight:= ADrawer.Trans_GridRCoordinalX2Mark(Position.X - ADrawer.FGraphicGridR.Left + Width);
+    NewLeft := ADrawer.Trans_GridRCoordinalX2Mark
+      (Position.X - ADrawer.FGraphicGridR.Left);
+    NewRight := ADrawer.Trans_GridRCoordinalX2Mark
+      (Position.X - ADrawer.FGraphicGridR.Left + Width);
     if NewLeft < ADrawer.AxisesData.Bottom.Min then
     begin
-      NewLeft:= ADrawer.AxisesData.Bottom.Min;
-      NewRight:= NewLeft + (OldAnchor.Right - OldAnchor.Left);
+      NewLeft := ADrawer.AxisesData.Bottom.Min;
+      NewRight := NewLeft + (OldAnchor.Right - OldAnchor.Left);
     end;
     if NewRight > ADrawer.AxisesData.Bottom.Max then
     begin
-      NewRight:= ADrawer.AxisesData.Bottom.Max;
-      NewLeft:= NewRight - (OldAnchor.Right - OldAnchor.Left);
+      NewRight := ADrawer.AxisesData.Bottom.Max;
+      NewLeft := NewRight - (OldAnchor.Right - OldAnchor.Left);
     end;
-    ASelection.AnchorLeft:= NewLeft;
-    ASelection.AnchorRight:= NewRight;
+    ASelection.AnchorLeft := NewLeft;
+    ASelection.AnchorRight := NewRight;
     ASelection.DoAnchorChange();
   end;
   inherited;
@@ -3063,33 +3296,33 @@ end;
 procedure TAxisSelection.TSelectionUI2.DrawCenterLine(const Canvas: TCanvas;
 const Rect: TRectF);
 var
-//  ASelection: TAxisSelection;
-//  ADrawer: TSpectrumDrawer;
+  // ASelection: TAxisSelection;
+  // ADrawer: TSpectrumDrawer;
   XPos: Single;
 begin
-//  if Not(FDontDrawLeftEdge or FDontDrawCenterLine or FDontDrawRightEdge) then
-//  begin
-//    inherited DrawCenterLine(Canvas, Rect);
-//  end
-//  else
-//  begin
-//    ASelection := TAxisSelection(Tag);
-//    if ASelection.GetDrawer(ADrawer) then
-//    begin
-//      XPos := ADrawer.Trans_MarkX2GridRCoordinal
-//        ((ASelection.AnchorLeft + ASelection.AnchorRight) / 2) +
-//        ADrawer.FGraphicGridR.Left;
-//      XPos := XPos - Position.X;
-//      Canvas.DrawLine(TPointF.Create(XPos, Rect.Top),
-//        TPointF.Create(XPos, Rect.Bottom), 1, FCenterLinePen);
-//    end;
-//    // 得到SELECTION的Anchor Center,换算成GridR的UI坐标，
-//    // 再映射到Selection控件的位置坐标，得到X坐标后再画线
-//  end;
+  // if Not(FDontDrawLeftEdge or FDontDrawCenterLine or FDontDrawRightEdge) then
+  // begin
+  // inherited DrawCenterLine(Canvas, Rect);
+  // end
+  // else
+  // begin
+  // ASelection := TAxisSelection(Tag);
+  // if ASelection.GetDrawer(ADrawer) then
+  // begin
+  // XPos := ADrawer.Trans_MarkX2GridRCoordinal
+  // ((ASelection.AnchorLeft + ASelection.AnchorRight) / 2) +
+  // ADrawer.FGraphicGridR.Left;
+  // XPos := XPos - Position.X;
+  // Canvas.DrawLine(TPointF.Create(XPos, Rect.Top),
+  // TPointF.Create(XPos, Rect.Bottom), 1, FCenterLinePen);
+  // end;
+  // // 得到SELECTION的Anchor Center,换算成GridR的UI坐标，
+  // // 再映射到Selection控件的位置坐标，得到X坐标后再画线
+  // end;
 
   if Not FDontDrawCenterLine then
   begin
-    XPos:=  Width / 2 ;
+    XPos := Width / 2;
     Canvas.DrawLine(TPointF.Create(XPos, Rect.Top),
       TPointF.Create(XPos, Rect.Bottom), 1, FCenterLinePen);
   end;
@@ -3161,7 +3394,6 @@ procedure TAxisSelection.TSelectionUI2.MoveHandle(AX, AY: Single);
 var
   ASelection: TAxisSelection;
   ADrawer: TSpectrumDrawer;
-  OldWidth: Single;
   OppositePos: Single;
 begin
   inherited;
@@ -3204,6 +3436,27 @@ begin
 
 end;
 
+procedure TAxisSelection.TSelectionUI2.Paint;
+var
+  save: TCanvasSaveState;
+begin
+  save := Canvas.SaveState;
+  try
+    Canvas.Fill.Kind := TBrushKind.Solid;
+    // Canvas.Fill.Color:= TAlphaColorRec.red;// and $00FFFFFF;
+    Canvas.Fill.Color := TAlphaColorRec.white; // and $00FFFFFF;
+//    Canvas.Fill.Color:= TAlphaColorRec.Green;
+//    Canvas.Fill.Color:= TColorRec.Null;
+    Canvas.FillRect(Selection.FClippedRect, 0, 0, [], 0.1);
+  finally
+    Canvas.RestoreState(save);
+  end;
+  inherited;
+{$IFDEF MSWINDOWS}
+  CnDebugger.LogMsg('TAxisSelection.TSelectionUI2.Paint');
+{$ENDIF}
+end;
+
 procedure TAxisSelection.TSelectionUI2.SetDontDrawCenterLine
   (const Value: Boolean);
 begin
@@ -3240,10 +3493,33 @@ begin
   end;
 end;
 
+{ TSortRect }
+
+function TSortRect.Compare(const Left, Right: TRectF): Integer;
+begin
+  if Left.Left < Right.Left then
+    Result := -1
+  else if Left.Left = Right.Left then
+    Result := 0
+  else
+    Result := 1;
+end;
+
+destructor TSortRect.Destroy;
+begin
+
+  inherited;
+end;
+
 initialization
 
+g_instance_sort_rect := TSortRect.Create;
 GlobalUseGPUCanvas := True;
 
 // GlobalUseDX10Software:= True;
 // GlobalUseDirect2D:= True;
+finalization
+
+g_instance_sort_rect := Nil;
+
 end.
