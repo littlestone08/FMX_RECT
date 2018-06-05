@@ -2,7 +2,7 @@ unit uRadioSpectrumChart;
 
 interface
 
-{ TODO: 绘制类接口化来继承，使让瀑布图可以挂在任何的谱线图上 }
+{ TODO 3: 绘制类接口化来继承，使让瀑布图可以挂在任何的谱线图上 }
 
 uses
   System.Classes, System.SysUtils, System.Types, System.UITypes,
@@ -334,7 +334,7 @@ type
 
   TSpectrumDrawer = Class(TAbstractSignalDrawer)
   Private Type
-    { TODO: 界面拖动时需要更新LeftPosPercent, RightPosPercent }
+    { TODO 1: 界面拖动时需要更新LeftPosPercent, RightPosPercent }
     { TODO: 拖动时FPS会增加，如何处理？ }
   Private
     FGrid: TBitmap;
@@ -2054,43 +2054,59 @@ end;
 // end;
 // end;
 // end;
+//procedure TSpectrumDrawer.Internal_DrawUnSelectionMask;
+//var
+//  ExcludeRects, FragmentRects: TArray<TRectF>;
+//  AChart: TSignalChart;
+//  ACanvas: TCanvas;
+//  iSelection: TAxisSelection;
+//  ARect: TRectF;
+//begin
+//  if FChart = Nil then  Exit;
+//
+//  AChart := FChart;
+//  if Self.FAxisesData.Bottom.SelectionManager.Count > 0 then
+//  begin
+//    for iSelection in Self.FAxisesData.Bottom.SelectionManager do
+//    begin
+//      ARect := iSelection.FClippedRect;
+//      ARect.offset(iSelection.FUI.Position.X, iSelection.FUI.Position.Y);
+//      Insert(ARect, ExcludeRects, 0);
+//    end;
+//
+//    RectExcusion(FGraphicGridR, ExcludeRects, FragmentRects);
+//
+//    ACanvas := AChart.Canvas;
+//    ACanvas.Fill.Color := TAlphaColors.Gray;
+//    ACanvas.Fill.Kind := TBrushKind.Solid;
+//    for ARect in FragmentRects do
+//    begin
+//      ACanvas.FillRect(ARect, 0, 0, [], 0.2);
+//    end;
+//
+////    for iSelection in Self.FAxisesData.Bottom.SelectionManager do
+////    begin
+////      With iSelection.FUI do
+////      begin
+////        InvalidateRect(LocalRect);
+////      end;
+////    end;
+//  end;
+//end;
+
 procedure TSpectrumDrawer.Internal_DrawUnSelectionMask;
 var
-  ExcludeRects, FragmentRects: TArray<TRectF>;
-  AChart: TSignalChart;
   ACanvas: TCanvas;
-  iSelection: TAxisSelection;
   ARect: TRectF;
 begin
   if FChart = Nil then  Exit;
 
-  AChart := FChart;
-  if Self.FAxisesData.Bottom.SelectionManager.Count > 0 then
+  ACanvas := FChart.Canvas;
+  ACanvas.Fill.Color := TAlphaColors.Gray;
+  ACanvas.Fill.Kind := TBrushKind.Solid;
+  for ARect in FMaskRects do
   begin
-    for iSelection in Self.FAxisesData.Bottom.SelectionManager do
-    begin
-      ARect := iSelection.FClippedRect;
-      ARect.offset(iSelection.FUI.Position.X, iSelection.FUI.Position.Y);
-      Insert(ARect, ExcludeRects, 0);
-    end;
-
-    RectExcusion(FGraphicGridR, ExcludeRects, FragmentRects);
-
-    ACanvas := AChart.Canvas;
-    ACanvas.Fill.Color := TAlphaColors.Gray;
-    ACanvas.Fill.Kind := TBrushKind.Solid;
-    for ARect in FragmentRects do
-    begin
-      ACanvas.FillRect(ARect, 0, 0, [], 0.2);
-    end;
-
-//    for iSelection in Self.FAxisesData.Bottom.SelectionManager do
-//    begin
-//      With iSelection.FUI do
-//      begin
-//        InvalidateRect(LocalRect);
-//      end;
-//    end;
+    ACanvas.FillRect(ARect, 0, 0, [], 0.2);
   end;
 
 end;
@@ -2321,6 +2337,7 @@ begin
 
   FGraphicGridR := FGraphicRect;
   FGraphicGridR.Top := FGraphicGridR.Top + FLeftTextR.Height * 0.5;
+//  FGraphicGridR.Top := FGraphicGridR.Top + FLeftTextR.Height * 1;
   FGraphicGridR.Left := FGraphicGridR.Left + FLeftTextR.Width * 1.2;
   FGraphicGridR.Bottom := FGraphicGridR.Bottom - FLeftTextR.Height * 0.5 -
     FBottomTextR.Height;
