@@ -311,7 +311,7 @@ type
     Procedure Internal_SetChart(const Value: TSignalChart); Virtual;
     procedure SetChart(const Value: TSignalChart); Virtual;
     Procedure DrawCross(X, Y: Single); Virtual; Abstract;
-    Procedure AfterChangeSize(); Virtual; Abstract;
+    Procedure DoSizeChanged(); Virtual; Abstract;
     Procedure UpdateGraphicRect; Virtual; Abstract;
     Procedure UpdateGridRAndStdTextR(); Virtual; Abstract;
     Procedure UpdateViewRangeIndex(Axis: TCustomAxis); Virtual; Abstract;
@@ -333,10 +333,34 @@ type
   End;
 
   TSpectrumDrawer = Class(TAbstractSignalDrawer)
+  Public type
+    ISpectrumStylePainter = Interface
+      Procedure Draw(Canvas: TCanvas; GridRect: TRectF; Bottom: TCustomAxis; const AData: TArray<Single>);
+    End;
+    TAbstractSpectrumStylePainter = Class(TInterfacedObject, ISpectrumStylePainter)
+    Protected
+      Procedure Draw(Canvas: TCanvas; GridRect: TRectF; Bottom: TCustomAxis; const AData: TArray<Single>); Virtual; Abstract;
+    End;
+    TColumnarStylePainter = Class(TAbstractSpectrumStylePainter)
+    Private
+      FPeaks  : TArray<Single>;
+      FFallOff: TArray<Single>;
+      FFalloffDecrement : Single;
+      FPeakDecrement    : Single;
+      FPeakVisible      : Boolean;
+      FFalloffVisible   : Boolean;
+      Procedure Internal_DrawViewData(Canvas: TCanvas;  GridRect: TRectF; const AData: TArray<Single>;
+        ViewIdxFrom, ViewIdxTo: Integer);
+    Public
+      Constructor Create;
+      Procedure Draw(Canvas: TCanvas; GridRect: TRectF; Bottom: TCustomAxis; const AData: TArray<Single>); Override;
+    End;
+
   Private Type
 
     { TODO 1:拖动时FPS会增加，如何处理？ }
   Private
+    FPainter: ISpectrumStylePainter;
     FGrid: TBitmap;
     // corss cursor
     FCrossOpacity: Single;
@@ -379,7 +403,7 @@ type
     FGraphicRect: TRectF;
     FGraphicGridR: TRectF;
     Procedure DrawCross(X, Y: Single); Override;
-    Procedure AfterChangeSize(); Override;
+    Procedure DoSizeChanged(); Override;
     Procedure DrawHint; Virtual;
     Procedure UpdateGridRAndStdTextR(); Override;
     Procedure UpdateGraphicRect; Override;
@@ -483,7 +507,7 @@ type
   Protected
     Procedure DrawHint; Override;
     Procedure DrawCross(X, Y: Single); Override;
-    Procedure AfterChangeSize(); Override;
+    Procedure DoSizeChanged(); Override;
     procedure SetChart(const Value: TSignalChart); Override;
     Procedure UpdateGridRAndStdTextR(); Override;
     Procedure UpdateGraphicRect; Override;
@@ -1600,6 +1624,7 @@ end;
 constructor TSpectrumDrawer.Create(AOwner: TComponent);
 begin
   inherited;
+  FPainter:= TColumnarStylePainter.Create;
   // FSelections := TObjectList<TLocatedSelection>.Create(True);
   FSectionBrush := TBrush.Create(TBrushKind.Solid, TAlphaColorRec.Gray);
   FGrid := TBitmap.Create;
@@ -1778,7 +1803,7 @@ begin
   end;
 end;
 
-procedure TSpectrumDrawer.AfterChangeSize;
+procedure TSpectrumDrawer.DoSizeChanged;
 var
   iSelection: TAxisSelection;
 begin
@@ -2352,15 +2377,10 @@ end;
 procedure TSpectrumDrawer.UpdateMaskRects;
 var
   ExcludeRects, FragmentRects: TArray<TRectF>;
-  AChart: TSignalChart;
-  ACanvas: TCanvas;
   iSelection: TAxisSelection;
   ARect: TRectF;
 begin
-  if FChart = Nil then  Exit;
-
-  AChart := FChart;
-  if Self.FAxisesData.Bottom.SelectionManager.Count > 0 then
+  if FAxisesData.Bottom.SelectionManager.Count > 0 then
   begin
     for iSelection in Self.FAxisesData.Bottom.SelectionManager do
     begin
@@ -2373,16 +2393,7 @@ begin
 
     FMaskRects:= FragmentRects;
     FUnMaskRects:= ExcludeRects;
-
-//    for iSelection in Self.FAxisesData.Bottom.SelectionManager do
-//    begin
-//      With iSelection.FUI do
-//      begin
-//        InvalidateRect(LocalRect);
-//      end;
-//    end;
   end;
-
 end;
 
 procedure TSpectrumDrawer.UpdateViewRangeIndex(Axis: TCustomAxis);
@@ -2420,7 +2431,7 @@ procedure TAbstractSignalDrawer.DoUpdateBackGround;
 begin
   UpdateGridRAndStdTextR();
   Chart.UpdateBitmap;
-  AfterChangeSize();
+  DoSizeChanged();
 end;
 
 procedure TAbstractSignalDrawer.Internal_SetChart(const Value: TSignalChart);
@@ -2540,7 +2551,7 @@ begin
     FOnColorBarClick(Sender);
 end;
 
-procedure TWaterFallDrawer.AfterChangeSize;
+procedure TWaterFallDrawer.DoSizeChanged;
 begin
   inherited;
   DockColorBar();
@@ -2853,7 +2864,6 @@ begin
       FWaterFallBufChanging := False;
     end;
   end;
-
 end;
 
 procedure TWaterFallDrawer.SetOnColorBarClick(const Value: TNotifyEvent);
@@ -2863,27 +2873,20 @@ end;
 
 procedure TWaterFallDrawer.SetShowWaterfall(const Value: Boolean);
 begin
-  if FShowWaterfall <> Value then
+  if FShowWaterfall = Value then Exit;
+
+  FShowWaterfall := Value;
+  if Not FShowWaterfall then
   begin
-    FShowWaterfall := Value;
-
-    if Not FShowWaterfall then
-    begin
-      FWaterFallBuf.SetSize(1, 1); // 节省内存开销
-    end;
-    if Chart <> Nil then
-    begin
-      UpdateGraphicRect();
-      Chart.UpdateBitmap;
-      Chart.InvalidateRect(Chart.LocalRect);
-      AfterChangeSize(); // 重新定位彩条图像
-    end
-    else
-    begin
-
-    end;
-
+    FWaterFallBuf.SetSize(1, 1); // 节省内存开销
   end;
+  if Chart <> Nil then
+  begin
+    UpdateGraphicRect();
+    Chart.UpdateBitmap;
+    Chart.InvalidateRect(Chart.LocalRect);
+    DoSizeChanged(); // 重新定位彩条图像
+  end
 end;
 
 procedure TWaterFallDrawer.UpdateGraphicRect;
@@ -3531,6 +3534,118 @@ destructor TSortRect.Destroy;
 begin
 
   inherited;
+end;
+
+{ TSpectrumDrawer.TColumnarStylePainter }
+
+constructor TSpectrumDrawer.TColumnarStylePainter.Create;
+begin
+  inherited;
+  FFalloffDecrement := 0.005;
+  FPeakDecrement := 0.001;
+  FPeakVisible := True;
+  FFalloffVisible := True;
+end;
+
+procedure TSpectrumDrawer.TColumnarStylePainter.Draw(Canvas: TCanvas;
+  GridRect: TRectF; Bottom: TCustomAxis; const AData: TArray<Single>);
+var
+  i: Integer;
+  di: Single;
+  nCount: Integer;
+begin
+  nCount := Length(AData);
+
+  if Length(FPeaks) < nCount then
+    SetLength(FPeaks, nCount);
+  if Length(FFallOff) < nCount then
+    SetLength(FFallOff, nCount);
+  for i := 0 to Length(AData) - 1 do
+  begin
+    di := AData[i];
+    if di >= FPeaks[i] then
+    begin
+      FPeaks[i] := di
+    end
+    else
+    begin
+      if FPeaks[i] > FPeakDecrement then
+        FPeaks[i] := FPeaks[i] - FPeakDecrement
+      else
+        FPeaks[i] := 0;
+    end;
+
+    if di >= FFallOff[i] then
+    begin
+      FFallOff[i] := di
+    end
+    else
+    begin
+      if FFallOff[i] > FFalloffDecrement then
+        FFallOff[i] := FFallOff[i] - FFalloffDecrement
+      else
+        FFallOff[i] := 0;
+    end;
+  end;
+
+  if (nCount > 0) and InRange(Bottom.ViewDataIdxTo, 0, nCount - 1) then
+  begin
+    Internal_DrawViewData(Canvas, GridRect,
+    FFallOff, Bottom.ViewDataIdxFrom, Bottom.ViewDataIdxTo);
+  end;
+end;
+
+procedure TSpectrumDrawer.TColumnarStylePainter.Internal_DrawViewData(
+  Canvas: TCanvas;  GridRect: TRectF;  const AData: TArray<Single>; ViewIdxFrom, ViewIdxTo: Integer);
+var
+  HStep: Single;
+  FalloffR: TRectF;
+  PeakR: TRectF;
+  i: Integer;
+  ACanvas: TCanvas;
+  nViewCount: Integer;
+begin
+  nViewCount := ViewIdxTo - ViewIdxFrom + 1;
+
+  HStep := GridRect.Width / (nViewCount - 1);
+
+  ACanvas := Canvas;
+  ACanvas.Stroke.Color := TAlphaColors.Black;
+  ACanvas.Stroke.Kind := TBrushKind.Solid;
+  ACanvas.Stroke.Thickness := 1;
+  ACanvas.Fill.Color := TAlphaColors.Lime;
+  ACanvas.Fill.Kind := TBrushKind.Solid;
+
+  for i := 0 to nViewCount - 1 do
+  begin
+    FalloffR := TRectF.Create(0, GridRect.Height *
+      (1 - AData[i + ViewIdxFrom]), HStep, GridRect.Height - 0);
+
+    FalloffR.offset((i - 0.5) * HStep, 0);
+    FalloffR.offset(GridRect.TopLeft);
+    FalloffR.Left := EnsureRange(FalloffR.Left, GridRect.Left,
+      GridRect.Right);
+    FalloffR.Right := EnsureRange(FalloffR.Right, GridRect.Left,
+      GridRect.Right);
+
+    PeakR := FalloffR;
+    if FFalloffVisible then
+    begin
+      if (FalloffR.Width > 2) then
+      begin
+        ACanvas.DrawRect(FalloffR, 0, 0, [], 1);
+        FalloffR.Inflate(-0.5, -0.5);
+      end;
+      ACanvas.FillRect(FalloffR, 0, 0, [], 1);
+    end;
+    if FPeakVisible then
+    begin
+      PeakR.Bottom := GridRect.Height * (1 - FPeaks[i + ViewIdxFrom]) +
+        GridRect.Top;
+      PeakR.Top := PeakR.Bottom - 1;
+      ACanvas.FillRect(PeakR, 0, 0, [], 1);
+    end;
+  end;
 end;
 
 initialization
