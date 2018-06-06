@@ -369,8 +369,10 @@ type
     TLineStylePainter = Class(TAbstractSpectrumStylePainter)
     Private
       FPath: TPathData;
+      function ShrinkData(const AData: TArray<Single>; IdxFrom, IdxTo: Single; RefCount: Single): TArray<Single>;
     Protected
       Procedure Draw(Canvas: TCanvas; GridRect: TRectF;const AData: TArray<Single>; ViewIdxFrom, ViewIdxTo: Integer); Override;
+
     Public
       Constructor Create;
       Destructor Destroy; Override;
@@ -3534,12 +3536,14 @@ var
   iXPos: Single;
 var
   nCount: Integer;
+  ShrinkedData: TArray<Single>;
 begin
   nCount:= Length(AData);
   if Not ((nCount > 0) and InRange(ViewIdxTo, 0, nCount - 1)) then Exit;
 
   nViewCount := ViewIdxTo - ViewIdxFrom + 1;
   HStep := GridRect.Width / (nViewCount - 1);
+  ShrinkedData:= ShrinkData(AData, ViewIdxFrom, ViewIdxTo, GridRect.Width);
 
   i:= 0;
   FPath.Clear();
@@ -3559,6 +3563,16 @@ begin
   Canvas.Stroke.Kind := TBrushKind.Solid;
   Canvas.Stroke.Thickness := 1;
   Canvas.DrawPath(FPath, 1);
+end;
+
+function TSpectrumDrawer.TLineStylePainter.ShrinkData(
+  const AData: TArray<Single>; IdxFrom, IdxTo: Single;  RefCount: Single): TArray<Single>;
+begin
+  Result:= AData;
+  {TODO: 这里可以优化}
+  //优化方法:
+  //如果IdxFrom到IdxTo中的点数超过2倍的RefCount，则通过计算收缩为2倍的RefCount,
+  //考虑到计算开销，可以为4倍的RefCount时再进行收缩操作
 end;
 
 initialization
