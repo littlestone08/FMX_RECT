@@ -336,15 +336,16 @@ type
   Public type
     ISpectrumStylePainter = Interface
       function get_Obj: TObject;
-      Procedure Draw(Canvas: TCanvas; GridRect: TRectF; Bottom: TCustomAxis; const AData: TArray<Single>);
+      Procedure Draw(Canvas: TCanvas; GridRect: TRectF;const AData: TArray<Single>; ViewIdxFrom, ViewIdxTo: Integer);
 
       Property Obj: TObject Read get_Obj;
     End;
     TAbstractSpectrumStylePainter = Class(TInterfacedObject, ISpectrumStylePainter)
     Protected
       function get_Obj: TObject;
-      Procedure Draw(Canvas: TCanvas; GridRect: TRectF; Bottom: TCustomAxis; const AData: TArray<Single>); Virtual; Abstract;
+      Procedure Draw(Canvas: TCanvas; GridRect: TRectF;const AData: TArray<Single>; ViewIdxFrom, ViewIdxTo: Integer); Virtual; Abstract;
     End;
+
     TColumnarStylePainter = Class(TAbstractSpectrumStylePainter)
     Private
       FPeaks  : TArray<Single>;
@@ -355,15 +356,25 @@ type
       FFalloffVisible   : Boolean;
       Procedure Internal_DrawViewData(Canvas: TCanvas;  GridRect: TRectF; const AData: TArray<Single>;
         ViewIdxFrom, ViewIdxTo: Integer);
+    Protected
+      Procedure Draw(Canvas: TCanvas; GridRect: TRectF;const AData: TArray<Single>; ViewIdxFrom, ViewIdxTo: Integer); Override;
     Public
       Constructor Create;
-      Procedure Draw(Canvas: TCanvas; GridRect: TRectF; Bottom: TCustomAxis; const AData: TArray<Single>); Override;
       Property FalloffDecrement : Single Read FFalloffDecrement Write FFalloffDecrement;
       Property PeakDecrement    : Single Read FPeakDecrement Write FPeakDecrement;
       Property PeakVisible      : Boolean Read FPeakVisible Write FPeakVisible;
       Property FalloffVisible   : Boolean Read FFalloffVisible Write FFalloffVisible;
     End;
 
+    TLineStylePainter = Class(TAbstractSpectrumStylePainter)
+    Private
+      FPath: TPathData;
+    Protected
+      Procedure Draw(Canvas: TCanvas; GridRect: TRectF;const AData: TArray<Single>; ViewIdxFrom, ViewIdxTo: Integer); Override;
+    Public
+      Constructor Create;
+      Destructor Destroy; Override;
+    End;
   Private Type
 
     { TODO 1:拖动时FPS会增加，如何处理？ }
@@ -376,15 +387,15 @@ type
     FCrossY: Single;
     FCursorInGraphicGrid: Boolean;
     FShowCross: Boolean;
-    //
+
     FDataCount: Integer;
     FData: TArray<Single>;
-    //
+
     FAxisesData: TAxises;
     // FAxisesView: TAxises;
     FLeftTextR: TRectF;
     FBottomTextR: TRectF;
-    //
+
     FBKColor: TAlphaColor;
     FGridBoundColor: TAlphaColor;
     FSectionBrush: TBrush;
@@ -1617,7 +1628,8 @@ end;
 constructor TSpectrumDrawer.Create(AOwner: TComponent);
 begin
   inherited;
-  FPainter:= TColumnarStylePainter.Create;
+//  FPainter:= TColumnarStylePainter.Create;
+  FPainter:= TLineStylePainter.Create;
   // FSelections := TObjectList<TLocatedSelection>.Create(True);
   FSectionBrush := TBrush.Create(TBrushKind.Solid, TAlphaColorRec.Gray);
   FGrid := TBitmap.Create;
@@ -1689,18 +1701,16 @@ procedure TSpectrumDrawer.DoDraw;
       Result := Result + Format('Labled Value: (%s, %s)', [LabelX, LabelY]);
 
 //      // 根据光标得到当前指向的数据值
-//      if Length(FData) > 0 then
-//      begin
-//        Result := Result + Format(#$D#$A'Data[%d] = %.2f',
-//          [DataIndex, FPeaks[DataIndex]]);
+      if Length(FData) > 0 then
+      begin
+        Result := Result + Format(#$D#$A'Data[%d] = %.2f',
+          [DataIndex, FData[DataIndex]]);
 //
-//        With FAxisesData.Left do
-//          PeakY := Format('%.2f' + FUnitStr,
-//            [FViewMin + (FViewMax - FViewMin) * FPeaks[DataIndex]]);
-//
-//        Result := Result + Format(#$D#$A'Peak Value: %s', [PeakY]);
-//
-//      end;
+        With FAxisesData.Left do
+          PeakY := Format('%.2f' + FUnitStr,
+            [FViewMin + (FViewMax - FViewMin) * FData[DataIndex]]);
+        Result := Result + Format(#$D#$A'Peak Value: %s', [PeakY]);
+      end;
     end;
   end;
 
@@ -1717,7 +1727,8 @@ begin
 
   if FPainter <> Nil then
   begin
-    FPainter.Draw(Chart.Canvas, Self.FGraphicGridR, Self.FAxisesData.Bottom, FData);
+    FPainter.Draw(Chart.Canvas, Self.FGraphicGridR, FData,
+      Self.FAxisesData.Bottom.ViewDataIdxFrom, Self.FAxisesData.Bottom.ViewDataIdxTo );
   end;
 
   Internal_DrawUnSelectionMask();
@@ -1974,7 +1985,7 @@ begin
   ACanvas.Fill.Kind := TBrushKind.Solid;
   for ARect in FMaskRects do
   begin
-    ACanvas.FillRect(ARect, 0, 0, [], 0.2);
+    ACanvas.FillRect(ARect, 0, 0, [], 0.4);
   end;
 end;
 
@@ -3394,8 +3405,7 @@ begin
   FFalloffVisible := True;
 end;
 
-procedure TSpectrumDrawer.TColumnarStylePainter.Draw(Canvas: TCanvas;
-  GridRect: TRectF; Bottom: TCustomAxis; const AData: TArray<Single>);
+procedure TSpectrumDrawer.TColumnarStylePainter.Draw(Canvas: TCanvas; GridRect: TRectF;const AData: TArray<Single>; ViewIdxFrom, ViewIdxTo: Integer);
 var
   i: Integer;
   di: Single;
@@ -3435,10 +3445,9 @@ begin
     end;
   end;
 
-  if (nCount > 0) and InRange(Bottom.ViewDataIdxTo, 0, nCount - 1) then
+  if (nCount > 0) and InRange(ViewIdxTo, 0, nCount - 1) then
   begin
-    Internal_DrawViewData(Canvas, GridRect,
-    FFallOff, Bottom.ViewDataIdxFrom, Bottom.ViewDataIdxTo);
+    Internal_DrawViewData(Canvas, GridRect,  FFallOff, ViewIdxFrom, ViewIdxTo);
   end;
 end;
 
@@ -3500,6 +3509,56 @@ end;
 function TSpectrumDrawer.TAbstractSpectrumStylePainter.get_Obj: TObject;
 begin
   Result:= Self;
+end;
+
+{ TSpectrumDrawer.TLineStylePainter }
+
+constructor TSpectrumDrawer.TLineStylePainter.Create;
+begin
+  inherited Create;
+  FPath:= TPathData.Create();
+end;
+
+destructor TSpectrumDrawer.TLineStylePainter.Destroy;
+begin
+  FreeAndNil(FPath);
+  inherited;
+end;
+
+procedure TSpectrumDrawer.TLineStylePainter.Draw(Canvas: TCanvas; GridRect: TRectF;const AData: TArray<Single>; ViewIdxFrom, ViewIdxTo: Integer);
+var
+  HStep: Single;
+  i: Integer;
+  nViewCount: Integer;
+  iYPos: Single;
+  iXPos: Single;
+var
+  nCount: Integer;
+begin
+  nCount:= Length(AData);
+  if Not ((nCount > 0) and InRange(ViewIdxTo, 0, nCount - 1)) then Exit;
+
+  nViewCount := ViewIdxTo - ViewIdxFrom + 1;
+  HStep := GridRect.Width / (nViewCount - 1);
+
+  i:= 0;
+  FPath.Clear();
+  iYPos:= GridRect.Height * (1 - AData[i + ViewIdxFrom]) + GridRect.Top;
+  iXPos:= i * HStep + GridRect.Left;
+  FPath.MoveTo(TPointF.Create(iXPos, iYPos));
+  for i := 1 to nViewCount - 1 do
+  begin
+    iYPos:= GridRect.Height * (1 - AData[i + ViewIdxFrom]) + GridRect.Top;
+    iXPos:= i * HStep + GridRect.Left;;
+    FPath.LineTo(TPointF.Create(iXPos, iYPos));
+  end;
+
+//  Canvas.Stroke.Color := TAlphaColors.Blue;
+  Canvas.Stroke.Color := TAlphaColors.Yellow;
+  Canvas.Stroke.Color := TAlphaColors.Brown;
+  Canvas.Stroke.Kind := TBrushKind.Solid;
+  Canvas.Stroke.Thickness := 1;
+  Canvas.DrawPath(FPath, 1);
 end;
 
 initialization
