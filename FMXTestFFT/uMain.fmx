@@ -21,7 +21,7 @@ object Form3: TForm3
   end
   object Button2: TButton
     Anchors = [akBottom]
-    Position.X = 862.686157226562500000
+    Position.X = 862.686157226562600000
     Position.Y = 582.000000000000000000
     TabOrder = 6
     Text = 'Button2'
@@ -267,10 +267,6 @@ object Form3: TForm3
     OnSwitch = swLSwitch
   end
   object SignalRectangeDrawer1: TSpectrumDrawer
-    PeakDecrement = 0.100000001490116100
-    FalloffDecrement = 0.500000000000000000
-    FalloffVisible = True
-    PeakVisible = True
     CrossOpacity = 0.300000011920929000
     AxisesData.Left.Min = -140
     AxisesData.Left.Max = 0
@@ -293,10 +289,6 @@ object Form3: TForm3
   end
   object SplitedDrawer1: TWaterFallDrawer
     Chart = SignalChart1
-    PeakDecrement = 0.004999999888241291
-    FalloffDecrement = 0.009999999776482582
-    FalloffVisible = True
-    PeakVisible = True
     CrossOpacity = 0.300000011920929000
     AxisesData.Left.Min = -140
     AxisesData.Left.Max = 0
@@ -332,7 +324,7 @@ object Form3: TForm3
       end
       item
         Color = claAqua
-        Offset = 0.414999991655349700
+        Offset = 0.414999991655349800
       end
       item
         Color = claLime
@@ -344,11 +336,11 @@ object Form3: TForm3
       end
       item
         Color = claRed
-        Offset = 0.800000011920929000
+        Offset = 0.800000011920928900
       end
       item
         Color = claWhite
-        Offset = 0.949999988079071000
+        Offset = 0.949999988079071100
       end>
     Left = 80
     Top = 520

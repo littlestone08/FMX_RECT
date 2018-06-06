@@ -394,14 +394,6 @@ type
     FUnMaskRects: TArray<TRectF>;
     Procedure UpdateMaskRects;
   private
-    FFalloffDecrement: Single;
-    FPeakDecrement: Single;
-    FPeakVisible: Boolean;
-    FFalloffVisible: Boolean;
-    procedure SetFalloffDecrement(const Value: Single);
-    procedure SetPeakeDecrement(const Value: Single);
-    procedure SetFalloffVisible(const Value: Boolean);
-    procedure SetPeakVisible(const Value: Boolean);
     procedure SetBKColor(const Value: TAlphaColor);
     procedure SetGridBoundColor(const Value: TAlphaColor);
   Protected
@@ -460,12 +452,6 @@ type
     function Trans_GridRCoordinalY2Mark(Y: Single): Single; inline;
     Property CursorInGraphicGrid: Boolean Read FCursorInGraphicGrid;
   Published
-    Property PeakDecrement: Single read FPeakDecrement write SetPeakeDecrement;
-    Property FalloffDecrement: Single read FFalloffDecrement
-      write SetFalloffDecrement;
-    Property FalloffVisible: Boolean read FFalloffVisible
-      write SetFalloffVisible;
-    Property PeakVisible: Boolean read FPeakVisible write SetPeakVisible;
     Property CrossOpacity: Single Read FCrossOpacity Write FCrossOpacity;
     Property AxisesData: TAxises Read FAxisesData Write FAxisesData;
     Property BKColor: TAlphaColor read FBKColor write SetBKColor;
@@ -1638,10 +1624,6 @@ begin
   FAxisesData := TAxises.Create(Self);
   // FAxisesView := TAxises.Create(self);
 
-  FFalloffDecrement := 0.005;
-  FPeakDecrement := 0.001;
-  FPeakVisible := True;
-  FFalloffVisible := True;
   FCrossOpacity := 0.3;
   FShowCross := True;
 
@@ -2070,15 +2052,7 @@ begin
   end;
 end;
 
-procedure TSpectrumDrawer.SetFalloffDecrement(const Value: Single);
-begin
-  FFalloffDecrement := Value;
-end;
 
-procedure TSpectrumDrawer.SetFalloffVisible(const Value: Boolean);
-begin
-  FFalloffVisible := Value;
-end;
 
 procedure TSpectrumDrawer.SetGridBoundColor(const Value: TAlphaColor);
 begin
@@ -2090,15 +2064,7 @@ begin
   end;
 end;
 
-procedure TSpectrumDrawer.SetPeakeDecrement(const Value: Single);
-begin
-  FPeakDecrement := Value;
-end;
 
-procedure TSpectrumDrawer.SetPeakVisible(const Value: Boolean);
-begin
-  FPeakVisible := Value;
-end;
 
 function TSpectrumDrawer.Trans_GridRCoordinalX2Mark(X: Single): Single;
 begin
@@ -2407,13 +2373,24 @@ begin
 end;
 
 procedure TWaterFallDrawer.DoDraw;
+var
+  Painter: TColumnarStylePainter;
 begin
   inherited;
 
   if Chart.ComponentState * [csLoading, csReading] <> [] then exit;
 
-  DrawWaterFallViewData(FData,
-    FAxisesData.Bottom.ViewDataIdxFrom, FAxisesData.Bottom.ViewDataIdxTo);
+  if (FPainter <> Nil) and (FPainter.Obj is TColumnarStylePainter)  then
+  begin
+    Painter:=  TColumnarStylePainter(FPainter.Obj);
+    DrawWaterFallViewData(Painter.FPeaks,
+      FAxisesData.Bottom.ViewDataIdxFrom, FAxisesData.Bottom.ViewDataIdxTo);
+  end
+  else
+  begin
+    DrawWaterFallViewData(FData,
+      FAxisesData.Bottom.ViewDataIdxFrom, FAxisesData.Bottom.ViewDataIdxTo);
+  end;
 end;
 
 procedure TWaterFallDrawer.HandleColorBarClickProc(Sender: TObject);
@@ -3411,8 +3388,8 @@ end;
 constructor TSpectrumDrawer.TColumnarStylePainter.Create;
 begin
   inherited;
-  FFalloffDecrement := 0.005;
-  FPeakDecrement := 0.001;
+  FFalloffDecrement := 0.01;
+  FPeakDecrement := 0.005;
   FPeakVisible := True;
   FFalloffVisible := True;
 end;
