@@ -601,6 +601,7 @@ begin
   // test;
 //  TestText;
 //  test2;
+
 end;
 
 procedure TForm3.Panel1MouseDown(Sender: TObject; Button: TMouseButton;

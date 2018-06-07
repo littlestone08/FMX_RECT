@@ -142,6 +142,7 @@ type
       function DoGetUpdateRect: TRectF; override;
       Procedure CalcuPaintRect(var Rect: TRectF); Override;
       Procedure Paint; Override;
+      function CenterComment: String;
     Public
       Constructor Create(AOwner: TComponent); Override;
       Destructor Destroy; Override;
@@ -3160,6 +3161,11 @@ begin
   Rect := Selection.FClippedRect;
 end;
 
+function TAxisSelection.TSelectionUI2.CenterComment: String;
+begin
+  Result:= 'This is Test Line'
+end;
+
 constructor TAxisSelection.TSelectionUI2.Create(AOwner: TComponent);
 begin
   inherited;
@@ -3236,9 +3242,12 @@ end;
 procedure TAxisSelection.TSelectionUI2.DrawCenterLine(const Canvas: TCanvas;
 const Rect: TRectF);
 var
-  // ASelection: TAxisSelection;
-  // ADrawer: TSpectrumDrawer;
+   ASelection: TAxisSelection;
+  ADrawer: TSpectrumDrawer;
   XPos: Single;
+  ARect: TRectF;
+  AComment: String;
+  Save: TCanvasSaveState;
 begin
   // if Not(FDontDrawLeftEdge or FDontDrawCenterLine or FDontDrawRightEdge) then
   // begin
@@ -3260,11 +3269,36 @@ begin
   // // 再映射到Selection控件的位置坐标，得到X坐标后再画线
   // end;
 
-  if Not FDontDrawCenterLine then
-  begin
-    XPos := Width / 2;
-    Canvas.DrawLine(TPointF.Create(XPos, Rect.Top),
-      TPointF.Create(XPos, Rect.Bottom), 1, FCenterLinePen);
+  save:= Canvas.SaveState;
+  try
+    if Not FDontDrawCenterLine then
+    begin
+      XPos := Width / 2;
+      Canvas.DrawLine(TPointF.Create(XPos, Rect.Top),
+        TPointF.Create(XPos, Rect.Bottom), 1, FCenterLinePen);
+
+
+      if TAxisSelection(tag).GetDrawer(ADrawer) then
+      begin
+        AComment:= CenterComment;
+        Canvas.Fill.Color:= TAlphaColorRec.Green;
+        ARect:= TRectF.Create(0, 0, Canvas.TextWidth(AComment), Canvas.TextHeight(AComment));
+        if ARect.Width < ADrawer.FGraphicGridR.Width then
+        begin
+          ARect.Location:= TPointF.Create(XPos, Rect.Top);
+          ARect.Offset(-ARect.Width / 2, -ARect.Height);
+          if ARect.Right + Position.X > ADrawer.FGraphicGridR.Right then
+            ARect.Offset(ADrawer.FGraphicGridR.Right - (ARect.Right + Position.X), 0);
+          if ARect.Left + Position.X < ADrawer.FGraphicGridR.Left then
+            ARect.Offset(ADrawer.FGraphicGridR.Left - (ARect.Left + Position.X), 0);
+
+          Canvas.FillText(ARect, AComment, False, 1, [], TTextAlign.Center);
+        end;
+      end;
+
+    end;
+  finally
+    Canvas.RestoreState(save);
   end;
 end;
 
