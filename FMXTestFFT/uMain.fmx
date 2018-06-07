@@ -21,7 +21,7 @@ object Form3: TForm3
   end
   object Button2: TButton
     Anchors = [akBottom]
-    Position.X = 862.686157226562600000
+    Position.X = 862.686157226562500000
     Position.Y = 582.000000000000000000
     TabOrder = 6
     Text = 'Button2'
@@ -117,7 +117,7 @@ object Form3: TForm3
     Size.Height = 32.000000000000000000
     Size.PlatformDefault = False
   end
-  object SignalChart1: TSignalChart
+  object SignalChart1: TViewPanSignalChart
     Anchors = [akLeft, akTop, akRight, akBottom]
     ClipChildren = True
     ClipParent = True
@@ -138,8 +138,8 @@ object Form3: TForm3
     Enabled = False
     Interval = 3
     OnTimer = Timer1Timer
-    Left = 56
-    Top = 40
+    Left = 376
+    Top = 24
   end
   object Switch1: TSwitch
     IsChecked = False
@@ -266,6 +266,9 @@ object Form3: TForm3
     TabOrder = 68
     OnSwitch = swLSwitch
   end
+  object BitmapAnimation1: TBitmapAnimation
+    Duration = 0.200000002980232200
+  end
   object SignalRectangeDrawer1: TSpectrumDrawer
     CrossOpacity = 0.300000011920929000
     AxisesData.Left.Min = -140
@@ -298,9 +301,9 @@ object Form3: TForm3
     AxisesData.Left.LineColor = claDarkslategray
     AxisesData.Left.UnitStr = 'dB'
     AxisesData.Bottom.Min = 0
-    AxisesData.Bottom.Max = 999
+    AxisesData.Bottom.Max = 22050
     AxisesData.Bottom.ViewMin = 0
-    AxisesData.Bottom.ViewMax = 999
+    AxisesData.Bottom.ViewMax = 22050
     AxisesData.Bottom.Thinkness = 1.000000000000000000
     AxisesData.Bottom.LineColor = claDarkslategray
     AxisesData.Bottom.UnitStr = 'Hz'
@@ -324,7 +327,7 @@ object Form3: TForm3
       end
       item
         Color = claAqua
-        Offset = 0.414999991655349800
+        Offset = 0.414999991655349700
       end
       item
         Color = claLime
@@ -336,18 +339,18 @@ object Form3: TForm3
       end
       item
         Color = claRed
-        Offset = 0.800000011920928900
+        Offset = 0.800000011920929000
       end
       item
         Color = claWhite
-        Offset = 0.949999988079071100
+        Offset = 0.949999988079071000
       end>
-    Left = 80
-    Top = 520
+    Left = 24
+    Top = 544
   end
   object Test1: TTest
-    Left = 16
-    Top = 520
+    Left = 24
+    Top = 496
     save = '{1D8C3D07-29A9-4779-A099-32A8691EEA69}'
   end
 end

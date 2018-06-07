@@ -49,42 +49,10 @@ object Form3: TForm3
     Size.Height = 449.000000000000000000
     Size.PlatformDefault = False
     OnResized = SignalChart1Resized
-    AxisesData.Left.MinValue = -140
-    AxisesData.Left.MaxValue = 0
-    AxisesData.Left.Thinkness = 1.000000000000000000
-    AxisesData.Left.LineColor = claDarkslategray
-    AxisesData.Left.LabelSuffix = 'dB'
-    AxisesData.Bottom.MinValue = 0
-    AxisesData.Bottom.MaxValue = 255
-    AxisesData.Bottom.Thinkness = 1.000000000000000000
-    AxisesData.Bottom.LineColor = claDarkslategray
-    AxisesData.Bottom.LabelSuffix = 'MHz'
-    AxisesView.Left.MinValue = -140
-    AxisesView.Left.MaxValue = 0
-    AxisesView.Left.Thinkness = 1.000000000000000000
-    AxisesView.Left.LineColor = claDarkslategray
-    AxisesView.Left.LabelSuffix = 'dB'
-    AxisesView.Bottom.MinValue = 0
-    AxisesView.Bottom.MaxValue = 1023
-    AxisesView.Bottom.Thinkness = 1.000000000000000000
-    AxisesView.Bottom.LineColor = claDarkslategray
-    AxisesView.Bottom.LabelSuffix = 'MHz'
-    Drawer = SignalRectangeDrawer1
-    BKColor = claNull
-    GridBoundColor = claDarkslategray
   end
   object Test1: TTest
     Left = 48
     Top = 408
     save = '{1D8C3D07-29A9-4779-A099-32A8691EEA69}'
-  end
-  object SignalRectangeDrawer1: TSignalRectangeDrawer
-    Chart = SignalChart1
-    PeakDecrement = 0.001000000047497451
-    FalloffDecrement = 0.004999999888241291
-    FalloffVisible = True
-    PeakVisible = True
-    Left = 48
-    Top = 352
   end
 end

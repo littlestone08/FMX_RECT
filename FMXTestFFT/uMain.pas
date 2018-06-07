@@ -13,7 +13,7 @@ uses
   Bass,
   {$ENDIF}
   FMX.Edit, FMX.EditBox,
-  FMX.SpinBox, uSpectrumSelection;
+  FMX.SpinBox, uSpectrumSelection, FMX.Ani;
 
 type
 
@@ -29,7 +29,7 @@ type
     Panel1: TPanel;
     sbMax: TSpinBox;
     sbMin: TSpinBox;
-    SignalChart1: TSignalChart;
+    SignalChart1: TViewPanSignalChart;
     SignalRectangeDrawer1: TSpectrumDrawer;
     SplitedDrawer1: TWaterFallDrawer;
     Test1: TTest;
@@ -47,6 +47,7 @@ type
     swL: TSwitch;
     swC: TSwitch;
     swR: TSwitch;
+    BitmapAnimation1: TBitmapAnimation;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -489,7 +490,7 @@ constructor TForm3.Create(AOwner: TComponent);
 begin
   inherited;
 
-  SetLength(FFTData, 256);
+  SetLength(FFTData, 2048);
   {$IFDEF MSWINDOWS}
   if (BASS_GetVersion shr 16) <> BASSVERSION then
     MessageDlg('"Bass.dll" 文件版本不合适! ', TmsgDlgType.mtError,
@@ -890,8 +891,8 @@ begin
   if BASS_ChannelIsActive(hs) <> BASS_ACTIVE_PLAYING then
     Exit;
 
-  BASS_ChannelGetData(hs, FFTData, BASS_DATA_FFT512);
-  SetLength(MYFFT, Length(FFTData) div 1);
+  BASS_ChannelGetData(hs, FFTData, BASS_DATA_FFT2048);
+  SetLength(MYFFT, Length(FFTData) div 2);
   {$ENDIF}
   for i := 0 to Length(MYFFT) - 1 do
   begin

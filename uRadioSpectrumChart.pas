@@ -5,9 +5,10 @@ interface
 { TODO 3: 绘制类接口化来继承，使让瀑布图可以挂在任何的谱线图上 }
 
 uses
-  System.Classes, System.SysUtils, System.Types, System.UITypes,
+  System.Classes, System.SysUtils, System.Types, System.UITypes, System.SyncObjs,
   // System.Contnrs,
   System.Math, System.DateUtils, System.IOUtils, System.Generics.Collections,
+  System.Math.Vectors,
   FMX.Objects, FMX.Graphics, FMX.Types, FMX.Controls, FMX.STdCtrls,
   uSpectrumSelection;
 
@@ -332,7 +333,9 @@ type
     Property Chart: TSignalChart Read FChart Write SetChart;
   End;
 
+
   TSpectrumDrawer = Class(TAbstractSignalDrawer)
+  {$REGION '嵌入工具类'}
   Public type
     ISpectrumStylePainter = Interface
       function get_Obj: TObject;
@@ -377,9 +380,7 @@ type
       Constructor Create;
       Destructor Destroy; Override;
     End;
-  Private Type
-
-    { TODO 1:拖动时FPS会增加，如何处理？ }
+  {$ENDREGION}
   Private
     FPainter: ISpectrumStylePainter;
     FGrid: TBitmap;
@@ -484,6 +485,25 @@ type
       function InterpolateColor(offset: Single): TAlphaColor;
       Procedure UpdateBitmap;
     End;
+    TAntiSpeed = Class
+    Strict Private Type
+      TTimerThread = Class(TThread)
+      Private
+        [weak]
+        FAntiSpeed: TAntiSpeed;
+      Protected
+        Procedure Execute; Override;
+      End;
+    Private
+      FAtomInt: Integer;
+      FTimerThread: TTimerThread;
+    Public
+      Constructor Create;
+      Destructor Destroy; Override;
+      Procedure Stop;
+      Procedure Start;
+      Function Purchase: Boolean;
+    End;
   Private
     FWaterFallRect: TRectF;
     FWaterFallGridR: TRectF;
@@ -506,6 +526,8 @@ type
     Procedure HandleColorBarClickProc(Sender: TObject);
     procedure SetColorBarGradient(const Value: TGradient);
     Procedure InitGradientRainBow(const AGradient: TGradient);
+  Private
+    FAntiFPS: TAntiSpeed; //防止FPS过度造成CPU大量无效，且影响绘图
   Protected
     Procedure DrawHint; Override;
     Procedure DrawCross(X, Y: Single); Override;
@@ -530,6 +552,25 @@ type
       write SetColorBarGradient;
   End;
 
+
+  TViewPanSignalChart = Class(TSignalChart)
+  private
+    FDownPos: TPointF;
+    FDownViewMin: Integer;
+    FDownViewMax: Integer;
+    FRatio: Single;
+    
+    FPanning: Boolean;
+
+    FAllowPan: Boolean;
+    procedure SetAllowPan(const Value: Boolean);
+  Public
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState;  X, Y: Single); Override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState;   X, Y: Single); override;
+    procedure MouseMove(Shift: TShiftState; X, Y: Single); Override;
+  published
+    Property AllowPan: Boolean read FAllowPan write SetAllowPan;
+  End;
 Procedure RectExcusion(R: TRectF; var RectsExclude: TArray<TRectF>;
   out RectsFragment: TArray<TRectF>);
 
@@ -638,7 +679,7 @@ end;
 
 procedure Register;
 begin
-  RegisterComponents('RadioReceiver', [TSignalChart, TSpectrumDrawer, TTest,
+  RegisterComponents('RadioReceiver', [TViewPanSignalChart, TSpectrumDrawer, TTest,
     TWaterFallDrawer, TSelection6P, TSelectionUI]);
 end;
 
@@ -1436,9 +1477,7 @@ begin
   Writer.WriteString(FSaveStr);
 end;
 
-{ TSignalChartDrawer }
-
-{ TSignalRectangeDrawer }
+{ TSpectrumDrawer }
 
 procedure TSpectrumDrawer.ChartSinkCheckSize;
 var
@@ -1672,7 +1711,7 @@ procedure TSpectrumDrawer.DoDraw;
     RatioX, RatioY: Single;
     DataIndex: Integer;
     LabelX, LabelY: String;
-    PeakY: String;
+    YValueStr: String;
   begin
     Result := '';
 
@@ -1709,9 +1748,9 @@ procedure TSpectrumDrawer.DoDraw;
           [DataIndex, FData[DataIndex]]);
 //
         With FAxisesData.Left do
-          PeakY := Format('%.2f' + FUnitStr,
+          YValueStr := Format('%.2f' + FUnitStr,
             [FViewMin + (FViewMax - FViewMin) * FData[DataIndex]]);
-        Result := Result + Format(#$D#$A'Peak Value: %s', [PeakY]);
+        Result := Result + Format(#$D#$A'Peak Value: %s', [YValueStr]);
       end;
     end;
   end;
@@ -1746,7 +1785,7 @@ begin
   end;
 
 {$IFDEF MSWINDOWS}
-  CnDebugger.LogMsg('TSpectrumDrawer.DoDraw Complete');
+//  CnDebugger.LogMsg('TSpectrumDrawer.DoDraw Complete');
 {$ENDIF}
 end;
 
@@ -2355,10 +2394,14 @@ begin
 
   InitGradientRainBow(FColorBarGradient);
   FColorBar.InitColors(FColorBarGradient);
+
+  FAntiFPS:= TAntiSpeed.Create;
 end;
 
 destructor TWaterFallDrawer.Destroy;
 begin
+  FreeAndNil(FAntiFPS);
+
   FreeAndNil(FWaterFallBuf);
   FreeAndNil(FColorBarGradient);
   inherited;
@@ -2569,8 +2612,9 @@ begin
       // -----------------
       if FLargeBuf then
       begin
-        if FWaterFallBmpStart < BMP_TOP_INDEX then
-          with FWaterFallBuf do
+        if self.FAntiFPS.Purchase then
+        begin
+          if FWaterFallBmpStart < BMP_TOP_INDEX then  with FWaterFallBuf do
           begin
             // MovedH := Ceil(FWaterFallGridR.Height);
             if Map(TMapAccess.ReadWrite, BmpData) then
@@ -2598,20 +2642,20 @@ begin
             end;
           end;
 
-        if FWaterFallBuf.HandleAllocated then
-        begin
-          With FWaterFallBuf.Canvas do
+          if FWaterFallBuf.HandleAllocated then
           begin
-            if BeginScene(Nil) then
-              try
-                DrawCurrLine(FWaterFallBmpStart);
-                Dec(FWaterFallBmpStart);
-              finally
-                EndScene();
-              end;
+            With FWaterFallBuf.Canvas do
+            begin
+              if BeginScene(Nil) then
+                try
+                  DrawCurrLine(FWaterFallBmpStart);
+                  Dec(FWaterFallBmpStart);
+                finally
+                  EndScene();
+                end;
+            end;
           end;
         end;
-
         Canvas.DrawBitmap(FWaterFallBuf, TRectF.Create(0, FWaterFallBmpStart,
           FWaterFallGridR.Width, FWaterFallGridR.Height + FWaterFallBmpStart),
           FWaterFallGridR, 1, False);
@@ -2619,26 +2663,29 @@ begin
       end
       else
       begin
-        with FWaterFallBuf do
+        if self.FAntiFPS.Purchase then
         begin
-          if Map(TMapAccess.ReadWrite, BmpData) then
+          with FWaterFallBuf do
           begin
-            try
-              // 移动图像向下一像素 ,要每行移动，不要多行同时移动，
-              // 否则有改变大小时会出错，而且对速度性能益处有限
-              MoveBytes := Width * BmpData.BytesPerPixel;
-              for i := Height - 2 Downto 0 do
-                System.Move(BmpData.GetPixelAddr(0, 0 + i)^,
-                  BmpData.GetPixelAddr(0, 1 + i)^, MoveBytes);
+            if Map(TMapAccess.ReadWrite, BmpData) then
+            begin
+              try
+                // 移动图像向下一像素 ,要每行移动，不要多行同时移动，
+                // 否则有改变大小时会出错，而且对速度性能益处有限
+                MoveBytes := Width * BmpData.BytesPerPixel;
+                for i := Height - 2 Downto 0 do
+                  System.Move(BmpData.GetPixelAddr(0, 0 + i)^,
+                    BmpData.GetPixelAddr(0, 1 + i)^, MoveBytes);
 
-              Canvas.Stroke.Kind := TBrushKind.Solid;
-              Canvas.Fill.Kind := TBrushKind.Solid;
-            finally
-              Unmap(BmpData);
+                Canvas.Stroke.Kind := TBrushKind.Solid;
+                Canvas.Fill.Kind := TBrushKind.Solid;
+              finally
+                Unmap(BmpData);
+              end;
             end;
           end;
+          DrawCurrLine(BMP_TOP_INDEX);
         end;
-        DrawCurrLine(BMP_TOP_INDEX);
         Canvas.DrawBitmap(FWaterFallBuf, FWaterFallBuf.Bounds,
           FWaterFallGridR, 1, True);
       end;
@@ -2746,7 +2793,12 @@ begin
     Chart.UpdateBitmap;
     Chart.InvalidateRect(Chart.LocalRect);
     DoSizeChanged(); // 重新定位彩条图像
-  end
+  end;
+
+  if Value then
+    FAntiFPS.Start
+  else
+    FAntiFPS.Stop;
 end;
 
 procedure TWaterFallDrawer.UpdateGraphicRect;
@@ -3338,7 +3390,7 @@ begin
   end;
   inherited;
 {$IFDEF MSWINDOWS}
-  CnDebugger.LogMsg('TAxisSelection.TSelectionUI2.Paint');
+//  CnDebugger.LogMsg('TAxisSelection.TSelectionUI2.Paint');
 {$ENDIF}
 end;
 
@@ -3573,6 +3625,133 @@ begin
   //优化方法:
   //如果IdxFrom到IdxTo中的点数超过2倍的RefCount，则通过计算收缩为2倍的RefCount,
   //考虑到计算开销，可以为4倍的RefCount时再进行收缩操作
+end;
+
+{ TWaterFallDrawer.TAntiFPS }
+
+constructor TWaterFallDrawer.TAntiSpeed.Create;
+begin
+  inherited;
+  FTimerThread:= TTimerThread.Create(True);
+  FTimerThread.FAntiSpeed:= Self;
+end;
+
+destructor TWaterFallDrawer.TAntiSpeed.Destroy;
+begin
+  FreeAndNil(FTimerThread);
+  inherited;
+end;
+
+function TWaterFallDrawer.TAntiSpeed.Purchase: Boolean;
+begin
+  Result:= FAtomInt > 0;
+  if Result then
+  begin
+    TInterlocked.Decrement(FAtomInt);
+  end;
+end;
+
+procedure TWaterFallDrawer.TAntiSpeed.Start;
+begin
+  FTimerThread.Resume;
+end;
+
+procedure TWaterFallDrawer.TAntiSpeed.Stop;
+begin
+  FTimerThread.Suspend;
+  FAtomInt:= 0;
+end;
+
+{ TWaterFallDrawer.TAntiFPS.TTimerThread }
+
+procedure TWaterFallDrawer.TAntiSpeed.TTimerThread.Execute;
+begin
+  while not Terminated do
+  begin
+    if FAntiSpeed.FAtomInt < 2 then
+      TInterlocked.Increment(FAntiSpeed.FAtomInt);
+    Sleep(25);
+  end;
+end;
+
+
+{ TViewPanSignalChart }
+
+procedure TViewPanSignalChart.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
+  Y: Single);
+begin
+  inherited;
+  if not Enabled then   Exit;
+  if Not (FDrawer is TSpectrumDrawer) then Exit;
+
+  if self.FPanning then
+    FPanning:= False;
+
+  FDownPos := TPointF.Create(X, Y);
+  With TSpectrumDrawer(FDrawer) do
+  begin
+    FDownViewMin:= AxisesData.Bottom.ViewMin;
+    FDownViewMax:= AxisesData.Bottom.ViewMax;
+    if FGraphicGridR.Width <> 0 then
+      FRatio:= (FDownViewMax - FDownViewMin) / FGraphicGridR.Width;
+    FPanning:= PtInRect(FGraphicGridR, FDownPos);      
+  end;
+end;
+
+procedure TViewPanSignalChart.MouseMove(Shift: TShiftState; X, Y: Single);
+var
+  P, OldPos: TPointF;
+  MoveVector: TVector;
+  MovePos: TPointF;
+  DeltaMark: Single;
+begin
+  inherited;
+
+  if not Enabled then  Exit;
+  if Not (FDrawer is TSpectrumDrawer) then Exit;
+  if TSpectrumDrawer(FDrawer).FGraphicGridR.Width = 0 then Exit;  
+
+  MovePos := TPointF.Create(X, Y);
+  if ssLeft in Shift then
+  begin
+    if FPanning then
+    begin
+      MoveVector := TVector.Create(X - FDownPos.X,
+        Y - FDownPos.Y);
+      DeltaMark:= MoveVector.X * FRatio;
+      
+      if DeltaMark <> 0 then
+      With TSpectrumDrawer(FDrawer).AxisesData.Bottom do
+      begin
+        if DeltaMark > 0 then 
+        begin //pan to right
+          DeltaMark:= EnsureRange(DeltaMark, 0,  FViewMin - FMin);
+        end
+        else if DeltaMark < 0 then
+        begin //pan to left
+          DeltaMark:= EnsureRange(DeltaMark, FViewMax - FMax, 0);      
+          FViewMin:= FViewMin - DeltaMark;
+          FViewMax:= FViewMax - DeltaMark;
+          DoViewChange;          
+        end;
+
+      end;
+    end;
+  end;
+end;
+
+procedure TViewPanSignalChart.MouseUp(Button: TMouseButton; Shift: TShiftState;
+  X, Y: Single);
+begin
+  inherited;
+  if not Enabled then   Exit;
+  if self.FPanning then
+    FPanning:= False;
+end;
+
+procedure TViewPanSignalChart.SetAllowPan(const Value: Boolean);
+begin
+  FAllowPan := Value;
 end;
 
 initialization

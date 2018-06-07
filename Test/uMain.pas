@@ -20,7 +20,6 @@ type
     Button2: TButton;
     SignalChart1: TSignalChart;
     Test1: TTest;
-    SignalRectangeDrawer1: TSignalRectangeDrawer;
     procedure Button3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure FormCreate(Sender: TObject);
