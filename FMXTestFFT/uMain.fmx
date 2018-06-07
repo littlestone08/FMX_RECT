@@ -21,7 +21,7 @@ object Form3: TForm3
   end
   object Button2: TButton
     Anchors = [akBottom]
-    Position.X = 862.686157226562500000
+    Position.X = 862.686157226562600000
     Position.Y = 582.000000000000000000
     TabOrder = 6
     Text = 'Button2'
@@ -133,6 +133,7 @@ object Form3: TForm3
     OnMouseLeave = SignalChart1MouseLeave
     OnResized = SignalChart1Resized
     Drawer = SplitedDrawer1
+    AllowPan = False
   end
   object Timer1: TTimer
     Enabled = False
@@ -327,7 +328,7 @@ object Form3: TForm3
       end
       item
         Color = claAqua
-        Offset = 0.414999991655349700
+        Offset = 0.414999991655349800
       end
       item
         Color = claLime
@@ -339,11 +340,11 @@ object Form3: TForm3
       end
       item
         Color = claRed
-        Offset = 0.800000011920929000
+        Offset = 0.800000011920928900
       end
       item
         Color = claWhite
-        Offset = 0.949999988079071000
+        Offset = 0.949999988079071100
       end>
     Left = 24
     Top = 544

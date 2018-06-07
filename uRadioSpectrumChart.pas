@@ -2559,7 +2559,10 @@ ViewIdxFrom, ViewIdxTo: Integer);
               // AColor := TAlphaColors.White
               // else
               // AColor := FRainBowColors[ColorIndex];
+              if i + ViewIdxFrom >= Length(ADAta) then Break;
+              
               AColor := FColorBar.InterpolateColor(AData[i + ViewIdxFrom]);
+              
 
               Stroke.Color := AColor;
 
@@ -3703,7 +3706,7 @@ var
   P, OldPos: TPointF;
   MoveVector: TVector;
   MovePos: TPointF;
-  DeltaMark: Single;
+  DeltaMark: Integer;
 begin
   inherited;
 
@@ -3711,14 +3714,14 @@ begin
   if Not (FDrawer is TSpectrumDrawer) then Exit;
   if TSpectrumDrawer(FDrawer).FGraphicGridR.Width = 0 then Exit;  
 
-  MovePos := TPointF.Create(X, Y);
-  if ssLeft in Shift then
+  if FPanning then
   begin
-    if FPanning then
+    if ssLeft in Shift then  
     begin
+      MovePos := TPointF.Create(X, Y);    
       MoveVector := TVector.Create(X - FDownPos.X,
         Y - FDownPos.Y);
-      DeltaMark:= MoveVector.X * FRatio;
+      DeltaMark:= Round(MoveVector.X * FRatio);
       
       if DeltaMark <> 0 then
       With TSpectrumDrawer(FDrawer).AxisesData.Bottom do
@@ -3730,11 +3733,16 @@ begin
         else if DeltaMark < 0 then
         begin //pan to left
           DeltaMark:= EnsureRange(DeltaMark, FViewMax - FMax, 0);      
-          FViewMin:= FViewMin - DeltaMark;
-          FViewMax:= FViewMax - DeltaMark;
-          DoViewChange;          
         end;
-
+        FViewMin:= FViewMin - DeltaMark;
+        FViewMax:= FViewMax - DeltaMark;
+        DoViewChange;
+        InvalidBackGround;
+//        self.InvalidateRect(LocalRect);
+//          ViewMin:= ViewMin - DeltaMark;
+//          ViewMax:=  ViewMax - DeltaMark;
+//          ViewMin:= 100;
+//          ViewMax:=  1000;
       end;
     end;
   end;
