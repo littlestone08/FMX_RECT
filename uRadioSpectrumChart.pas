@@ -3718,6 +3718,8 @@ begin
   begin
     if ssLeft in Shift then  
     begin
+      if Cursor <> crSize then Cursor:= crSize;
+
       MovePos := TPointF.Create(X, Y);    
       MoveVector := TVector.Create(X - FDownPos.X,
         Y - FDownPos.Y);
@@ -3728,21 +3730,16 @@ begin
       begin
         if DeltaMark > 0 then 
         begin //pan to right
-          DeltaMark:= EnsureRange(DeltaMark, 0,  FViewMin - FMin);
+          DeltaMark:= EnsureRange(DeltaMark, 0,  FDownViewMin - FMin);
         end
         else if DeltaMark < 0 then
         begin //pan to left
-          DeltaMark:= EnsureRange(DeltaMark, FViewMax - FMax, 0);      
+          DeltaMark:= EnsureRange(DeltaMark, FDownViewMax - FMax, 0);      
         end;
-        FViewMin:= FViewMin - DeltaMark;
-        FViewMax:= FViewMax - DeltaMark;
+        FViewMin:= FDownViewMin - DeltaMark;
+        FViewMax:= FDownViewMax - DeltaMark;
         DoViewChange;
         InvalidBackGround;
-//        self.InvalidateRect(LocalRect);
-//          ViewMin:= ViewMin - DeltaMark;
-//          ViewMax:=  ViewMax - DeltaMark;
-//          ViewMin:= 100;
-//          ViewMax:=  1000;
       end;
     end;
   end;
@@ -3754,7 +3751,10 @@ begin
   inherited;
   if not Enabled then   Exit;
   if self.FPanning then
+  begin
     FPanning:= False;
+    Cursor:= crDefault;
+  end;
 end;
 
 procedure TViewPanSignalChart.SetAllowPan(const Value: Boolean);
