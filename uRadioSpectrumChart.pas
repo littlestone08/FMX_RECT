@@ -2,7 +2,7 @@ unit uRadioSpectrumChart;
 
 interface
 
-{ TODO 3: 绘制类接口化来继承，使让瀑布图可以挂在任何的谱线图上 }
+
 
 uses
   System.Classes, System.SysUtils, System.Types, System.UITypes, System.SyncObjs,
@@ -455,6 +455,8 @@ type
     function Trans_RatioY2GridRCoordinal(RatioY: Single): Single; inline;
     function Trans_MarkX2GridRCoordinal(X: Single): Single; // inline;
     function Trans_MarkY2GridRCoordinal(Y: Single): Single; inline;
+
+    function MarkY0ByMarkX(MarkX: Single; out MarkY: Single): Boolean;
 
     function Trans_RatioX2Mark(Percent: Single): Single; inline;
     function Trans_RatioY2Mark(Percent: Single): Single; inline;
@@ -1727,7 +1729,7 @@ procedure TSpectrumDrawer.DoDraw;
           System.Math.Min(RatioX, 1)) + ViewDataIdxFrom;
       end;
 
-      // Chart坐标
+      // Chart中的Mouse坐标
       Result := Format('GridR : (%.2f, %.2f)'#$D#$A +
         'Cursor: (%.2f, %.2f)=>'#$D#$A + '        (%.2f, %.2f)=>'#$D#$A +
         '        (%.2f%%, %.2f%%)'#$D#$A,
@@ -1915,6 +1917,32 @@ begin
   inherited;
   SetSelectUIParentNil(Self.FAxisesData.Bottom.SelectionManager);
   SetSelectUIParentNil(Self.FAxisesData.Left.SelectionManager);
+end;
+
+function TSpectrumDrawer.MarkY0ByMarkX(MarkX: Single;
+  out MarkY: Single): Boolean;
+var
+  RatioX: Single;
+  DataIndex: Integer;
+  Data0: Single;
+begin
+  Result:= False;
+  RatioX:= Trans_MarkX2Ratio(MarkX);
+
+  With FAxisesData.Bottom do
+  begin
+    DataIndex := Round((ViewDataIdxTo - ViewDataIdxFrom) *
+      System.Math.Min(RatioX, 1)) + ViewDataIdxFrom;
+  end;
+  if (DataIndex >= 0) and (DataIndex < Length(FData))  then
+  begin
+    Data0:= FData[DataIndex];
+
+    With FAxisesData.Left do
+      MarkY:= FViewMin + (FViewMax - FViewMin) * FData[DataIndex];
+    Result:= True;
+  end;
+
 end;
 
 // procedure TSpectrumDrawer.Internal_DrawUnSelectionMask;
@@ -3162,8 +3190,24 @@ begin
 end;
 
 function TAxisSelection.TSelectionUI2.CenterComment: String;
+var
+  ASelection: TAxisSelection;
+  ADrawer: TSpectrumDrawer;
+  MarkX: Single;
+  MarkY: Single;
 begin
-  Result:= 'This is Test Line'
+  Result:= 'Invalid Selection Data';
+  ASelection:= TAxisSelection(tag);
+
+  if ASelection.GetDrawer(ADrawer) then
+  begin
+    MarkX:= (ASelection.AnchorLeft + ASelection.AnchorRight) / 2;
+    Result:= Format('%.2f', [MarkX]) + ADrawer.AxisesData.Bottom.UnitStr;
+  end;
+  if ADrawer.MarkY0ByMarkX(MarkX, MarkY) then
+  begin
+    Result:= Result + ' ' + Format('[%.1f%s]', [MarkY, ADrawer.AxisesData.Left.UnitStr]);
+  end;
 end;
 
 constructor TAxisSelection.TSelectionUI2.Create(AOwner: TComponent);
